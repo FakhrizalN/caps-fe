@@ -1,3 +1,4 @@
+import Button from "@/components/Button";
 import Image from "next/image";
 
 export default function Home() {
@@ -15,7 +16,7 @@ export default function Home() {
         <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
           <li className="mb-2 tracking-[-.01em]">
             Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
+            <code className="bg-amber-500 dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
               src/app/page.tsx
             </code>
             .
