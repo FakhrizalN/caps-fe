@@ -1,232 +1,142 @@
-'use client';
+'use client'
 
-import Button from "@/components/Button";
-import Checkbox from "@/components/form/Checkbox";
-import FormField from "@/components/form/FormField";
-import Input from "@/components/form/Input";
-import React, { useState } from 'react';
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Field } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
-export default function Login() {
+export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    rememberMe: false
-  });
-
-  const [errors, setErrors] = useState({
-    email: '',
     password: ''
-  });
-
-  const [touched, setTouched] = useState({
-    email: false,
-    password: false
-  });
-
-  const validateEmail = (email: string) => {
-    if (!email) {
-      return 'Email is required';
-    }
-    
-    // Check if email contains @
-    if (!email.includes('@')) {
-      return "Sertakan '@' pada alamat email. '" + email + "' tidak memiliki '@'.";
-    }
-    
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return 'Please enter a valid email address';
-    }
-    
-    return '';
-  };
-
-  const validatePassword = (password: string) => {
-    if (!password) {
-      return 'Password is required';
-    }
-    
-    if (password.length < 6) {
-      return 'Password must be at least 6 characters long';
-    }
-    
-    return '';
-  };
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
+  const router = useRouter()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+      [name]: value
+    }))
+  }
 
-    // Clear error when user starts typing
-    if (errors[name as keyof typeof errors]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError('')
 
-    // Real-time validation for better UX
-    if (touched[name as keyof typeof touched]) {
-      let error = '';
-      if (name === 'email') {
-        error = validateEmail(value);
-      } else if (name === 'password') {
-        error = validatePassword(value);
-      }
+    try {
+      // Implementasi login API call di sini
+      console.log('Login attempt:', formData)
       
-      setErrors(prev => ({
-        ...prev,
-        [name]: error
-      }));
+      // Simulasi API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Redirect setelah login berhasil
+      router.push('/dashboard')
+    } catch (err) {
+      setError('Login gagal. Periksa email dan password Anda.')
+    } finally {
+      setIsLoading(false)
     }
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    setTouched(prev => ({
-      ...prev,
-      [name]: true
-    }));
-
-    // Validate on blur
-    let error = '';
-    if (name === 'email') {
-      error = validateEmail(value);
-    } else if (name === 'password') {
-      error = validatePassword(value);
-    }
-    
-    setErrors(prev => ({
-      ...prev,
-      [name]: error
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Mark all fields as touched
-    setTouched({
-      email: true,
-      password: true
-    });
-
-    // Validate all fields
-    const emailError = validateEmail(formData.email);
-    const passwordError = validatePassword(formData.password);
-    
-    const newErrors = {
-      email: emailError,
-      password: passwordError
-    };
-
-    setErrors(newErrors);
-
-    // If no errors, proceed with login
-    if (!emailError && !passwordError) {
-      console.log('Login attempt:', formData);
-      // Here you would typically call your login API
-    }
-  };
-
-  const getFieldState = (fieldName: keyof typeof errors) => {
-    return errors[fieldName] ? 'error' : 'default';
-  };
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-[514px] p-12 bg-white rounded-2xl shadow-[0px_1px_3px_0px_rgba(0,0,0,0.06)] inline-flex flex-col justify-start items-center gap-7 overflow-hidden">
-        {/* Header */}
-        <div className="self-stretch flex flex-col justify-start items-center gap-5">
-          <div className="self-stretch text-center justify-start text-gray-900 text-2xl font-bold font-inter leading-loose">
-            Sign in
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/LogoITK.png" 
+              alt="Institut Teknologi Kalimantan" 
+              className="h-50 w-auto"
+            />
           </div>
-        </div>
+          <CardTitle className="text-xl font-bold text-gray-700">
+            Tracer Study Alumni ITK
+          </CardTitle>
+        </CardHeader>
+        
+        <CardContent>
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <Field>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  placeholder="Masukkan alamat email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                />
+              </Field>
 
-        {/* Form */}
-        <form 
-          className="self-stretch flex flex-col justify-start items-center gap-6" 
-          onSubmit={handleSubmit}
-          noValidate
-        >
-          {/* Email Field */}
-          <FormField
-            label="Email address"
-            required
-            errorMessage={touched.email ? errors.email : ''}
-            className="self-stretch"
-          >
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
-              placeholder="filament@mail.com"
-              state={getFieldState('email')}
-            />
-          </FormField>
-
-          {/* Password Field */}
-          <FormField
-            label="Password"
-            required
-            errorMessage={touched.password ? errors.password : ''}
-            className="self-stretch"
-          >
-            <Input
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
-              placeholder="••••••••••"
-              state={getFieldState('password')}
-              showPasswordToggle
-            />
-          </FormField>
-
-          {/* Remember Me Checkbox */}
-          <div className="self-stretch inline-flex justify-start items-start gap-3">
-            <div className="size- pt-0.5 flex justify-start items-start gap-2.5">
-              <Checkbox
-                id="remember-me"
-                name="rememberMe"
-                label=""
-                checked={formData.rememberMe}
-                onChange={handleInputChange}
-                className="m-0 p-0"
-              />
+              <Field>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  placeholder="Masukkan password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                />
+              </Field>
             </div>
-            <div className="w-[87px] inline-flex flex-col justify-start items-start">
-              <label 
-                htmlFor="remember-me"
-                className="justify-start text-gray-950 text-sm font-medium font-inter leading-tight cursor-pointer"
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="remember-me"
+                  checked={rememberMe}
+                  onCheckedChange={checked => setRememberMe(checked === true)}
+                />
+                <Label 
+                  htmlFor="remember-me" 
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  Ingat saya
+                </Label>
+              </div>
+
+              <Link 
+                href="/forgot-password" 
+                className="text-sm font-medium text-primary hover:text-primary/80 underline"
               >
-                Remember me
-              </label>
+                Lupa password?
+              </Link>
             </div>
-          </div>
 
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            className="self-stretch px-4 py-2 bg-primary-700 rounded-lg shadow-[0px_0.5px_2px_0px_rgba(0,0,0,0.05)] inline-flex justify-center items-center gap-1.5"
-          >
-            <div className="text-center justify-start text-white text-sm font-semibold font-inter leading-tight">
-              Sign in
-            </div>
-          </Button>
-        </form>
-      </div>
+            {error && (
+              <div className="text-destructive text-sm text-center p-3 bg-destructive/10 rounded-md">
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full"
+              size="lg"
+            >
+              {isLoading ? 'Memproses...' : 'Masuk'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
-  );
+  )
 }
