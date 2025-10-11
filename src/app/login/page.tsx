@@ -17,6 +17,10 @@ export default function LoginPage() {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({
+    email: false,
+    password: false
+  })
   const [rememberMe, setRememberMe] = useState(false)
   const router = useRouter()
 
@@ -26,10 +30,35 @@ export default function LoginPage() {
       ...prev,
       [name]: value
     }))
+    
+    // Clear field error when user starts typing
+    if (fieldErrors[name as keyof typeof fieldErrors]) {
+      setFieldErrors(prev => ({
+        ...prev,
+        [name]: false
+      }))
+    }
+  }
+
+  const validateForm = () => {
+    const errors = {
+      email: !formData.email.trim(),
+      password: !formData.password.trim()
+    }
+    
+    setFieldErrors(errors)
+    return !errors.email && !errors.password
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Custom validation
+    if (!validateForm()) {
+      setError('Email dan password harus diisi')
+      return
+    }
+    
     setIsLoading(true)
     setError('')
 
@@ -66,7 +95,7 @@ export default function LoginPage() {
         </CardHeader>
         
         <CardContent>
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             <div className="space-y-4">
               <Field>
                 <Label htmlFor="email">Email</Label>
@@ -75,10 +104,10 @@ export default function LoginPage() {
                   name="email"
                   type="email"
                   autoComplete="email"
-                  required
                   placeholder="Masukkan alamat email"
                   value={formData.email}
                   onChange={handleInputChange}
+                  aria-invalid={fieldErrors.email}
                 />
               </Field>
 
@@ -89,10 +118,10 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   autoComplete="current-password"
-                  required
                   placeholder="Masukkan password"
                   value={formData.password}
                   onChange={handleInputChange}
+                  aria-invalid={fieldErrors.password}
                 />
               </Field>
             </div>
