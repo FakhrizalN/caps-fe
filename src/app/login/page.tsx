@@ -70,7 +70,7 @@ export default function LoginPage() {
       await new Promise(resolve => setTimeout(resolve, 1000))
       
       // Redirect setelah login berhasil
-      router.push('/dashboard')
+      router.push('/')
     } catch (err) {
       setError('Login gagal. Periksa email dan password Anda.')
     } finally {
