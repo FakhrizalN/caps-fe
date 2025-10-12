@@ -14,6 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
+import { Search, Trash2 } from "lucide-react"
 import * as React from "react"
 
 import {
@@ -26,7 +27,8 @@ import {
 } from "@/components/ui/table"
 
 import { DataTableViewOptions } from "@/components/column_toggle"
-import { DataTablePagination } from "@/components/pagination"
+import { DataTablePagination } from "@/components/pagination_table"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 interface DataTableProps<TData, TValue> {
@@ -42,6 +44,7 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
+  const [globalFilter, setGlobalFilter] = React.useState("")
 
   const table = useReactTable({
     data,
@@ -51,42 +54,100 @@ export function DataTable<TData, TValue>({
       columnVisibility,
       rowSelection,
       columnFilters,
+      globalFilter,
     },
     enableRowSelection: true,
+    enableGlobalFilter: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    globalFilterFn: (row, columnId, filterValue) => {
+      const search = filterValue.toLowerCase()
+      
+      
+      const values = Object.values(row.original as Record<string, any>)
+        .filter(Boolean)
+        .map(value => String(value).toLowerCase())
+      
+      
+      return values.some(value => value.includes(search))
+    },
   })
+
+  const selectedRows = table.getFilteredSelectedRowModel().rows
+  const selectedCount = selectedRows.length
+
+  const handleDeleteAll = async () => {
+    if (selectedCount === 0) return
+
+    const confirmMessage = `Are you sure you want to delete ${selectedCount} selected employee${selectedCount > 1 ? 's' : ''}?`
+    
+    if (window.confirm(confirmMessage)) {
+      try {
+        // Get selected employee IDs
+        const selectedIds = selectedRows.map(row => (row.original as any).id)
+        
+        // Implementasi API call untuk bulk delete
+        console.log('Delete employees:', selectedIds)
+        
+        // Simulasi API call
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // Clear selection after successful delete
+        setRowSelection({})
+        
+        // Refresh halaman atau update state
+        window.location.reload()
+      } catch (error) {
+        console.error('Error deleting employees:', error)
+        alert('Failed to delete employees. Please try again.')
+      }
+    }
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2">
-          <Input
-            placeholder="Filter names..."
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("name")?.setFilterValue(event.target.value)
-            }
-            className="h-8 w-[150px] lg:w-[250px]"
-          />
-          <Input
-            placeholder="Filter emails..."
-            value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("email")?.setFilterValue(event.target.value)
-            }
-            className="h-8 w-[150px] lg:w-[250px]"
-          />
+          <div className="relative">
+            <Search className="absolute left-2 top-2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search..."
+              value={globalFilter ?? ""}
+              onChange={(event) => setGlobalFilter(String(event.target.value))}
+              className="h-8 w-[150px] lg:w-[250px] pl-8"
+            />
+          </div>
+          {selectedCount > 0 && (
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-muted-foreground">
+                {selectedCount} selected
+              </span>
+            </div>
+          )}
         </div>
-        <DataTableViewOptions table={table} />
+        <div className="flex items-center space-x-2">
+          {selectedCount > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDeleteAll}
+              className="h-8"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete All ({selectedCount})
+            </Button>
+          )}
+          <DataTableViewOptions table={table} />
+        </div>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -138,7 +199,9 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} />
+      <div className="flex items-center justify-end space-x-2 py-4">
+        <DataTablePagination table={table} />
+      </div>
     </div>
   )
 }

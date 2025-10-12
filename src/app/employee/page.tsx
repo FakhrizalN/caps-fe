@@ -1,3 +1,19 @@
+import { AppSidebar } from "@/components/app-sidebar"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage
+} from "@/components/ui/breadcrumb"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+import { Plus } from "lucide-react"
+import Link from "next/link"; // Ganti dengan Next.js Link
 import { columns, type Employee } from "./columns"
 import { DataTable } from "./data-table"
 
@@ -56,16 +72,33 @@ export default async function EmployeePage() {
   const data = await getData()
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex flex-col space-y-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Employee Directory</h2>
-          <p className="text-muted-foreground">
-            Manage and view employee information.
-          </p>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 !h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage>Employee Directory</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </header>
+        <div className="flex flex-1 flex-col gap-8 p-8">
+          <div className="flex items-center justify-between">
+            <div className="text-3xl font-bold tracking-tight">User Management</div>
+            <Link href="/employee/add">
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Employee
+              </Button>
+            </Link>
+          </div>
+          <DataTable columns={columns} data={data} />
         </div>
-        <DataTable columns={columns} data={data} />
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
