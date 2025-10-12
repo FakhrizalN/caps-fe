@@ -20,70 +20,58 @@ import {
 import { Check, ChevronDown, ChevronUp, Edit, Plus, Search, Trash2 } from "lucide-react"
 import { useState } from "react"
 
-// Sample data untuk template surveys - now moved to state
+// Sample data untuk template surveys - updated with only 4 survey types
 const initialTemplateSurveys = [
   {
     id: "1",
-    title: "Exit Survey IT",
+    title: "Exit Survey",
     lastEdit: "Last Edit May 2024",
     type: "template"
   },
   {
     id: "2", 
-    title: "Exit Survey SI",
-    lastEdit: "Last Edit May 2024",
+    title: "Tracer Study Lv. 1",
+    lastEdit: "Last Edit June 2024",
     type: "template"
   },
   {
     id: "3",
-    title: "Tracer Study I-P",
-    lastEdit: "Last Edit Sept 2024",
+    title: "Tracer Study Lv. 2",
+    lastEdit: "Last Edit July 2024",
     type: "template"
   },
   {
     id: "4",
-    title: "Tracer Study I-Si",
-    lastEdit: "Last Edit Sept 2024", 
-    type: "template"
-  },
-  {
-    id: "5",
-    title: "SPP IT",
-    lastEdit: "Last Edit May 2024",
+    title: "Survey Kepuasan Pengguna",
+    lastEdit: "Last Edit August 2024", 
     type: "template"
   },
 ]
 
-// Sample data untuk surveys periode
+// Sample data untuk surveys periode - updated with the 4 survey types
 const initialSurveys = [
   {
-    id: "6",
+    id: "5",
     title: "Exit Survey",
     lastEdit: "Last Edit May 2024",
+    type: "survey"
+  },
+  {
+    id: "6",
+    title: "Tracer Study Lv. 1",
+    lastEdit: "Last Edit June 2024",
     type: "survey"
   },
   {
     id: "7",
-    title: "Exit Survey",
-    lastEdit: "Last Edit May 2024",
+    title: "Tracer Study Lv. 2",
+    lastEdit: "Last Edit July 2024",
     type: "survey"
   },
   {
     id: "8",
-    title: "Exit Survey",
-    lastEdit: "Last Edit - 1 year",
-    type: "survey"
-  },
-  {
-    id: "9",
-    title: "Exit Survey",
-    lastEdit: "Last Edit Nov 2022",
-    type: "survey"
-  },
-  {
-    id: "10",
-    title: "Exit Survey",
-    lastEdit: "Last Edit May 2023",
+    title: "Survey Kepuasan Pengguna",
+    lastEdit: "Last Edit August 2024",
     type: "survey"
   },
 ]
@@ -99,24 +87,49 @@ export default function SurveyManagementPage() {
   const [sections, setSections] = useState([
     {
       id: 1,
-      name: "Periode 2022",
+      name: "Periode 2024",
       surveys: initialSurveys,
       isCollapsed: false
     },
     {
       id: 2,
-      name: "Periode 2021", 
+      name: "Periode 2023", 
       surveys: [
         {
-          id: "11",
-          title: "Exit Survey 2021",
-          lastEdit: "Last Edit Dec 2021",
+          id: "9",
+          title: "Exit Survey",
+          lastEdit: "Last Edit Dec 2023",
           type: "survey"
         },
         {
+          id: "10",
+          title: "Tracer Study Lv. 1",
+          lastEdit: "Last Edit Nov 2023", 
+          type: "survey"
+        },
+        {
+          id: "11",
+          title: "Survey Kepuasan Pengguna",
+          lastEdit: "Last Edit Oct 2023", 
+          type: "survey"
+        }
+      ],
+      isCollapsed: false
+    },
+    {
+      id: 3,
+      name: "Periode 2022", 
+      surveys: [
+        {
           id: "12",
-          title: "Tracer Study 2021",
-          lastEdit: "Last Edit Nov 2021", 
+          title: "Exit Survey",
+          lastEdit: "Last Edit Dec 2022",
+          type: "survey"
+        },
+        {
+          id: "13",
+          title: "Tracer Study Lv. 2",
+          lastEdit: "Last Edit Nov 2022", 
           type: "survey"
         }
       ],
