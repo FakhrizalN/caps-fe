@@ -74,8 +74,7 @@ export default async function EmployeePage() {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Navbar at the top */}
-      <Navbar />
+      {/* <Navbar /> */}
       
       {/* Sidebar and main content below navbar */}
       <div className="flex flex-1 overflow-hidden">

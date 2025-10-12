@@ -1,0 +1,101 @@
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { MoreVertical } from "lucide-react"
+import { useState } from "react"
+import { SurveyDetailDialog } from "./survey-detail-dialog"
+
+interface Survey {
+  id: string
+  title: string
+  lastEdit: string
+  type: string
+}
+
+interface SurveyCardProps {
+  survey: Survey
+  onEdit: () => void
+  isEditMode: boolean
+  onDelete?: (surveyId: string) => void
+}
+
+export function SurveyCard({ 
+  survey, 
+  isEditMode, 
+  onDelete 
+}: SurveyCardProps) {
+  const [showDetailDialog, setShowDetailDialog] = useState(false)
+
+  const handleDetailSave = (data: {
+    title: string
+    fakultas: string
+    prodi: string
+    isOpen: boolean
+  }) => {
+    // Handle save logic here
+    console.log("Survey details:", data)
+  }
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(survey.id)
+    }
+  }
+
+  return (
+    <>
+      <Card className="relative">
+        <CardHeader>
+          {!isEditMode && (
+            <CardAction>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowDetailDialog(true)}>
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="text-red-600" 
+                    onClick={handleDelete}
+                  >
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </CardAction>
+          )}
+          <CardTitle className="text-base">{survey.title}</CardTitle>
+          <CardDescription className="text-xs text-gray-500">
+            {survey.lastEdit}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full h-24 bg-gray-200 rounded-md"></div>
+        </CardContent>
+      </Card>
+
+      <SurveyDetailDialog
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+        survey={survey}
+        onSave={handleDetailSave}
+      />
+    </>
+  )
+}
