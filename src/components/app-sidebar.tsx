@@ -1,7 +1,7 @@
 "use client"
 
 import { HomeIcon } from "@heroicons/react/24/outline"
-import { ChevronRight } from "lucide-react"
+import { Building2, ChevronRight, ClipboardList, Users } from "lucide-react"
 import { usePathname } from "next/navigation"
 import * as React from "react"
 
@@ -35,10 +35,23 @@ const data = {
         {
           title: "Unit Directory",
           url: "/unit",
+          icon: Building2,
         },
         {
           title: "Employee Directory",
           url: "/employee",
+          icon: Users,
+        },
+      ],
+    },
+    {
+      title: "Survey Directory",
+      url: "#",
+      items: [
+        {
+          title: "Survey Management",
+          url: "/survey",
+          icon: ClipboardList,
         },
       ],
     },
@@ -90,11 +103,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenu>
                     {item.items.map((subItem) => {
                       const isActive = pathname === subItem.url
+                      const IconComponent = subItem.icon
 
                       return (
                         <SidebarMenuItem key={subItem.title}>
                           <SidebarMenuButton asChild isActive={isActive}>
-                            <a href={subItem.url}>{subItem.title}</a>
+                            <a href={subItem.url} className="flex items-center gap-2">
+                              <IconComponent className="h-4 w-4" />
+                              {subItem.title}
+                            </a>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
                       )
