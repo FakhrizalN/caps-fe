@@ -129,9 +129,43 @@ export default function SurveyManagementPage() {
     console.log("Edit survey")
   }
 
-  const handleDuplicate = () => {
-    // Handle duplicate action
-    console.log("Duplicate survey")
+  const handleDuplicate = (surveyId: string) => {
+    // Check if it's a template survey first
+    const isTemplate = templateSurveys.some(survey => survey.id === surveyId)
+    
+    if (isTemplate) {
+      // Duplicate template survey
+      const surveyToDuplicate = templateSurveys.find(survey => survey.id === surveyId)
+      if (surveyToDuplicate) {
+        const newSurvey = {
+          ...surveyToDuplicate,
+          id: `template-${Date.now()}`, // Generate unique ID
+          title: `${surveyToDuplicate.title} (Copy)`,
+          lastEdit: `Last Edit ${new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
+        }
+        setTemplateSurveys(prev => [...prev, newSurvey])
+      }
+    } else {
+      // Duplicate survey from sections
+      setSections(prev => 
+        prev.map(section => {
+          const surveyToDuplicate = section.surveys.find(survey => survey.id === surveyId)
+          if (surveyToDuplicate) {
+            const newSurvey = {
+              ...surveyToDuplicate,
+              id: `survey-${Date.now()}`, // Generate unique ID
+              title: `${surveyToDuplicate.title} (Copy)`,
+              lastEdit: `Last Edit ${new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
+            }
+            return {
+              ...section,
+              surveys: [...section.surveys, newSurvey]
+            }
+          }
+          return section
+        })
+      )
+    }
   }
 
   const handleDeleteSurvey = (surveyId: string) => {
@@ -300,6 +334,7 @@ export default function SurveyManagementPage() {
                       survey={survey}
                       onEdit={handleEdit}
                       onDelete={handleDeleteSurvey}
+                      onDuplicate={handleDuplicate}
                       isEditMode={isEditMode}
                     />
                   ))}
@@ -369,6 +404,7 @@ export default function SurveyManagementPage() {
                         survey={survey}
                         onEdit={handleEdit}
                         onDelete={handleDeleteSurvey}
+                        onDuplicate={handleDuplicate}
                         isEditMode={isEditMode}
                       />
                     ))}

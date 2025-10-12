@@ -29,12 +29,14 @@ interface SurveyCardProps {
   onEdit: () => void
   isEditMode: boolean
   onDelete?: (surveyId: string) => void
+  onDuplicate?: (surveyId: string) => void
 }
 
 export function SurveyCard({ 
   survey, 
   isEditMode, 
-  onDelete 
+  onDelete,
+  onDuplicate 
 }: SurveyCardProps) {
   const [showDetailDialog, setShowDetailDialog] = useState(false)
 
@@ -54,6 +56,12 @@ export function SurveyCard({
     }
   }
 
+  const handleDuplicate = () => {
+    if (onDuplicate) {
+      onDuplicate(survey.id)
+    }
+  }
+
   return (
     <>
       <Card className="relative">
@@ -69,6 +77,9 @@ export function SurveyCard({
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setShowDetailDialog(true)}>
                     Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDuplicate}>
+                    Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     className="text-red-600" 
