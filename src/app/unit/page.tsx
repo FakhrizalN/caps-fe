@@ -1,6 +1,5 @@
-"use client"
-
 import { AppSidebar } from "@/components/app-sidebar"
+import { Navbar } from "@/components/navbar"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -99,28 +98,37 @@ export default async function UnitManagementPage() {
   const prodiData = await getProdiData()
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 !h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Unit Management</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-        <div className="flex flex-1 flex-col gap-8 p-8">
-          <UnitManagementClient 
-            fakultasData={fakultasData}
-            jurusanData={jurusanData}
-            prodiData={prodiData}
-          />
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="flex flex-col h-screen">
+      {/* Navbar at the top */}
+      <Navbar />
+      
+      {/* Sidebar and main content below navbar */}
+      <div className="flex flex-1 overflow-hidden">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset>
+            <header className="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="mr-2 !h-4" />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>Unit Management</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </header>
+            
+            <div className="flex flex-1 flex-col gap-8 p-8">
+              <UnitManagementClient 
+                fakultasData={fakultasData}
+                jurusanData={jurusanData}
+                prodiData={prodiData}
+              />
+            </div>
+          </SidebarInset>
+        </SidebarProvider>
+      </div>
+    </div>
   )
 }

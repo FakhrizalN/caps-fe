@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar"
+import { Navbar } from "@/components/navbar"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,7 +14,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Plus } from "lucide-react"
-import Link from "next/link"; // Ganti dengan Next.js Link
+import Link from "next/link"
 import { columns, type Employee } from "./columns"
 import { DataTable } from "./data-table"
 
@@ -72,33 +73,41 @@ export default async function EmployeePage() {
   const data = await getData()
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 !h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Employee Directory</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-        <div className="flex flex-1 flex-col gap-8 p-8">
-          <div className="flex items-center justify-between">
-            <div className="text-3xl font-bold tracking-tight">User Management</div>
-            <Link href="/employee/add">
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add Employee
-              </Button>
-            </Link>
-          </div>
-          <DataTable columns={columns} data={data} />
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="flex flex-col h-screen">
+      {/* Navbar at the top */}
+      <Navbar />
+      
+      {/* Sidebar and main content below navbar */}
+      <div className="flex flex-1 overflow-hidden">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset>
+            <header className="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="mr-2 !h-4" />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>Employee Directory</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </header>
+            <div className="flex flex-1 flex-col gap-8 p-8">
+              <div className="flex items-center justify-between">
+                <div className="text-3xl font-bold tracking-tight">User Management</div>
+                <Link href="/employee/add">
+                  <Button className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add Employee
+                  </Button>
+                </Link>
+              </div>
+              <DataTable columns={columns} data={data} />
+            </div>
+          </SidebarInset>
+        </SidebarProvider>
+      </div>
+    </div>
   )
 }
