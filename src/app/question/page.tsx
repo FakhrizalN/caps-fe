@@ -2,10 +2,12 @@
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { QuestionCardGForm, QuestionData } from "@/components/question_card_gform"
+import { QuestionFloatingToolbar } from "@/components/question_floating_toolbar"
 import { QuestionHeaderCard } from "@/components/question_header_card"
 import { QuestionToolbar } from "@/components/question_toolbar"
-import { QuestionFloatingToolbar } from "@/components/question_floating_toolbar"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { useState } from "react"
 
 export default function QuestionsPage() {
@@ -31,6 +33,65 @@ export default function QuestionsPage() {
       maxValue: 5,
       minLabel: "Not satisfied",
       maxLabel: "Very satisfied"
+    },
+    {
+      id: "q3",
+      type: "multiple_choice",
+      title: "What is your favorite color?",
+      description: "Choose one option",
+      required: false,
+      options: [
+        { id: "opt1", label: "Red" },
+        { id: "opt2", label: "Blue" },
+        { id: "opt3", label: "Green" }
+      ]
+    },
+    {
+      id: "q4",
+      type: "linear_scale",
+      title: "How would you rate the service?",
+      required: true,
+      minValue: 1,
+      maxValue: 5,
+      minLabel: "Poor",
+      maxLabel: "Excellent"
+    },
+    {
+      id: "q5",
+      type: "multiple_choice",
+      title: "Which day of the week do you prefer?",
+      description: "Select your favorite day",
+      required: false,
+      options: [
+        { id: "opt1", label: "Monday" },
+        { id: "opt2", label: "Tuesday" },
+        { id: "opt3", label: "Wednesday" },
+        { id: "opt4", label: "Thursday" },
+        { id: "opt5", label: "Friday" }
+      ]
+    },
+    {
+      id: "q6",
+      type: "linear_scale",
+      title: "On a scale of 1-10, how likely are you to recommend us?",
+      required: true,
+      minValue: 1,
+      maxValue: 10,
+      minLabel: "Not likely",
+      maxLabel: "Very likely"
+    },
+    {
+      id: "q7",
+      type: "multiple_choice",
+      title: "What is your age group?",
+      description: "Select the range that applies",
+      required: false,
+      options: [
+        { id: "opt1", label: "18-25" },
+        { id: "opt2", label: "26-35" },
+        { id: "opt3", label: "36-45" },
+        { id: "opt4", label: "46+" }
+      ]
     }
   ])
   const [isPreviewMode, setIsPreviewMode] = useState(false)
@@ -80,6 +141,17 @@ export default function QuestionsPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
+        <header className="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4 z-20">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 !h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbPage>Survey 1</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </header>
         {/* Question Toolbar */}
         <QuestionToolbar 
           title="Survey 1"
@@ -100,8 +172,7 @@ export default function QuestionsPage() {
         )}
         
         <div className="p-6 bg-gray-50 min-h-screen">
-          {/* Container: lebar max 1280px, ke kiri, kasih space kanan buat floating toolbar */}
-          <div className="max-w-6xl ml-0 w-full space-y-3 pr-24">
+          <div className="ml-0 w-full space-y-3 pr-24">
             {/* Question Header Card */}
             <QuestionHeaderCard
               title={surveyTitle}

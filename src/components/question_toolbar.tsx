@@ -2,12 +2,12 @@
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { 
-  File, 
-  Undo2, 
-  Redo2, 
-  Eye, 
-  Share2 
+import {
+  Eye,
+  File,
+  Redo2,
+  Share2,
+  Undo2
 } from "lucide-react"
 import { useState } from "react"
 
@@ -36,7 +36,7 @@ export function QuestionToolbar({
   }
 
   return (
-    <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+    <div className="sticky top-16 z-10 bg-white border-b shadow-sm">
       <div className="flex items-center justify-between px-6 py-3">
         <div className="flex items-center gap-3 min-w-[200px]">
           <File className="h-5 w-5 text-primary" />

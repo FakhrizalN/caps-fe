@@ -60,7 +60,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
-  const isDashboardActive = pathname === "/dashboard"
+  const isDashboardActive = pathname === "/"
 
   return (
     <Sidebar {...props}>
@@ -72,7 +72,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             size="sm"
             className="w-full justify-start"
           >
-            <a href="/dashboard" className="flex items-center gap-2">
+            <a href="/" className="flex items-center gap-2">
               <HomeIcon className="h-4 w-4" />
               Dashboard
             </a>
