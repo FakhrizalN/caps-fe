@@ -19,6 +19,12 @@ export interface QuestionData {
   maxValue?: number
   minLabel?: string
   maxLabel?: string
+
+  selectedOption?: string       
+  selectedOptions?: string[]    
+  selectedValue?: number          
+  textAnswer?: string            
+  gridAnswers?: Record<string, string> 
 }
 
 interface QuestionCardGFormProps {
@@ -113,7 +119,7 @@ export function QuestionCardGForm({
     >
       <CardHeader className="pt-0 -mt-4">
         <div className="flex items-start gap-3">
-          {/* Drag Handle - Only in Edit Mode */}
+          {/*Edit Mode */}
           {isEditMode && (
             <Button 
               variant="ghost" 
