@@ -29,9 +29,10 @@ interface NewSurveyDialogProps {
 
 export interface SurveyFormData {
   template: string
-  fakultas: string
-  prodi: string
   name: string
+  title?: string
+  description?: string
+  periode?: string
 }
 
 // Sample data untuk dropdown options
@@ -42,31 +43,13 @@ const templateOptions = [
   "Template 4"
 ]
 
-const fakultasOptions = [
-  "Fakultas Sains dan Teknologi Informasi",
-  "Fakultas Pembangunan Berkelanjutan",
-  "Fakultas Rekayasa dan Teknologi Industri"
-]
-
-const prodiOptions = [
-  "Informatika",
-  "Sistem Informasi",
-  "Matematika",
-  "Statistika",
-  "Fisika"
-]
-
 export function NewSurveyDialog({ isOpen, onOpenChange, onSave }: NewSurveyDialogProps) {
   const [selectedTemplate, setSelectedTemplate] = useState("")
-  const [selectedFakultas, setSelectedFakultas] = useState("")
-  const [selectedProdi, setSelectedProdi] = useState("")
   const [templateName, setTemplateName] = useState("")
 
   const handleSave = () => {
     const formData: SurveyFormData = {
       template: selectedTemplate,
-      fakultas: selectedFakultas,
-      prodi: selectedProdi,
       name: templateName
     }
     
@@ -74,8 +57,6 @@ export function NewSurveyDialog({ isOpen, onOpenChange, onSave }: NewSurveyDialo
     
     // Reset form
     setSelectedTemplate("")
-    setSelectedFakultas("")
-    setSelectedProdi("")
     setTemplateName("")
   }
 
@@ -84,8 +65,6 @@ export function NewSurveyDialog({ isOpen, onOpenChange, onSave }: NewSurveyDialo
     
     // Reset form
     setSelectedTemplate("")
-    setSelectedFakultas("")
-    setSelectedProdi("")
     setTemplateName("")
   }
 
@@ -124,44 +103,6 @@ export function NewSurveyDialog({ isOpen, onOpenChange, onSave }: NewSurveyDialo
                 {templateOptions.map((template) => (
                   <SelectItem key={template} value={template}>
                     {template}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Pilih Fakultas */}
-          <div className="grid gap-2">
-            <Label htmlFor="fakultas">
-              Fakultas <span className="text-red-500">*</span>
-            </Label>
-            <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select fakultas" />
-              </SelectTrigger>
-              <SelectContent>
-                {fakultasOptions.map((fakultas) => (
-                  <SelectItem key={fakultas} value={fakultas}>
-                    {fakultas}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Pilih Prodi */}
-          <div className="grid gap-2">
-            <Label htmlFor="prodi">
-              Prodi <span className="text-red-500">*</span>
-            </Label>
-            <Select value={selectedProdi} onValueChange={setSelectedProdi}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select prodi" />
-              </SelectTrigger>
-              <SelectContent>
-                {prodiOptions.map((prodi) => (
-                  <SelectItem key={prodi} value={prodi}>
-                    {prodi}
                   </SelectItem>
                 ))}
               </SelectContent>

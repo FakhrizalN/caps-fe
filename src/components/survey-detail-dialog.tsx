@@ -11,15 +11,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { useState } from "react"
+import { updateSurvey } from "@/lib/api"
+import { useEffect, useState } from "react"
 
 interface SurveyDetailDialogProps {
   open: boolean
@@ -27,60 +21,78 @@ interface SurveyDetailDialogProps {
   survey?: {
     id: string
     title: string
-    fakultas?: string
-    prodi?: string
     isOpen?: boolean
+    description?: string
+    is_active?: boolean
+    periode?: string
   }
-  onSave: (data: {
+  onSave?: (data: {
     title: string
-    fakultas: string
-    prodi: string
     isOpen: boolean
   }) => void
-}
-
-const fakultasList = [
-  "Faculty of Engineering",
-  "Faculty of Economics and Business", 
-  "Faculty of Computer Science",
-  "Faculty of Medicine",
-  "Faculty of Law",
-  "Faculty of Psychology"
-]
-
-const prodiList: Record<string, string[]> = {
-  "Faculty of Engineering": ["Civil Engineering", "Mechanical Engineering", "Electrical Engineering"],
-  "Faculty of Economics and Business": ["Management", "Accounting", "Economics"],
-  "Faculty of Computer Science": ["Informatics", "Information Systems", "Computer Engineering"],
-  "Faculty of Medicine": ["Medical Education", "Pharmacy", "Public Health"],
-  "Faculty of Law": ["Law"],
-  "Faculty of Psychology": ["Psychology"]
+  onSuccess?: () => void // Callback after successful update
 }
 
 export function SurveyDetailDialog({ 
   open, 
   onOpenChange, 
   survey,
-  onSave 
+  onSave,
+  onSuccess
 }: SurveyDetailDialogProps) {
-  const [title, setTitle] = useState(survey?.title || "")
-  const [fakultas, setFakultas] = useState(survey?.fakultas || "")
-  const [prodi, setProdi] = useState(survey?.prodi || "")
-  const [isOpen, setIsOpen] = useState(survey?.isOpen || false)
+  const [title, setTitle] = useState("")
+  const [isOpen, setIsOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSave = () => {
-    if (title && fakultas && prodi) {
-      onSave({ title, fakultas, prodi, isOpen })
+  // Update form when survey prop changes
+  useEffect(() => {
+    if (survey) {
+      setTitle(survey.title || "")
+      setIsOpen(survey.isOpen ?? survey.is_active ?? false)
+    }
+  }, [survey])
+
+  const handleSave = async () => {
+    if (!title) {
+      setError("Please fill in the survey name")
+      return
+    }
+
+    if (!survey?.id) {
+      setError("Survey ID is missing")
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Call API to update survey
+      await updateSurvey(survey.id, {
+        title,
+        is_active: isOpen,
+      })
+
+      // Call the legacy onSave callback if provided
+      if (onSave) {
+        onSave({ title, isOpen })
+      }
+
+      // Call onSuccess callback to refresh data
+      if (onSuccess) {
+        onSuccess()
+      }
+
+      // Close dialog
       onOpenChange(false)
+    } catch (err) {
+      console.error('Error updating survey:', err)
+      setError(err instanceof Error ? err.message : 'Failed to update survey')
+    } finally {
+      setIsLoading(false)
     }
   }
-
-  const handleFakultasChange = (value: string) => {
-    setFakultas(value)
-    setProdi("") // Reset prodi when fakultas changes
-  }
-
-  const availableProdi = fakultas ? prodiList[fakultas] || [] : []
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -91,6 +103,13 @@ export function SurveyDetailDialog({
             Configure survey details.
           </DialogDescription>
         </DialogHeader>
+        
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+            {error}
+          </div>
+        )}
         
         <div className="grid gap-4 py-4">
           {/* Survey Name Field */}
@@ -105,48 +124,6 @@ export function SurveyDetailDialog({
               placeholder="Enter survey name"
               className="w-full"
             />
-          </div>
-
-          {/* Faculty Select */}
-          <div className="grid gap-2">
-            <Label htmlFor="fakultas">
-              Fakultas
-            </Label>
-            <Select value={fakultas} onValueChange={handleFakultasChange}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select fakultas" />
-              </SelectTrigger>
-              <SelectContent>
-                {fakultasList.map((fak) => (
-                  <SelectItem key={fak} value={fak}>
-                    {fak}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Study Program Select */}
-          <div className="grid gap-2">
-            <Label htmlFor="prodi">
-              Program Studi
-            </Label>
-            <Select 
-              value={prodi} 
-              onValueChange={setProdi}
-              disabled={!fakultas}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select program studi" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableProdi.map((prod) => (
-                  <SelectItem key={prod} value={prod}>
-                    {prod}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Survey Status Switch */}
@@ -168,11 +145,18 @@ export function SurveyDetailDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            disabled={isLoading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!title || !fakultas || !prodi}>
-            Save
+          <Button 
+            onClick={handleSave} 
+            disabled={!title || isLoading}
+          >
+            {isLoading ? "Saving..." : "Save"}
           </Button>
         </DialogFooter>
       </DialogContent>

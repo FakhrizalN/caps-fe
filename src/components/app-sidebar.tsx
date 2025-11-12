@@ -1,8 +1,8 @@
 "use client"
 
 import { HomeIcon } from "@heroicons/react/24/outline"
-import { Building2, ChevronRight, ClipboardList, Users } from "lucide-react"
-import { usePathname } from "next/navigation"
+import { Building2, ChevronRight, ClipboardList, LogOut, Users } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
 import * as React from "react"
 
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,7 @@ import {
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -23,6 +24,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { logout } from "@/lib/api"
 
 // This is sample data.
 const data = {
@@ -60,7 +62,13 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const router = useRouter()
   const isDashboardActive = pathname === "/"
+
+  const handleLogout = () => {
+    logout()
+    router.push('/login')
+  }
 
   return (
     <Sidebar {...props}>
@@ -123,6 +131,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </Collapsible>
         ))}
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

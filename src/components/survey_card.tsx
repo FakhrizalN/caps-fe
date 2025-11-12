@@ -30,20 +30,20 @@ interface SurveyCardProps {
   isEditMode: boolean
   onDelete?: (surveyId: string) => void
   onDuplicate?: (surveyId: string) => void
+  onUpdateSuccess?: () => void // Callback after successful update
 }
 
 export function SurveyCard({ 
   survey, 
   isEditMode, 
   onDelete,
-  onDuplicate 
+  onDuplicate,
+  onUpdateSuccess
 }: SurveyCardProps) {
   const [showDetailDialog, setShowDetailDialog] = useState(false)
 
   const handleDetailSave = (data: {
     title: string
-    fakultas: string
-    prodi: string
     isOpen: boolean
   }) => {
     // Handle save logic here
@@ -106,6 +106,7 @@ export function SurveyCard({
         onOpenChange={setShowDetailDialog}
         survey={survey}
         onSave={handleDetailSave}
+        onSuccess={onUpdateSuccess}
       />
     </>
   )

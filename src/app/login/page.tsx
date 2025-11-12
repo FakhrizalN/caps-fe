@@ -6,19 +6,20 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { login, setTokens, setUser } from '@/lib/api'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
-    email: '',
+    id: '',
     password: ''
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({
-    email: false,
+    id: false,
     password: false
   })
   const [rememberMe, setRememberMe] = useState(false)
@@ -42,12 +43,12 @@ export default function LoginPage() {
 
   const validateForm = () => {
     const errors = {
-      email: !formData.email.trim(),
+      id: !formData.id.trim(),
       password: !formData.password.trim()
     }
     
     setFieldErrors(errors)
-    return !errors.email && !errors.password
+    return !errors.id && !errors.password
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,7 +56,7 @@ export default function LoginPage() {
     
     // Custom validation
     if (!validateForm()) {
-      setError('Email dan password harus diisi')
+      setError('ID dan password harus diisi')
       return
     }
     
@@ -63,16 +64,36 @@ export default function LoginPage() {
     setError('')
 
     try {
-      // Implementasi login API call di sini
-      console.log('Login attempt:', formData)
+      console.log('Attempting login to:', process.env.NEXT_PUBLIC_API_URL)
+      console.log('Login credentials:', { id: formData.id, password: '***' })
       
-      // Simulasi API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Call Django login API
+      const response = await login({
+        id: formData.id,
+        password: formData.password
+      })
       
-      // Redirect setelah login berhasil
+      console.log('Login successful:', { 
+        hasAccess: !!response.access, 
+        hasRefresh: !!response.refresh,
+        hasUser: !!response.user 
+      })
+      
+      // Store tokens and user data
+      setTokens(response.access, response.refresh)
+      
+      if (response.user) {
+        setUser(response.user)
+      }
+      
+      // Redirect to dashboard after successful login
+      console.log('Redirecting to dashboard...')
       router.push('/')
+      
     } catch (err) {
-      setError('Login gagal. Periksa email dan password Anda.')
+      console.error('Login error:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Login gagal. Periksa ID dan password Anda.'
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -98,16 +119,16 @@ export default function LoginPage() {
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             <div className="space-y-4">
               <Field>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="id">ID / Username</Label>
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="Masukkan alamat email"
-                  value={formData.email}
+                  id="id"
+                  name="id"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="Masukkan ID atau username"
+                  value={formData.id}
                   onChange={handleInputChange}
-                  aria-invalid={fieldErrors.email}
+                  aria-invalid={fieldErrors.id}
                 />
               </Field>
 

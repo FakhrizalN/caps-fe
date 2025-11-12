@@ -17,125 +17,121 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { createSurvey, deleteSurvey, getSurveys, getTemplates, type Survey, type Template } from "@/lib/api"
 import { Check, ChevronDown, ChevronUp, Edit, Plus, Search, Trash2 } from "lucide-react"
-import { useState } from "react"
-
-// Sample data untuk template surveys - updated with only 4 survey types
-const initialTemplateSurveys = [
-  {
-    id: "1",
-    title: "Exit Survey",
-    lastEdit: "Last Edit May 2024",
-    type: "template"
-  },
-  {
-    id: "2", 
-    title: "Tracer Study Lv. 1",
-    lastEdit: "Last Edit June 2024",
-    type: "template"
-  },
-  {
-    id: "3",
-    title: "Tracer Study Lv. 2",
-    lastEdit: "Last Edit July 2024",
-    type: "template"
-  },
-  {
-    id: "4",
-    title: "Survey Kepuasan Pengguna",
-    lastEdit: "Last Edit August 2024", 
-    type: "template"
-  },
-]
-
-// Sample data untuk surveys periode - updated with the 4 survey types
-const initialSurveys = [
-  {
-    id: "5",
-    title: "Exit Survey",
-    lastEdit: "Last Edit May 2024",
-    type: "survey"
-  },
-  {
-    id: "6",
-    title: "Tracer Study Lv. 1",
-    lastEdit: "Last Edit June 2024",
-    type: "survey"
-  },
-  {
-    id: "7",
-    title: "Tracer Study Lv. 2",
-    lastEdit: "Last Edit July 2024",
-    type: "survey"
-  },
-  {
-    id: "8",
-    title: "Survey Kepuasan Pengguna",
-    lastEdit: "Last Edit August 2024",
-    type: "survey"
-  },
-]
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export default function SurveyManagementPage() {
+  const router = useRouter()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   
-  // Add state for template surveys
-  const [templateSurveys, setTemplateSurveys] = useState(initialTemplateSurveys)
+  // State for template surveys from API
+  const [templateSurveys, setTemplateSurveys] = useState<Array<{
+    id: string
+    title: string
+    lastEdit: string
+    type: string
+  }>>([])
   
   // State untuk multiple sections
-  const [sections, setSections] = useState([
-    {
-      id: 1,
-      name: "Periode 2024",
-      surveys: initialSurveys,
-      isCollapsed: false
-    },
-    {
-      id: 2,
-      name: "Periode 2023", 
-      surveys: [
-        {
-          id: "9",
-          title: "Exit Survey",
-          lastEdit: "Last Edit Dec 2023",
-          type: "survey"
-        },
-        {
-          id: "10",
-          title: "Tracer Study Lv. 1",
-          lastEdit: "Last Edit Nov 2023", 
-          type: "survey"
-        },
-        {
-          id: "11",
-          title: "Survey Kepuasan Pengguna",
-          lastEdit: "Last Edit Oct 2023", 
-          type: "survey"
-        }
-      ],
-      isCollapsed: false
-    },
-    {
-      id: 3,
-      name: "Periode 2022", 
-      surveys: [
-        {
-          id: "12",
-          title: "Exit Survey",
-          lastEdit: "Last Edit Dec 2022",
-          type: "survey"
-        },
-        {
-          id: "13",
-          title: "Tracer Study Lv. 2",
-          lastEdit: "Last Edit Nov 2022", 
-          type: "survey"
-        }
-      ],
-      isCollapsed: false
+  const [sections, setSections] = useState<Array<{
+    id: number
+    name: string
+    surveys: Array<{
+      id: string
+      title: string
+      lastEdit: string
+      type: string
+    }>
+    isCollapsed: boolean
+  }>>([])
+
+  // Fetch surveys and templates from API on component mount
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+    await Promise.all([fetchTemplates(), fetchSurveys()])
+  }
+
+  const fetchTemplates = async () => {
+    try {
+      const data = await getTemplates()
+      
+      // Convert templates to card format
+      const formattedTemplates = data.map((template: Template) => ({
+        id: template.id,
+        title: template.title,
+        lastEdit: template.updated_at 
+          ? `Last Edit ${new Date(template.updated_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
+          : 'Never edited',
+        type: 'template'
+      }))
+
+      setTemplateSurveys(formattedTemplates)
+    } catch (err) {
+      console.error('Error fetching templates:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch templates')
+      
+      // If unauthorized, redirect to login
+      if (err instanceof Error && err.message.includes('Session expired')) {
+        router.push('/login')
+      }
     }
-  ])
+  }
+
+  const fetchSurveys = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      const data = await getSurveys()
+      
+      // Group surveys by periode
+      const surveysByPeriode = data.reduce((acc: any, survey: Survey) => {
+        const periode = survey.periode || 'Uncategorized'
+        if (!acc[periode]) {
+          acc[periode] = []
+        }
+        acc[periode].push({
+          id: survey.id,
+          title: survey.title,
+          lastEdit: survey.updated_at 
+            ? `Last Edit ${new Date(survey.updated_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
+            : 'Never edited',
+          type: survey.type || 'survey'
+        })
+        return acc
+      }, {})
+
+      // Convert to sections format
+      const newSections = Object.keys(surveysByPeriode).map((periode, index) => ({
+        id: index + 1,
+        name: periode,
+        surveys: surveysByPeriode[periode],
+        isCollapsed: false
+      }))
+
+      if (newSections.length > 0) {
+        setSections(newSections)
+      }
+      
+    } catch (err) {
+      console.error('Error fetching surveys:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch surveys')
+      
+      // If unauthorized, redirect to login
+      if (err instanceof Error && err.message.includes('Session expired')) {
+        router.push('/login')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleEdit = () => {
     // Handle edit action
@@ -181,28 +177,55 @@ export default function SurveyManagementPage() {
     }
   }
 
-  const handleDeleteSurvey = (surveyId: string) => {
+  const handleDeleteSurvey = async (surveyId: string) => {
     // Check if it's a template survey first
     const isTemplate = templateSurveys.some(survey => survey.id === surveyId)
     
     if (isTemplate) {
-      // Remove from template surveys
+      // For templates, we might need a different API endpoint
+      // For now, just remove from local state
       setTemplateSurveys(prev => prev.filter(survey => survey.id !== surveyId))
-    } else {
-      // Remove from sections
+      return
+    }
+    
+    // Delete survey from API
+    try {
+      await deleteSurvey(surveyId)
+      
+      // Remove from local state
       setSections(prev => 
         prev.map(section => ({
           ...section,
           surveys: section.surveys.filter(survey => survey.id !== surveyId)
         }))
       )
+      
+      // Refresh surveys
+      await fetchSurveys()
+    } catch (err) {
+      console.error('Error deleting survey:', err)
+      setError(err instanceof Error ? err.message : 'Failed to delete survey')
     }
   }
 
-  const handleSave = (data: SurveyFormData) => {
-    // Handle save action
-    console.log("Save survey:", data)
-    setIsDialogOpen(false)
+  const handleSave = async (data: SurveyFormData) => {
+    try {
+      setError(null)
+      
+      // Create survey via API
+      await createSurvey({
+        title: data.name, // Using name as title from form
+        periode: new Date().getFullYear().toString()
+      })
+      
+      setIsDialogOpen(false)
+      
+      // Refresh surveys
+      await fetchSurveys()
+    } catch (err) {
+      console.error('Error creating survey:', err)
+      setError(err instanceof Error ? err.message : 'Failed to create survey')
+    }
   }
 
   const handleEditMode = () => {
@@ -297,10 +320,24 @@ export default function SurveyManagementPage() {
             </header>
             
             <div className="flex flex-1 flex-col gap-6 p-6 overflow-auto">
-              {/* Header Section */}
-              <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Survey Management</h1>
-              </div>
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                  {error}
+                </div>
+              )}
+
+              {/* Loading State */}
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-gray-500">Loading surveys...</div>
+                </div>
+              ) : (
+                <>
+                  {/* Header Section */}
+                  <div className="flex items-center justify-between">
+                    <h1 className="text-3xl font-bold tracking-tight">Survey Management</h1>
+                  </div>
 
               {/* Controls Section */}
               <div className="flex items-center justify-between">
@@ -349,6 +386,7 @@ export default function SurveyManagementPage() {
                       onDelete={handleDeleteSurvey}
                       onDuplicate={handleDuplicate}
                       isEditMode={isEditMode}
+                      onUpdateSuccess={fetchSurveys}
                     />
                   ))}
                 </div>
@@ -419,6 +457,7 @@ export default function SurveyManagementPage() {
                         onDelete={handleDeleteSurvey}
                         onDuplicate={handleDuplicate}
                         isEditMode={isEditMode}
+                        onUpdateSuccess={fetchSurveys}
                       />
                     ))}
                   </div>
@@ -436,6 +475,8 @@ export default function SurveyManagementPage() {
                   <Plus className="h-4 w-4 text-gray-500" />
                 </Button>
               </div>
+              )}
+                </>
               )}
             </div>
           </SidebarInset>
