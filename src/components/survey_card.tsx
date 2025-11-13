@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { type SurveyType } from "@/lib/api"
 import { MoreVertical } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { SurveyDetailDialog } from "./survey-detail-dialog"
 
@@ -49,6 +50,7 @@ export function SurveyCard({
   onDuplicate,
   onUpdateSuccess
 }: SurveyCardProps) {
+  const router = useRouter()
   const [showDetailDialog, setShowDetailDialog] = useState(false)
 
   const handleDetailSave = (data: {
@@ -71,28 +73,43 @@ export function SurveyCard({
     }
   }
 
+  const handleCardClick = () => {
+    if (!isEditMode) {
+      router.push(`/survey/${survey.id}`)
+    }
+  }
+
   return (
     <>
-      <Card className="relative">
+      <Card className="relative cursor-pointer hover:shadow-md transition-shadow" onClick={handleCardClick}>
         <CardHeader>
           {!isEditMode && (
             <CardAction>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setShowDetailDialog(true)}>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation()
+                    setShowDetailDialog(true)
+                  }}>
                     Edit
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleDuplicate}>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation()
+                    handleDuplicate()
+                  }}>
                     Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     className="text-red-600" 
-                    onClick={handleDelete}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete()
+                    }}
                   >
                     Delete
                   </DropdownMenuItem>

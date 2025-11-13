@@ -1,33 +1,33 @@
 "use client"
 
-import * as React from "react"
 import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+    ColumnDef,
+    ColumnFiltersState,
+    SortingState,
+    VisibilityState,
+    flexRender,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
 } from "@tanstack/react-table"
-import { Eye, Search, ChevronDown } from "lucide-react"  
+import { ChevronDown, Eye, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
+import * as React from "react"
 
+import { DataTableViewOptions } from "@/components/column_toggle"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from "@/components/ui/table"
-import { DataTableViewOptions } from "@/components/column_toggle"
 
 export type ResponseData = {
   id: string
@@ -38,9 +38,10 @@ export type ResponseData = {
 
 interface ResponseListTableProps {
   data: ResponseData[]
+  surveyId?: string
 }
 
-export function ResponseListTable({ data }: ResponseListTableProps) {
+export function ResponseListTable({ data, surveyId }: ResponseListTableProps) {
   const router = useRouter()
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -128,7 +129,7 @@ export function ResponseListTable({ data }: ResponseListTableProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push(`/response/${response.id}`)}
+              onClick={() => router.push(surveyId ? `/survey/${surveyId}/response/${response.id}` : `/response/${response.id}`)}
             >
               <Eye className="h-4 w-4 mr-2" />
               View

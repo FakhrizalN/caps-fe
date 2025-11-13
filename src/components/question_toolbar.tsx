@@ -16,6 +16,7 @@ interface QuestionToolbarProps {
   title?: string
   activeTab?: "questions" | "responses" | "settings"
   isPreviewMode?: boolean
+  surveyId?: string
   onTabChange?: (tab: "questions" | "responses" | "settings") => void
   onPreviewToggle?: () => void
   onPublish?: () => void
@@ -25,6 +26,7 @@ export function QuestionToolbar({
   title = "Survey 1",
   activeTab = "questions",
   isPreviewMode = false,
+  surveyId,
   onTabChange,
   onPreviewToggle,
   onPublish
@@ -37,10 +39,19 @@ export function QuestionToolbar({
     onTabChange?.(tab)
     
     // Navigate based on tab
-    if (tab === "questions") {
-      router.push("/question")
-    } else if (tab === "responses") {
-      router.push("/response")
+    if (surveyId) {
+      if (tab === "questions") {
+        router.push(`/survey/${surveyId}`)
+      } else if (tab === "responses") {
+        router.push(`/survey/${surveyId}/response`)
+      }
+    } else {
+      // Fallback to old routes if no surveyId
+      if (tab === "questions") {
+        router.push("/question")
+      } else if (tab === "responses") {
+        router.push("/response")
+      }
     }
     // Settings tab doesn't navigate
   }
