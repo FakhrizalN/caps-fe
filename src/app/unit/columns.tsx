@@ -1,45 +1,48 @@
-"use client"
-
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { deleteFaculty, deleteProgramStudy } from "@/lib/api"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 import { EditUnitDialog } from "./edit-unit-dialog"
 
-// Simplified types - only id and name
+// Updated types matching API
 export type Fakultas = {
-  id: string
+  id: number
   name: string
-}
-
-export type Jurusan = {
-  id: string
-  name: string
+  created_at?: string
+  updated_at?: string
 }
 
 export type ProgramStudi = {
-  id: string
+  id: number
   name: string
+  faculty?: number
+  faculty_name?: string
+  created_at?: string
+  updated_at?: string
 }
 
 // Helper function to create actions cell
-const createActionsCell = (activeTab: string, fakultasData?: Fakultas[], jurusanData?: Jurusan[]) => 
+const createActionsCell = (activeTab: string, fakultasData?: Fakultas[]) => 
   ({ row }: { row: any }) => {
     const unit = row.original
 
     const handleDelete = async () => {
       if (window.confirm(`Are you sure you want to delete ${unit.name}?`)) {
         try {
-          console.log(`Delete ${activeTab}:`, unit.id)
-          await new Promise(resolve => setTimeout(resolve, 1000))
+          if (activeTab === "fakultas") {
+            await deleteFaculty(unit.id)
+          } else if (activeTab === "prodi") {
+            await deleteProgramStudy(unit.id)
+          }
           window.location.reload()
         } catch (error) {
           console.error(`Error deleting ${activeTab}:`, error)
@@ -63,7 +66,6 @@ const createActionsCell = (activeTab: string, fakultasData?: Fakultas[], jurusan
             <EditUnitDialog
               activeTab={activeTab}
               fakultasData={fakultasData || []}
-              jurusanData={jurusanData || []}
               unitData={unit}
               trigger={
                 <div className="w-full cursor-pointer px-2 py-1.5 text-sm">
@@ -132,57 +134,8 @@ export const fakultasColumns: ColumnDef<Fakultas>[] = [
   },
 ]
 
-// Columns for Jurusan  
-export const createJurusanColumns = (fakultasData: Fakultas[]): ColumnDef<Jurusan>[] => [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-    enableResizing: false,
-    size: 40,
-  },
-  {
-    accessorKey: "name",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="justify-start h-8 px-2 w-full"
-        >
-          Jurusan
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    enableResizing: false,
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: createActionsCell("jurusan", fakultasData),
-  },
-]
-
 // Columns for Program Studi
-export const createProdiColumns = (fakultasData: Fakultas[], jurusanData: Jurusan[]): ColumnDef<ProgramStudi>[] => [
+export const createProdiColumns = (fakultasData: Fakultas[]): ColumnDef<ProgramStudi>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -224,12 +177,27 @@ export const createProdiColumns = (fakultasData: Fakultas[], jurusanData: Jurusa
     enableResizing: false,
   },
   {
+    accessorKey: "faculty_name",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="justify-start h-8 px-2 w-full"
+        >
+          Fakultas
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    enableResizing: false,
+  },
+  {
     id: "actions",
     enableHiding: false,
-    cell: createActionsCell("prodi", fakultasData, jurusanData),
+    cell: createActionsCell("prodi", fakultasData),
   },
 ]
 
 // Keep the original columns for backward compatibility
-export const jurusanColumns = createJurusanColumns([])
-export const prodiColumns = createProdiColumns([], [])
+export const prodiColumns = createProdiColumns([])

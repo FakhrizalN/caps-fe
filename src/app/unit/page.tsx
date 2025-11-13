@@ -1,5 +1,4 @@
 import { AppSidebar } from "@/components/app-sidebar"
-import { Navbar } from "@/components/navbar"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,89 +11,31 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { getFaculties, getProgramStudiesDetailed } from "@/lib/api"
 import { UnitManagementClient } from "../../components/unit-management-client"
 
-// Sample data untuk Fakultas
+// Fetch Fakultas data from API
 async function getFakultasData() {
-  return [
-    {
-      id: "1",
-      name: "Fakultas Sains dan Teknologi Informasi",
-    },
-    {
-      id: "2", 
-      name: "Fakultas Pembangunan Berkelanjutan",
-    },
-    {
-      id: "3",
-      name: "Fakultas Rekayasa dan Teknologi Industri",
-    },
-  ]
+  try {
+    return await getFaculties()
+  } catch (error) {
+    console.error('Error fetching faculties:', error)
+    return []
+  }
 }
 
-// Sample data untuk Jurusan
-async function getJurusanData() {
-  return [
-    {
-      id: "1",
-      name: "Jurusan Sains dan Analitika Data",
-    },
-    {
-      id: "2",
-      name: "Jurusan Teknik Elektro, Informatika, dan Bisnis", 
-    },
-    {
-      id: "3",
-      name: "Jurusan Teknologi Kemaritiman",
-    },
-    {
-      id: "4",
-      name: "Jurusan Teknik Sipil dan Perencanaan",
-    },
-    {
-      id: "5",
-      name: "Jurusan Teknologi Industri",
-    },
-    {
-      id: "6",
-      name: "Jurusan Rekayasa Industri",
-    },
-  ]
-}
-
-// Sample data untuk Program Studi
+// Fetch Program Studi data from API
 async function getProdiData() {
-  return [
-    {
-      id: "1",
-      name: "Matematika",
-    },
-    {
-      id: "2",
-      name: "Ilmu Aktuaria", 
-    },
-    {
-      id: "3",
-      name: "Statistika",
-    },
-    {
-      id: "4",
-      name: "Fisika", 
-    },
-    {
-      id: "5",
-      name: "Informatika",
-    },
-    {
-      id: "6",
-      name: "Sistem Informasi",
-    },
-  ]
+  try {
+    return await getProgramStudiesDetailed()
+  } catch (error) {
+    console.error('Error fetching program studies:', error)
+    return []
+  }
 }
 
 export default async function UnitManagementPage() {
   const fakultasData = await getFakultasData()
-  const jurusanData = await getJurusanData()
   const prodiData = await getProdiData()
 
   return (
@@ -120,7 +61,6 @@ export default async function UnitManagementPage() {
             <div className="flex flex-1 flex-col gap-8 p-8">
               <UnitManagementClient 
                 fakultasData={fakultasData}
-                jurusanData={jurusanData}
                 prodiData={prodiData}
               />
             </div>

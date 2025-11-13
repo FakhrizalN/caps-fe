@@ -1,5 +1,6 @@
+"use client"
+
 import { AppSidebar } from "@/components/app-sidebar"
-import { Navbar } from "@/components/navbar"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,64 +14,54 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { getUsers, type User } from "@/lib/api"
 import { Plus } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { columns, type Employee } from "./columns"
 import { DataTable } from "./data-table"
 
-// Sample data
-async function getData(): Promise<Employee[]> {
-  return [
-    {
-      id: "1",
-      name: "John Doe",
-      email: "john.doe@itk.ac.id",
-      role: "Admin",
-      unit: "Computer Science",
-      unitId: "CS001",
-      phone: "+62 812-3456-7890",
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      email: "jane.smith@itk.ac.id",
-      role: "Staff",
-      unit: "Information Technology",
-      unitId: "IT001",
-      phone: "+62 813-4567-8901",
-    },
-    {
-      id: "3",
-      name: "Bob Johnson",
-      email: "bob.johnson@itk.ac.id",
-      role: "Manager",
-      unit: "Electrical Engineering",
-      unitId: "EE001",
-      phone: "+62 814-5678-9012",
-    },
-    {
-      id: "4",
-      name: "Alice Brown",
-      email: "alice.brown@itk.ac.id",
-      role: "Staff",
-      unit: "Mechanical Engineering",
-      unitId: "ME001",
-      phone: "+62 815-6789-0123",
-    },
-    {
-      id: "5",
-      name: "Charlie Wilson",
-      email: "charlie.wilson@itk.ac.id",
-      role: "Admin",
-      unit: "Civil Engineering",
-      unitId: "CE001",
-      phone: "+62 816-7890-1234",
-    },
-  ]
-}
+export default function EmployeePage() {
+  const router = useRouter()
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-export default async function EmployeePage() {
-  const data = await getData()
+  useEffect(() => {
+    fetchEmployees()
+  }, [])
+
+  const fetchEmployees = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      const users = await getUsers()
+      
+      // Convert User API format to Employee format
+      const formattedEmployees: Employee[] = users.map((user: User) => ({
+        id: user.id,
+        name: user.username || 'N/A', // username adalah fullname
+        email: user.email || 'N/A',
+        role: user.role_name || 'N/A',
+        unit: user.program_study_name || 'N/A',
+        unitId: user.program_study?.toString() || 'N/A',
+        phone: user.phone_number || 'N/A',
+      }))
+      
+      setEmployees(formattedEmployees)
+    } catch (err) {
+      console.error('Error fetching users:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch users')
+      
+      // If unauthorized, redirect to login
+      if (err instanceof Error && err.message.includes('Session expired')) {
+        router.push('/login')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="flex flex-col h-screen">
@@ -93,16 +84,32 @@ export default async function EmployeePage() {
               </Breadcrumb>
             </header>
             <div className="flex flex-1 flex-col gap-8 p-8">
-              <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold tracking-tight">User Management</div>
-                <Link href="/employee/add">
-                  <Button className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Employee
-                  </Button>
-                </Link>
-              </div>
-              <DataTable columns={columns} data={data} />
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                  {error}
+                </div>
+              )}
+
+              {/* Loading State */}
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-gray-500">Loading users...</div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="text-3xl font-bold tracking-tight">User Management</div>
+                    <Link href="/employee/add">
+                      <Button className="flex items-center gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add Employee
+                      </Button>
+                    </Link>
+                  </div>
+                  <DataTable columns={columns} data={employees} />
+                </>
+              )}
             </div>
           </SidebarInset>
         </SidebarProvider>

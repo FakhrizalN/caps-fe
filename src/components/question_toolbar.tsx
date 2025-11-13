@@ -9,6 +9,7 @@ import {
   Share2,
   Undo2
 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 interface QuestionToolbarProps {
@@ -28,11 +29,20 @@ export function QuestionToolbar({
   onPreviewToggle,
   onPublish
 }: QuestionToolbarProps) {
+  const router = useRouter()
   const [currentTab, setCurrentTab] = useState(activeTab)
 
   const handleTabChange = (tab: "questions" | "responses" | "settings") => {
     setCurrentTab(tab)
     onTabChange?.(tab)
+    
+    // Navigate based on tab
+    if (tab === "questions") {
+      router.push("/question")
+    } else if (tab === "responses") {
+      router.push("/response")
+    }
+    // Settings tab doesn't navigate
   }
 
   return (

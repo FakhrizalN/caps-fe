@@ -147,9 +147,9 @@ export function setUser(user: any) {
 }
 
 /**
- * Get stored user data
+ * Get stored user data from localStorage
  */
-export function getUser(): any | null {
+export function getCurrentUser(): any | null {
   if (typeof window !== 'undefined') {
     const user = localStorage.getItem('user')
     return user ? JSON.parse(user) : null
@@ -236,7 +236,8 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
-    throw new Error(error.detail || 'Request failed')
+    console.error('API Error Response:', error)
+    throw new Error(error.detail || JSON.stringify(error) || 'Request failed')
   }
 
   // Handle 204 No Content (DELETE requests)
@@ -252,30 +253,44 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
 // Survey API Functions
 // ==========================================
 
+export type SurveyType = 'exit' | 'lv1' | 'lv2' | 'skp'
+
 export interface Survey {
   id: string
   title: string
-  lastEdit?: string
-  type?: string
-  created_at?: string
-  updated_at?: string
   description?: string
   is_active?: boolean
-  periode?: string
+  survey_type?: SurveyType
+  periode?: number | null // For display (returned from backend)
+  periode_id?: number | null // For sending to backend
+  created_by?: string
+  start_at?: string | null
+  end_at?: string | null
+  created_at?: string
+  updated_at?: string
+  // For display purposes
+  lastEdit?: string
+  type?: string
 }
 
 export interface CreateSurveyData {
   title: string
   description?: string
   is_active?: boolean
-  periode?: string
+  survey_type: SurveyType // Make required with default
+  periode_id?: number | null // Changed to periode_id
+  start_at?: string | null
+  end_at?: string | null
 }
 
 export interface UpdateSurveyData {
   title?: string
   description?: string
   is_active?: boolean
-  periode?: string
+  survey_type?: SurveyType
+  periode_id?: number | null // Changed to periode_id
+  start_at?: string | null
+  end_at?: string | null
 }
 
 /**
@@ -326,32 +341,419 @@ export async function deleteSurvey(id: string): Promise<void> {
 }
 
 // ==========================================
-// Template API Functions
+// User API Functions
 // ==========================================
 
-export interface Template {
+export interface User {
   id: string
-  title: string
-  description?: string
+  username: string // fullname
+  email?: string
+  role?: number | string
+  role_name?: string
+  program_study?: number | string
+  program_study_name?: string
+  address?: string
+  phone_number?: string
+  last_survey?: 'none' | 'exit' | 'lv1' | 'lv2'
+  is_active?: boolean
+  is_staff?: boolean
+  is_superuser?: boolean
+  date_joined?: string
+  last_login?: string
   created_at?: string
   updated_at?: string
+}
+
+export interface CreateUserData {
+  id: string
+  username: string // fullname
+  password: string
+  email?: string
+  role?: number
+  program_study?: number
+  address?: string
+  phone_number?: string
+  last_survey?: 'none' | 'exit' | 'lv1' | 'lv2'
+}
+
+export interface UpdateUserData {
+  username?: string // fullname
+  password?: string
+  email?: string
+  role?: number
+  program_study?: number
+  address?: string
+  phone_number?: string
+  last_survey?: 'none' | 'exit' | 'lv1' | 'lv2'
   is_active?: boolean
 }
 
 /**
- * Get all templates
+ * Get all users
  */
-export async function getTemplates(): Promise<Template[]> {
-  return fetchWithAuth('/api/templates/', {
+export async function getUsers(): Promise<User[]> {
+  return fetchWithAuth('/api/users/', {
     method: 'GET',
   })
 }
 
 /**
- * Get a single template by ID
+ * Get a single user by ID
  */
-export async function getTemplate(id: string): Promise<Template> {
-  return fetchWithAuth(`/api/templates/${id}/`, {
+export async function getUser(id: string): Promise<User> {
+  return fetchWithAuth(`/api/users/${id}/`, {
     method: 'GET',
   })
 }
+
+/**
+ * Create a new user
+ */
+export async function createUser(data: CreateUserData): Promise<User> {
+  return fetchWithAuth('/api/users/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Update a user
+ */
+export async function updateUser(id: string, data: UpdateUserData): Promise<User> {
+  return fetchWithAuth(`/api/users/${id}/`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Delete a user
+ */
+export async function deleteUser(id: string): Promise<void> {
+  return fetchWithAuth(`/api/users/${id}/`, {
+    method: 'DELETE',
+  })
+}
+
+// ==========================================
+// Role API Functions
+// ==========================================
+
+export interface Role {
+  id: number
+  name: string
+  description?: string
+  permissions?: string[]
+  created_at?: string
+  updated_at?: string
+}
+
+export interface CreateRoleData {
+  name: string
+  description?: string
+  permissions?: string[]
+}
+
+export interface UpdateRoleData {
+  name?: string
+  description?: string
+  permissions?: string[]
+}
+
+/**
+ * Get all roles
+ */
+export async function getRoles(): Promise<Role[]> {
+  return fetchWithAuth('/api/roles/', {
+    method: 'GET',
+  })
+}
+
+/**
+ * Get a single role by ID
+ */
+export async function getRole(id: number): Promise<Role> {
+  return fetchWithAuth(`/api/roles/${id}/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Create a new role
+ */
+export async function createRole(data: CreateRoleData): Promise<Role> {
+  return fetchWithAuth('/api/roles/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Update a role
+ */
+export async function updateRole(id: number, data: UpdateRoleData): Promise<Role> {
+  return fetchWithAuth(`/api/roles/${id}/`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Delete a role
+ */
+export async function deleteRole(id: number): Promise<void> {
+  return fetchWithAuth(`/api/roles/${id}/`, {
+    method: 'DELETE',
+  })
+}
+
+// ==========================================
+// Period (Periode) API Functions
+// ==========================================
+
+export interface Period {
+  id: number
+  name?: string
+  category?: string  // Added - this is the periode name in backend
+  start_date?: string
+  end_date?: string
+  order?: number
+  is_active?: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+export interface CreatePeriodData {
+  category: string  // Changed to category (required)
+  order: number     // Made required
+  start_date?: string
+  end_date?: string
+  is_active?: boolean
+}
+
+export interface UpdatePeriodData {
+  category?: string
+  order?: number
+  start_date?: string
+  end_date?: string
+  is_active?: boolean
+}
+
+/**
+ * Get all periods
+ */
+export async function getPeriods(): Promise<Period[]> {
+  return fetchWithAuth('/api/periodes/', {
+    method: 'GET',
+  })
+}
+
+/**
+ * Get a single period by ID
+ */
+export async function getPeriod(id: number): Promise<Period> {
+  return fetchWithAuth(`/api/periodes/${id}/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Create a new period
+ */
+export async function createPeriod(data: CreatePeriodData): Promise<Period> {
+  return fetchWithAuth('/api/periodes/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Update a period (PATCH for partial update)
+ */
+export async function updatePeriod(id: number, data: UpdatePeriodData): Promise<Period> {
+  return fetchWithAuth(`/api/periodes/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Delete a period
+ */
+export async function deletePeriod(id: number): Promise<void> {
+  return fetchWithAuth(`/api/periodes/${id}/`, {
+    method: 'DELETE',
+  })
+}
+
+// ==========================================
+// Program Study API Functions
+// ==========================================
+
+export interface ProgramStudy {
+  id: number
+  name: string
+  code?: string
+  description?: string
+  created_at?: string
+  updated_at?: string
+}
+
+/**
+ * Get all program studies
+ */
+export async function getProgramStudies(): Promise<ProgramStudy[]> {
+  return fetchWithAuth('/api/unit/program-studies/', {
+    method: 'GET',
+  })
+}
+
+/**
+ * Get a single program study by ID
+ */
+export async function getProgramStudy(id: number): Promise<ProgramStudy> {
+  return fetchWithAuth(`/api/unit/program-studies/${id}/`, {
+    method: 'GET',
+  })
+}
+
+// ==========================================
+// Faculty (Fakultas) API Functions
+// ==========================================
+
+export interface Faculty {
+  id: number
+  name: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface CreateFacultyData {
+  name: string
+}
+
+export interface UpdateFacultyData {
+  name?: string
+}
+
+/**
+ * Get all faculties
+ */
+export async function getFaculties(): Promise<Faculty[]> {
+  return fetchWithAuth('/api/unit/faculties/', {
+    method: 'GET',
+  })
+}
+
+/**
+ * Get a single faculty by ID
+ */
+export async function getFaculty(id: number): Promise<Faculty> {
+  return fetchWithAuth(`/api/unit/faculties/${id}/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Create a new faculty
+ */
+export async function createFaculty(data: CreateFacultyData): Promise<Faculty> {
+  return fetchWithAuth('/api/unit/faculties/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Update a faculty (PATCH for partial update)
+ */
+export async function updateFaculty(id: number, data: UpdateFacultyData): Promise<Faculty> {
+  return fetchWithAuth(`/api/unit/faculties/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Delete a faculty
+ */
+export async function deleteFaculty(id: number): Promise<void> {
+  return fetchWithAuth(`/api/unit/faculties/${id}/`, {
+    method: 'DELETE',
+  })
+}
+
+// ==========================================
+// Program Study API Functions (Updated)
+// ==========================================
+
+export interface ProgramStudyDetailed {
+  id: number
+  name: string
+  faculty?: number
+  faculty_name?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface CreateProgramStudyData {
+  name: string
+  faculty: number
+}
+
+export interface UpdateProgramStudyData {
+  name?: string
+  faculty?: number
+}
+
+/**
+ * Get all program studies with optional faculty filter
+ */
+export async function getProgramStudiesDetailed(facultyId?: number): Promise<ProgramStudyDetailed[]> {
+  const url = facultyId 
+    ? `/api/unit/program-studies/?faculty_id=${facultyId}`
+    : '/api/unit/program-studies/'
+  
+  return fetchWithAuth(url, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Get a single program study by ID (detailed)
+ */
+export async function getProgramStudyDetailed(id: number): Promise<ProgramStudyDetailed> {
+  return fetchWithAuth(`/api/unit/program-studies/${id}/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Create a new program study
+ */
+export async function createProgramStudy(data: CreateProgramStudyData): Promise<ProgramStudyDetailed> {
+  return fetchWithAuth('/api/unit/program-studies/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Update a program study (PATCH for partial update)
+ */
+export async function updateProgramStudy(id: number, data: UpdateProgramStudyData): Promise<ProgramStudyDetailed> {
+  return fetchWithAuth(`/api/unit/program-studies/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Delete a program study
+ */
+export async function deleteProgramStudy(id: number): Promise<void> {
+  return fetchWithAuth(`/api/unit/program-studies/${id}/`, {
+    method: 'DELETE',
+  })
+}
+

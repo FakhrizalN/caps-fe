@@ -3,13 +3,14 @@
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { deleteUser } from "@/lib/api"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 import Link from "next/link"
@@ -100,13 +101,9 @@ export const columns: ColumnDef<Employee>[] = [
       const handleDelete = async () => {
         if (window.confirm(`Are you sure you want to delete ${employee.name}?`)) {
           try {
-            // Implementasi API call untuk delete employee
-            console.log('Delete employee:', employee.id)
+            await deleteUser(employee.id)
             
-            // Simulasi API call
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            
-            // Refresh halaman atau update state
+            // Refresh halaman setelah delete sukses
             window.location.reload()
           } catch (error) {
             console.error('Error deleting employee:', error)

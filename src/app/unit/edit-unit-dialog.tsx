@@ -2,46 +2,44 @@
 
 import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select"
+import { updateFaculty, updateProgramStudy } from "@/lib/api"
 import { Edit } from "lucide-react"
 import { useEffect, useState } from "react"
-import { Fakultas, Jurusan, ProgramStudi } from "./columns"
+import { Fakultas, ProgramStudi } from "./columns"
 
 interface EditUnitDialogProps {
   activeTab: string
   fakultasData: Fakultas[]
-  jurusanData: Jurusan[]
-  unitData: Fakultas | Jurusan | ProgramStudi
+  unitData: Fakultas | ProgramStudi
   trigger?: React.ReactNode
 }
 
 export function EditUnitDialog({ 
   activeTab, 
   fakultasData, 
-  jurusanData, 
   unitData,
   trigger
 }: EditUnitDialogProps) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [selectedFakultas, setSelectedFakultas] = useState("")
-  const [selectedJurusan, setSelectedJurusan] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   // Initialize form with existing data
@@ -49,25 +47,17 @@ export function EditUnitDialog({
     if (unitData) {
       setName(unitData.name)
       
-      // For jurusan, get the fakultas ID (you would get this from your data)
-      if (activeTab === "jurusan" && 'fakultasId' in unitData) {
-        setSelectedFakultas((unitData as any).fakultasId || "")
-      }
-      
-      // For program studi, get the jurusan ID (you would get this from your data)
-      if (activeTab === "prodi" && 'jurusanId' in unitData) {
-        setSelectedJurusan((unitData as any).jurusanId || "")
+      // For program studi, get the faculty ID
+      if (activeTab === "prodi" && 'faculty' in unitData) {
+        setSelectedFakultas((unitData as ProgramStudi).faculty?.toString() || "")
       }
     }
   }, [unitData, activeTab])
 
   const resetForm = () => {
     setName(unitData?.name || "")
-    if (activeTab === "jurusan" && 'fakultasId' in unitData) {
-      setSelectedFakultas((unitData as any).fakultasId || "")
-    }
-    if (activeTab === "prodi" && 'jurusanId' in unitData) {
-      setSelectedJurusan((unitData as any).jurusanId || "")
+    if (activeTab === "prodi" && 'faculty' in unitData) {
+      setSelectedFakultas((unitData as ProgramStudi).faculty?.toString() || "")
     }
   }
 
@@ -75,30 +65,22 @@ export function EditUnitDialog({
     e.preventDefault()
     if (!name.trim()) return
 
-    if (activeTab === "jurusan" && !selectedFakultas) {
+    if (activeTab === "prodi" && !selectedFakultas) {
       alert("Please select a fakultas")
-      return
-    }
-
-    if (activeTab === "prodi" && !selectedJurusan) {
-      alert("Please select a jurusan")
       return
     }
 
     setIsLoading(true)
     
     try {
-      const updatedUnit = {
-        id: unitData.id,
-        name: name.trim(),
-        ...(activeTab === "jurusan" && { fakultasId: selectedFakultas }),
-        ...(activeTab === "prodi" && { jurusanId: selectedJurusan }),
+      if (activeTab === "fakultas") {
+        await updateFaculty(unitData.id, { name: name.trim() })
+      } else if (activeTab === "prodi") {
+        await updateProgramStudy(unitData.id, {
+          name: name.trim(),
+          faculty: parseInt(selectedFakultas)
+        })
       }
-
-      console.log(`Updating ${activeTab}:`, updatedUnit)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
       
       // Close dialog
       setOpen(false)
@@ -117,8 +99,6 @@ export function EditUnitDialog({
     switch (activeTab) {
       case "fakultas":
         return "Edit Fakultas"
-      case "jurusan":
-        return "Edit Jurusan"
       case "prodi":
         return "Edit Program Studi"
       default:
@@ -130,8 +110,6 @@ export function EditUnitDialog({
     switch (activeTab) {
       case "fakultas":
         return "Update the fakultas information."
-      case "jurusan":
-        return "Update the jurusan information."
       case "prodi":
         return "Update the program studi information."
       default:
@@ -143,8 +121,6 @@ export function EditUnitDialog({
     switch (activeTab) {
       case "fakultas":
         return "Fakultas Name"
-      case "jurusan":
-        return "Jurusan Name"
       case "prodi":
         return "Program Studi Name"
       default:
@@ -156,8 +132,6 @@ export function EditUnitDialog({
     switch (activeTab) {
       case "fakultas":
         return "Enter fakultas name"
-      case "jurusan":
-        return "Enter jurusan name"
       case "prodi":
         return "Enter program studi name"
       default:
@@ -182,8 +156,8 @@ export function EditUnitDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
-            {/* Fakultas Selection for Jurusan */}
-            {activeTab === "jurusan" && (
+            {/* Fakultas Selection for Program Studi */}
+            {activeTab === "prodi" && (
               <div className="space-y-2">
                 <Label htmlFor="fakultas">Fakultas</Label>
                 <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
@@ -192,27 +166,8 @@ export function EditUnitDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {fakultasData.map((fakultas) => (
-                      <SelectItem key={fakultas.id} value={fakultas.id}>
+                      <SelectItem key={fakultas.id} value={fakultas.id.toString()}>
                         {fakultas.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Jurusan Selection for Program Studi */}
-            {activeTab === "prodi" && (
-              <div className="space-y-2">
-                <Label htmlFor="jurusan">Jurusan</Label>
-                <Select value={selectedJurusan} onValueChange={setSelectedJurusan}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select jurusan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {jurusanData.map((jurusan) => (
-                      <SelectItem key={jurusan.id} value={jurusan.id}>
-                        {jurusan.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

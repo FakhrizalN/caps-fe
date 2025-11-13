@@ -2,73 +2,64 @@
 
 import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select"
+import { createFaculty, createProgramStudy } from "@/lib/api"
 import { Plus } from "lucide-react"
 import { useState } from "react"
-import { Fakultas, Jurusan } from "./columns"
+import { Fakultas } from "./columns"
 
 interface AddUnitDialogProps {
   activeTab: string
   fakultasData: Fakultas[]
-  jurusanData: Jurusan[]
 }
 
-export function AddUnitDialog({ activeTab, fakultasData, jurusanData }: AddUnitDialogProps) {
+export function AddUnitDialog({ activeTab, fakultasData }: AddUnitDialogProps) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [selectedFakultas, setSelectedFakultas] = useState("")
-  const [selectedJurusan, setSelectedJurusan] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   const resetForm = () => {
     setName("")
     setSelectedFakultas("")
-    setSelectedJurusan("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
 
-    if (activeTab === "jurusan" && !selectedFakultas) {
+    if (activeTab === "prodi" && !selectedFakultas) {
       alert("Please select a fakultas")
-      return
-    }
-
-    if (activeTab === "prodi" && !selectedJurusan) {
-      alert("Please select a jurusan")
       return
     }
 
     setIsLoading(true)
     
     try {
-      const newUnit = {
-        name: name.trim(),
-        ...(activeTab === "jurusan" && { fakultasId: selectedFakultas }),
-        ...(activeTab === "prodi" && { jurusanId: selectedJurusan }),
+      if (activeTab === "fakultas") {
+        await createFaculty({ name: name.trim() })
+      } else if (activeTab === "prodi") {
+        await createProgramStudy({
+          name: name.trim(),
+          faculty: parseInt(selectedFakultas)
+        })
       }
-
-      console.log(`Adding new ${activeTab}:`, newUnit)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
       
       // Reset form and close dialog
       resetForm()
@@ -88,8 +79,6 @@ export function AddUnitDialog({ activeTab, fakultasData, jurusanData }: AddUnitD
     switch (activeTab) {
       case "fakultas":
         return "Add New Fakultas"
-      case "jurusan":
-        return "Add New Jurusan"
       case "prodi":
         return "Add New Program Studi"
       default:
@@ -101,10 +90,8 @@ export function AddUnitDialog({ activeTab, fakultasData, jurusanData }: AddUnitD
     switch (activeTab) {
       case "fakultas":
         return "Create a new fakultas for your institution."
-      case "jurusan":
-        return "Create a new jurusan under a fakultas."
       case "prodi":
-        return "Create a new program studi under a jurusan."
+        return "Create a new program studi under a fakultas."
       default:
         return "Create a new unit."
     }
@@ -114,8 +101,6 @@ export function AddUnitDialog({ activeTab, fakultasData, jurusanData }: AddUnitD
     switch (activeTab) {
       case "fakultas":
         return "Fakultas Name"
-      case "jurusan":
-        return "Jurusan Name"
       case "prodi":
         return "Program Studi Name"
       default:
@@ -127,8 +112,6 @@ export function AddUnitDialog({ activeTab, fakultasData, jurusanData }: AddUnitD
     switch (activeTab) {
       case "fakultas":
         return "Enter fakultas name"
-      case "jurusan":
-        return "Enter jurusan name"
       case "prodi":
         return "Enter program studi name"
       default:
@@ -140,8 +123,6 @@ export function AddUnitDialog({ activeTab, fakultasData, jurusanData }: AddUnitD
     switch (activeTab) {
       case "fakultas":
         return "Fakultas"
-      case "jurusan":
-        return "Jurusan"
       case "prodi":
         return "Program Studi"
       default:
@@ -164,8 +145,8 @@ export function AddUnitDialog({ activeTab, fakultasData, jurusanData }: AddUnitD
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
-            {/* Fakultas Selection for Jurusan */}
-            {activeTab === "jurusan" && (
+            {/* Fakultas Selection for Program Studi */}
+            {activeTab === "prodi" && (
               <div className="space-y-2">
                 <Label htmlFor="fakultas">Fakultas</Label>
                 <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
@@ -174,27 +155,8 @@ export function AddUnitDialog({ activeTab, fakultasData, jurusanData }: AddUnitD
                   </SelectTrigger>
                   <SelectContent>
                     {fakultasData.map((fakultas) => (
-                      <SelectItem key={fakultas.id} value={fakultas.id}>
+                      <SelectItem key={fakultas.id} value={fakultas.id.toString()}>
                         {fakultas.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Jurusan Selection for Program Studi */}
-            {activeTab === "prodi" && (
-              <div className="space-y-2">
-                <Label htmlFor="jurusan">Jurusan</Label>
-                <Select value={selectedJurusan} onValueChange={setSelectedJurusan}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select jurusan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {jurusanData.map((jurusan) => (
-                      <SelectItem key={jurusan.id} value={jurusan.id}>
-                        {jurusan.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

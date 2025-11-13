@@ -2,8 +2,13 @@
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { QuestionToolbar } from "@/components/question_toolbar"
-import { ResponseAnswerCard, ResponseAnswer } from "@/components/response_answer_card"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { ResponseAnswer, ResponseAnswerCard } from "@/components/response_answer_card"
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 
 const mockResponses = [
@@ -81,6 +86,17 @@ export default function ResponseDetailPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
+        <header className="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4 z-20">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 !h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Survey 1</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </header>
         {/* Toolbar - Sticky di atas */}
         <QuestionToolbar 
           title="Survey 1"
@@ -95,51 +111,62 @@ export default function ResponseDetailPage() {
             <div className="max-w-6xl mx-auto flex items-center justify-between">
               {/* Left: Dropdown + Pagination */}
               <div className="flex items-center gap-4">
-                <select 
+                <Select 
                   value={currentId}
-                  onChange={(e) => router.push(`/response/${e.target.value}`)}
-                  className="w-[200px] px-3 py-2 border border-gray-300 rounded-md bg-white text-sm"
+                  onValueChange={(value) => router.push(`/response/${value}`)}
                 >
-                  {mockResponses.map((r) => (
-                    <option key={r.id} value={r.id}>{r.nama}</option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Select response" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockResponses.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.nama}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 <div className="flex items-center gap-2">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={handlePrevious}
                     disabled={currentIndex <= 1}
-                    className="p-1.5 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    ‹
-                  </button>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
                   <span className="text-sm font-medium text-gray-900">
                     {currentIndex} dari {mockResponses.length}
                   </span>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={handleNext}
                     disabled={currentIndex >= mockResponses.length}
-                    className="p-1.5 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    ›
-                  </button>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
 
               {/* Right: Action Buttons */}
               <div className="flex items-center gap-2">
-                <button 
+                <Button 
+                  variant="destructive"
                   onClick={() => console.log("Delete")}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
+                  className="gap-2"
                 >
-                  <span>🗑</span> Delete
-                </button>
-                <button 
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </Button>
+                <Button 
                   onClick={() => console.log("Export")}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                  className="gap-2"
                 >
-                  <span>⬇</span> Export
-                </button>
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
               </div>
             </div>
           </div>

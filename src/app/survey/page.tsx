@@ -17,7 +17,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { createSurvey, deleteSurvey, getSurveys, getTemplates, type Survey, type Template } from "@/lib/api"
+import { createPeriod, createSurvey, deletePeriod, deleteSurvey, getPeriods, getSurvey, getSurveys, updatePeriod, type Period, type Survey, type SurveyType } from "@/lib/api"
 import { Check, ChevronDown, ChevronUp, Edit, Plus, Search, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -29,26 +29,49 @@ export default function SurveyManagementPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  // State for template surveys from API
-  const [templateSurveys, setTemplateSurveys] = useState<Array<{
+  // State for surveys without periode
+  const [surveysWithoutPeriode, setSurveysWithoutPeriode] = useState<Array<{
     id: string
     title: string
+    description?: string
     lastEdit: string
     type: string
+    is_active?: boolean
+    survey_type?: SurveyType
+    periode?: number | null
+    start_at?: string | null
+    end_at?: string | null
+    isOpen?: boolean
   }>>([])
   
-  // State untuk multiple sections
+  // State untuk multiple sections (now synced with backend periods)
   const [sections, setSections] = useState<Array<{
-    id: number
+    id: number // This is now periode ID from backend (negative for new/temporary)
     name: string
+    order: number // Order from backend
     surveys: Array<{
       id: string
       title: string
+      description?: string
       lastEdit: string
       type: string
+      is_active?: boolean
+      survey_type?: SurveyType
+      periode?: number | null
+      start_at?: string | null
+      end_at?: string | null
+      isOpen?: boolean
     }>
     isCollapsed: boolean
+    isNew?: boolean // Flag for newly created sections not yet saved
+    isModified?: boolean // Flag for modified sections
   }>>([])
+  
+  // Store all periods from backend
+  const [allPeriods, setAllPeriods] = useState<Period[]>([])
+  
+  // Store sections to delete
+  const [sectionsToDelete, setSectionsToDelete] = useState<number[]>([])
 
   // Fetch surveys and templates from API on component mount
   useEffect(() => {
@@ -56,69 +79,83 @@ export default function SurveyManagementPage() {
   }, [])
 
   const fetchData = async () => {
-    await Promise.all([fetchTemplates(), fetchSurveys()])
-  }
-
-  const fetchTemplates = async () => {
-    try {
-      const data = await getTemplates()
-      
-      // Convert templates to card format
-      const formattedTemplates = data.map((template: Template) => ({
-        id: template.id,
-        title: template.title,
-        lastEdit: template.updated_at 
-          ? `Last Edit ${new Date(template.updated_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
-          : 'Never edited',
-        type: 'template'
-      }))
-
-      setTemplateSurveys(formattedTemplates)
-    } catch (err) {
-      console.error('Error fetching templates:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch templates')
-      
-      // If unauthorized, redirect to login
-      if (err instanceof Error && err.message.includes('Session expired')) {
-        router.push('/login')
-      }
-    }
+    await fetchSurveys()
   }
 
   const fetchSurveys = async () => {
     try {
       setIsLoading(true)
       setError(null)
-      const data = await getSurveys()
       
-      // Group surveys by periode
-      const surveysByPeriode = data.reduce((acc: any, survey: Survey) => {
-        const periode = survey.periode || 'Uncategorized'
-        if (!acc[periode]) {
-          acc[periode] = []
+      // Fetch both surveys and periods
+      const [surveysData, periodsData] = await Promise.all([
+        getSurveys(),
+        getPeriods()
+      ])
+      
+      setAllPeriods(periodsData)
+      
+      // Separate surveys without periode and with periode
+      const withoutPeriode: any[] = []
+      const surveysByPeriode: any = {}
+      
+      surveysData.forEach((survey: Survey) => {
+        if (!survey.periode) {
+          // Survey without periode
+          withoutPeriode.push({
+            id: survey.id,
+            title: survey.title,
+            description: survey.description,
+            lastEdit: survey.updated_at 
+              ? `Last Edit ${new Date(survey.updated_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
+              : 'Never edited',
+            type: survey.type || 'survey',
+            is_active: survey.is_active,
+            survey_type: survey.survey_type,
+            periode: survey.periode,
+            start_at: survey.start_at,
+            end_at: survey.end_at,
+            isOpen: survey.is_active
+          })
+        } else {
+          // Survey with periode - use periode ID as key
+          const periodeKey = survey.periode.toString()
+          if (!surveysByPeriode[periodeKey]) {
+            surveysByPeriode[periodeKey] = []
+          }
+          surveysByPeriode[periodeKey].push({
+            id: survey.id,
+            title: survey.title,
+            description: survey.description,
+            lastEdit: survey.updated_at 
+              ? `Last Edit ${new Date(survey.updated_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
+              : 'Never edited',
+            type: survey.type || 'survey',
+            is_active: survey.is_active,
+            survey_type: survey.survey_type,
+            periode: survey.periode,
+            start_at: survey.start_at,
+            end_at: survey.end_at,
+            isOpen: survey.is_active
+          })
         }
-        acc[periode].push({
-          id: survey.id,
-          title: survey.title,
-          lastEdit: survey.updated_at 
-            ? `Last Edit ${new Date(survey.updated_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
-            : 'Never edited',
-          type: survey.type || 'survey'
-        })
-        return acc
-      }, {})
+      })
 
-      // Convert to sections format
-      const newSections = Object.keys(surveysByPeriode).map((periode, index) => ({
-        id: index + 1,
-        name: periode,
-        surveys: surveysByPeriode[periode],
-        isCollapsed: false
-      }))
+      // Set surveys without periode
+      setSurveysWithoutPeriode(withoutPeriode)
 
-      if (newSections.length > 0) {
-        setSections(newSections)
-      }
+      // Convert to sections format using real periode data
+      const newSections = periodsData
+        .sort((a, b) => (a.order || 0) - (b.order || 0)) // Sort by order
+        .map((periode) => ({
+          id: periode.id, // Use real periode ID
+          name: periode.category || periode.name || `Periode ${periode.id}`,
+          order: periode.order || 0,
+          surveys: surveysByPeriode[periode.id.toString()] || [],
+          isCollapsed: false
+        }))
+
+      setSections(newSections)
       
     } catch (err) {
       console.error('Error fetching surveys:', err)
@@ -138,53 +175,51 @@ export default function SurveyManagementPage() {
     console.log("Edit survey")
   }
 
-  const handleDuplicate = (surveyId: string) => {
-    // Check if it's a template survey first
-    const isTemplate = templateSurveys.some(survey => survey.id === surveyId)
-    
-    if (isTemplate) {
-      // Duplicate template survey
-      const surveyToDuplicate = templateSurveys.find(survey => survey.id === surveyId)
-      if (surveyToDuplicate) {
-        const newSurvey = {
-          ...surveyToDuplicate,
-          id: `template-${Date.now()}`, // Generate unique ID
-          title: `${surveyToDuplicate.title} (Copy)`,
-          lastEdit: `Last Edit ${new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
-        }
-        setTemplateSurveys(prev => [...prev, newSurvey])
+  const handleDuplicate = async (surveyId: string) => {
+    try {
+      // Fetch the complete survey data from API
+      const surveyData = await getSurvey(surveyId)
+      
+      // Create a duplicate survey with modified title
+      const duplicateData = {
+        title: `${surveyData.title} (Copy)`,
+        description: surveyData.description,
+        is_active: surveyData.is_active,
+        survey_type: surveyData.survey_type || 'exit',
+        periode_id: surveyData.periode || null,
+        start_at: surveyData.start_at,
+        end_at: surveyData.end_at,
       }
-    } else {
-      // Duplicate survey from sections
-      setSections(prev => 
-        prev.map(section => {
-          const surveyToDuplicate = section.surveys.find(survey => survey.id === surveyId)
-          if (surveyToDuplicate) {
-            const newSurvey = {
-              ...surveyToDuplicate,
-              id: `survey-${Date.now()}`, // Generate unique ID
-              title: `${surveyToDuplicate.title} (Copy)`,
-              lastEdit: `Last Edit ${new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
-            }
-            return {
-              ...section,
-              surveys: [...section.surveys, newSurvey]
-            }
-          }
-          return section
-        })
-      )
+      
+      // Create the duplicate survey via API
+      await createSurvey(duplicateData)
+      
+      // Refresh the survey list
+      await fetchSurveys()
+    } catch (err) {
+      console.error('Error duplicating survey:', err)
+      setError(err instanceof Error ? err.message : 'Failed to duplicate survey')
     }
   }
 
   const handleDeleteSurvey = async (surveyId: string) => {
-    // Check if it's a template survey first
-    const isTemplate = templateSurveys.some(survey => survey.id === surveyId)
+    // Check if it's a survey without periode first
+    const isSurveyWithoutPeriode = surveysWithoutPeriode.some(survey => survey.id === surveyId)
     
-    if (isTemplate) {
-      // For templates, we might need a different API endpoint
-      // For now, just remove from local state
-      setTemplateSurveys(prev => prev.filter(survey => survey.id !== surveyId))
+    if (isSurveyWithoutPeriode) {
+      // Delete survey without periode from API
+      try {
+        await deleteSurvey(surveyId)
+        
+        // Remove from local state
+        setSurveysWithoutPeriode(prev => prev.filter(survey => survey.id !== surveyId))
+        
+        // Refresh surveys
+        await fetchSurveys()
+      } catch (err) {
+        console.error('Error deleting survey:', err)
+        setError(err instanceof Error ? err.message : 'Failed to delete survey')
+      }
       return
     }
     
@@ -212,11 +247,56 @@ export default function SurveyManagementPage() {
     try {
       setError(null)
       
+      console.log('Received form data:', data)
+      
+      // Prepare data for API
+      const surveyData: any = {
+        title: data.name,
+        survey_type: data.survey_type || 'exit',
+        is_active: false,
+      }
+
+      // Only add description if it exists and is not empty
+      if (data.description && data.description.trim() !== '') {
+        surveyData.description = data.description.trim()
+      }
+
+      // Handle periode_id - backend serializer requires this field
+      if (data.periode && data.periode !== "none") {
+        const periodeId = parseInt(data.periode)
+        if (!isNaN(periodeId)) {
+          surveyData.periode_id = periodeId
+        } else {
+          // If invalid, send null (backend should accept this after fix)
+          surveyData.periode_id = null
+        }
+      } else {
+        // If no periode selected, send null
+        surveyData.periode_id = null
+      }
+
+      // Convert datetime to ISO format if present
+      if (data.start_at && data.start_at.trim() !== '') {
+        try {
+          surveyData.start_at = new Date(data.start_at).toISOString()
+        } catch (e) {
+          console.error('Invalid start_at format:', data.start_at)
+        }
+      }
+
+      if (data.end_at && data.end_at.trim() !== '') {
+        try {
+          surveyData.end_at = new Date(data.end_at).toISOString()
+        } catch (e) {
+          console.error('Invalid end_at format:', data.end_at)
+        }
+      }
+      
+      console.log('Sending to API:', surveyData)
+      
       // Create survey via API
-      await createSurvey({
-        title: data.name, // Using name as title from form
-        periode: new Date().getFullYear().toString()
-      })
+      const result = await createSurvey(surveyData)
+      console.log('Survey created successfully:', result)
       
       setIsDialogOpen(false)
       
@@ -228,7 +308,70 @@ export default function SurveyManagementPage() {
     }
   }
 
-  const handleEditMode = () => {
+  const handleEditMode = async () => {
+    if (isEditMode) {
+      // Switching from Edit mode to Done mode - save all changes
+      try {
+        setError(null)
+        setIsLoading(true)
+        
+        // 1. Delete marked sections first
+        if (sectionsToDelete.length > 0) {
+          await Promise.all(
+            sectionsToDelete.map(id => deletePeriod(id))
+          )
+          setSectionsToDelete([])
+        }
+        
+        // 2. Update orders with a two-phase approach to avoid conflicts
+        const existingSections = sections.filter(s => !s.isNew && s.id > 0)
+        
+        if (existingSections.length > 0) {
+          // Phase 1: Set all to temporary high orders (1000+) to avoid conflicts
+          await Promise.all(
+            existingSections.map((section, index) => 
+              updatePeriod(section.id, {
+                order: 1000 + index,
+              })
+            )
+          )
+          
+          // Phase 2: Set to actual target orders
+          await Promise.all(
+            existingSections.map(section => 
+              updatePeriod(section.id, {
+                category: section.name,
+                order: section.order,
+              })
+            )
+          )
+        }
+        
+        // 3. Create new sections last (after orders are updated)
+        const newSections = sections.filter(s => s.isNew)
+        if (newSections.length > 0) {
+          await Promise.all(
+            newSections.map(section => 
+              createPeriod({
+                category: section.name,
+                order: section.order,
+                is_active: true,
+              })
+            )
+          )
+        }
+        
+        // Refresh data after all changes
+        await fetchSurveys()
+        
+      } catch (err) {
+        console.error('Error saving changes:', err)
+        setError(err instanceof Error ? err.message : 'Failed to save changes')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
     setIsEditMode(!isEditMode)
   }
 
@@ -238,14 +381,22 @@ export default function SurveyManagementPage() {
   }
 
   const handleDeleteSection = (sectionId: number) => {
-    setSections(prev => prev.filter(section => section.id !== sectionId))
+    if (sectionId < 0) {
+      // It's a new section that hasn't been saved yet, just remove from state
+      setSections(prev => prev.filter(section => section.id !== sectionId))
+    } else {
+      // Mark for deletion (will be deleted when Done is clicked)
+      setSectionsToDelete(prev => [...prev, sectionId])
+      setSections(prev => prev.filter(section => section.id !== sectionId))
+    }
   }
 
   const handleSectionNameChange = (sectionId: number, newName: string) => {
+    // Just update local state, will save when Done is clicked
     setSections(prev => 
       prev.map(section => 
         section.id === sectionId 
-          ? { ...section, name: newName }
+          ? { ...section, name: newName, isModified: true }
           : section
       )
     )
@@ -267,11 +418,18 @@ export default function SurveyManagementPage() {
       if (currentIndex <= 0) return prev // Already at top
       
       const newSections = [...prev]
+      
+      // Swap positions
       const temp = newSections[currentIndex]
       newSections[currentIndex] = newSections[currentIndex - 1]
       newSections[currentIndex - 1] = temp
       
-      return newSections
+      // Update orders and mark as modified
+      return newSections.map((section, index) => ({
+        ...section,
+        order: index + 1,
+        isModified: !section.isNew, // Mark existing sections as modified
+      }))
     })
   }
 
@@ -281,23 +439,43 @@ export default function SurveyManagementPage() {
       if (currentIndex >= prev.length - 1) return prev // Already at bottom
       
       const newSections = [...prev]
+      
+      // Swap positions
       const temp = newSections[currentIndex]
       newSections[currentIndex] = newSections[currentIndex + 1]
       newSections[currentIndex + 1] = temp
       
-      return newSections
+      // Update orders and mark as modified
+      return newSections.map((section, index) => ({
+        ...section,
+        order: index + 1,
+        isModified: !section.isNew, // Mark existing sections as modified
+      }))
     })
   }
 
-  const addNewPeriode = () => {
-    const newId = Math.max(...sections.map(s => s.id)) + 1
+  const addNewSection = () => {
+    // Generate temporary negative ID for new sections
+    const newId = sections.length > 0 
+      ? Math.min(...sections.map(s => s.id), 0) - 1 
+      : -1
+    
+    const maxOrder = sections.length > 0
+      ? Math.max(...sections.map(s => s.order))
+      : 0
+    
     const currentYear = new Date().getFullYear()
+    const nextYear = currentYear + 1
+    
     const newSection = {
-      id: newId,
-      name: `Periode ${currentYear}`,
+      id: newId, // Negative ID indicates it's not saved yet
+      name: `Periode ${currentYear}/${nextYear}`,
+      order: maxOrder + 1,
       surveys: [],
-      isCollapsed: false
+      isCollapsed: false,
+      isNew: true, // Mark as new
     }
+    
     setSections(prev => [...prev, newSection])
   }
 
@@ -374,11 +552,11 @@ export default function SurveyManagementPage() {
                 </div>
               </div>
 
-              {/* Template Section */}
+              {/* Template Section - Now shows surveys without periode */}
               <div className="space-y-4">
-                <h2 className="text-lg font-semibold">Template</h2>
+                <h2 className="text-lg font-semibold">Survey Tanpa Periode</h2>
                 <div className="grid grid-cols-5 gap-4">
-                  {templateSurveys.map((survey) => (
+                  {surveysWithoutPeriode.map((survey) => (
                     <SurveyCard
                       key={survey.id}
                       survey={survey}
@@ -469,7 +647,7 @@ export default function SurveyManagementPage() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={addNewPeriode}
+                  onClick={addNewSection}
                   className="w-full border border-dashed border-gray-300 hover:border-gray-400 hover:bg-gray-50"
                 >
                   <Plus className="h-4 w-4 text-gray-500" />

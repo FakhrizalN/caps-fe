@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -13,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { type SurveyType } from "@/lib/api"
 import { MoreVertical } from "lucide-react"
 import { useState } from "react"
 import { SurveyDetailDialog } from "./survey-detail-dialog"
@@ -20,8 +22,15 @@ import { SurveyDetailDialog } from "./survey-detail-dialog"
 interface Survey {
   id: string
   title: string
+  description?: string
   lastEdit: string
   type: string
+  is_active?: boolean
+  survey_type?: SurveyType
+  periode?: number | null
+  start_at?: string | null
+  end_at?: string | null
+  isOpen?: boolean
 }
 
 interface SurveyCardProps {
@@ -93,11 +102,17 @@ export function SurveyCard({
           )}
           <CardTitle className="text-base">{survey.title}</CardTitle>
           <CardDescription className="text-xs text-gray-500">
-            {survey.lastEdit}
+            {survey.is_active ? (
+              <Badge variant="default">Active</Badge>
+            ) : (
+              <Badge variant="secondary">Inactive</Badge>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="w-full h-24 bg-gray-200 rounded-md"></div>
+          <p className="text-sm text-gray-600 line-clamp-3">
+            {survey.description || "No description available"}
+          </p>
         </CardContent>
       </Card>
 

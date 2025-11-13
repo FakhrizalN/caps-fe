@@ -18,8 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { getPeriods, type SurveyType } from "@/lib/api"
 import { Plus } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 interface NewSurveyDialogProps {
   isOpen: boolean
@@ -28,44 +30,73 @@ interface NewSurveyDialogProps {
 }
 
 export interface SurveyFormData {
-  template: string
   name: string
-  title?: string
   description?: string
-  periode?: string
+  survey_type?: SurveyType
+  periode?: string | null
+  start_at?: string | null
+  end_at?: string | null
 }
 
-// Sample data untuk dropdown options
-const templateOptions = [
-  "Template 1",
-  "Template 2", 
-  "Template 3",
-  "Template 4"
+const surveyTypeOptions: { value: SurveyType; label: string }[] = [
+  { value: 'exit', label: 'Exit' },
+  { value: 'lv1', label: 'Level 1' },
+  { value: 'lv2', label: 'Level 2' },
+  { value: 'skp', label: 'SKP' },
 ]
 
 export function NewSurveyDialog({ isOpen, onOpenChange, onSave }: NewSurveyDialogProps) {
-  const [selectedTemplate, setSelectedTemplate] = useState("")
-  const [templateName, setTemplateName] = useState("")
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [surveyType, setSurveyType] = useState<SurveyType>("exit")
+  const [selectedPeriode, setSelectedPeriode] = useState<string>("")
+  const [startAt, setStartAt] = useState("")
+  const [endAt, setEndAt] = useState("")
+  const [periodeOptions, setPeriodeOptions] = useState<Array<{ id: number; category?: string; name?: string }>>([])
+
+  // Fetch periods on component mount
+  useEffect(() => {
+    const fetchPeriods = async () => {
+      try {
+        const periods = await getPeriods()
+        setPeriodeOptions(periods)
+      } catch (error) {
+        console.error('Error fetching periods:', error)
+      }
+    }
+    fetchPeriods()
+  }, [])
 
   const handleSave = () => {
     const formData: SurveyFormData = {
-      template: selectedTemplate,
-      name: templateName
+      name: title,
+      description: description || undefined,
+      survey_type: surveyType,
+      periode: selectedPeriode && selectedPeriode !== "none" ? selectedPeriode : null,
+      start_at: startAt || null,
+      end_at: endAt || null,
     }
+    
+    console.log('Form data before sending:', formData)
     
     onSave(formData)
     
     // Reset form
-    setSelectedTemplate("")
-    setTemplateName("")
+    resetForm()
+  }
+
+  const resetForm = () => {
+    setTitle("")
+    setDescription("")
+    setSurveyType("exit")
+    setSelectedPeriode("")
+    setStartAt("")
+    setEndAt("")
   }
 
   const handleCancel = () => {
     onOpenChange(false)
-    
-    // Reset form
-    setSelectedTemplate("")
-    setTemplateName("")
+    resetForm()
   }
 
   return (
@@ -76,7 +107,7 @@ export function NewSurveyDialog({ isOpen, onOpenChange, onSave }: NewSurveyDialo
           New
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             Add Survey
@@ -84,51 +115,100 @@ export function NewSurveyDialog({ isOpen, onOpenChange, onSave }: NewSurveyDialo
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
-          {/* Pilih Template */}
+          {/* Survey Name */}
           <div className="grid gap-2">
-            <Label htmlFor="template">
-              Template <span className="text-red-500">*</span>
+            <Label htmlFor="name">
+              Survey Name <span className="text-red-500">*</span>
             </Label>
-            <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+            <Input
+              id="name"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter survey name"
+              className="w-full"
+            />
+          </div>
+
+          {/* Description */}
+          <div className="grid gap-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter survey description (optional)"
+              className="w-full"
+              rows={3}
+            />
+          </div>
+
+          {/* Survey Type */}
+          <div className="grid gap-2">
+            <Label htmlFor="survey-type">
+              Survey Type <span className="text-red-500">*</span>
+            </Label>
+            <Select value={surveyType} onValueChange={(value) => setSurveyType(value as SurveyType)}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select template" />
+                <SelectValue placeholder="Select survey type" />
               </SelectTrigger>
               <SelectContent>
-                <div className="p-2">
-                  <Input 
-                    placeholder="Search..." 
-                    className="mb-2"
-                  />
-                </div>
-                {templateOptions.map((template) => (
-                  <SelectItem key={template} value={template}>
-                    {template}
+                {surveyTypeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Nama Template */}
-            <div className="grid gap-2">
-            <Label htmlFor="name">
-              Survey Name <span className="text-red-500">*</span>
-            </Label>
+          {/* Periode */}
+          <div className="grid gap-2">
+            <Label htmlFor="periode">Periode</Label>
+            <Select value={selectedPeriode} onValueChange={setSelectedPeriode}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select periode (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {periodeOptions.map((periode) => (
+                  <SelectItem key={periode.id} value={periode.id.toString()}>
+                    {periode.category || periode.name || `Periode ${periode.id}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Start Date */}
+          <div className="grid gap-2">
+            <Label htmlFor="start-at">Start Date</Label>
             <Input
-              id="name"
-              value={templateName}
-              onChange={(e) => setTemplateName(e.target.value)}
-              placeholder="Enter survey name"
+              id="start-at"
+              type="datetime-local"
+              value={startAt}
+              onChange={(e) => setStartAt(e.target.value)}
               className="w-full"
             />
-            </div>
+          </div>
+
+          {/* End Date */}
+          <div className="grid gap-2">
+            <Label htmlFor="end-at">End Date</Label>
+            <Input
+              id="end-at"
+              type="datetime-local"
+              value={endAt}
+              onChange={(e) => setEndAt(e.target.value)}
+              className="w-full"
+            />
+          </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled={!title}>
             Save
           </Button>
         </DialogFooter>

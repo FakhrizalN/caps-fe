@@ -21,74 +21,101 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  deleteUser,
+  getProgramStudies,
+  getRoles,
+  getUser,
+  updateUser,
+  type ProgramStudy,
+  type Role,
+  type UpdateUserData,
+  type User
+} from "@/lib/api"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-
-type Employee = {
-  id: string
-  name: string
-  email: string
-  role: string
-  unit: string
-  unitId: string
-  phone: string
-}
 
 export default function EditEmployeePage() {
   const router = useRouter()
   const params = useParams()
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingData, setIsLoadingData] = useState(true)
-  const [formData, setFormData] = useState({
-    name: "",
+  const [error, setError] = useState<string | null>(null)
+  const [roles, setRoles] = useState<Role[]>([])
+  const [programStudies, setProgramStudies] = useState<ProgramStudy[]>([])
+  const [userData, setUserData] = useState<User | null>(null)
+  
+  const [formData, setFormData] = useState<UpdateUserData>({
+    username: "",
     email: "",
-    role: "",
-    unit: "",
-    unitId: "",
-    phone: "",
+    password: "",
+    role: undefined,
+    program_study: undefined,
+    address: "",
+    phone_number: "",
+    last_survey: "none",
+    is_active: true,
   })
 
-  // Mock data untuk simulasi fetch employee
   useEffect(() => {
-    const fetchEmployee = async () => {
-      setIsLoadingData(true)
-      try {
-        // Simulasi API call untuk get employee by ID
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        // Mock data berdasarkan ID
-        const mockEmployee: Employee = {
-          id: params.id as string,
-          name: "Mrs. Ara Wunsch",
-          email: "amelie.schuppe@example.org",
-          role: "Tracer_team",
-          unit: "Institutional",
-          unitId: "INST001",
-          phone: "0808",
-        }
-        
-        setFormData({
-          name: mockEmployee.name,
-          email: mockEmployee.email,
-          role: mockEmployee.role,
-          unit: mockEmployee.unit,
-          unitId: mockEmployee.unitId,
-          phone: mockEmployee.phone,
-        })
-      } catch (error) {
-        console.error('Error fetching employee:', error)
-      } finally {
-        setIsLoadingData(false)
-      }
-    }
-
     if (params.id) {
-      fetchEmployee()
+      fetchUserData()
+      fetchRoles()
+      fetchProgramStudies()
     }
   }, [params.id])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const fetchUserData = async () => {
+    try {
+      setIsLoadingData(true)
+      setError(null)
+      const user = await getUser(params.id as string)
+      setUserData(user)
+      
+      setFormData({
+        username: user.username || "",
+        email: user.email || "",
+        password: "", // Don't pre-fill password
+        role: user.role as number | undefined,
+        program_study: user.program_study as number | undefined,
+        address: user.address || "",
+        phone_number: user.phone_number || "",
+        last_survey: user.last_survey || "none",
+        is_active: user.is_active ?? true,
+      })
+    } catch (err) {
+      console.error('Error fetching user:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch user data')
+      
+      if (err instanceof Error && err.message.includes('Session expired')) {
+        router.push('/login')
+      }
+    } finally {
+      setIsLoadingData(false)
+    }
+  }
+
+  const fetchRoles = async () => {
+    try {
+      const data = await getRoles()
+      setRoles(data)
+    } catch (err) {
+      console.error("Error fetching roles:", err)
+    }
+  }
+
+  const fetchProgramStudies = async () => {
+    try {
+      const data = await getProgramStudies()
+      setProgramStudies(data)
+    } catch (err) {
+      console.error("Error fetching program studies:", err)
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
@@ -99,44 +126,43 @@ export default function EditEmployeePage() {
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === "role" || name === "program_study" ? parseInt(value) : value
     }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null)
 
     try {
-      // Implementasi API call untuk update employee
-      console.log('Update employee:', formData)
-      
-      // Simulasi API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Redirect kembali ke employee list
+      // Only send password if it's been changed
+      const updateData: UpdateUserData = { ...formData }
+      if (!updateData.password || updateData.password.trim() === "") {
+        delete updateData.password
+      }
+
+      await updateUser(params.id as string, updateData)
       router.push('/employee')
-    } catch (error) {
-      console.error('Error updating employee:', error)
+    } catch (err) {
+      console.error('Error updating employee:', err)
+      setError(err instanceof Error ? err.message : 'Failed to update user')
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this employee?')) {
+    if (window.confirm(`Are you sure you want to delete user "${formData.username}"?`)) {
       setIsLoading(true)
+      setError(null)
+      
       try {
-        // Implementasi API call untuk delete employee
-        console.log('Delete employee:', params.id)
-        
-        // Simulasi API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        // Redirect kembali ke employee list
+        await deleteUser(params.id as string)
         router.push('/employee')
-      } catch (error) {
-        console.error('Error deleting employee:', error)
+      } catch (err) {
+        console.error('Error deleting employee:', err)
+        setError(err instanceof Error ? err.message : 'Failed to delete user')
       } finally {
         setIsLoading(false)
       }
@@ -180,8 +206,15 @@ export default function EditEmployeePage() {
           </Breadcrumb>
         </header>
         <div className="flex flex-1 flex-col gap-8 p-8">
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
-            <div className="text-3xl font-bold tracking-tight">{formData.name}</div>
+            <div className="text-3xl font-bold tracking-tight">{formData.username || 'Edit Employee'}</div>
             <Button 
               variant="destructive" 
               onClick={handleDelete}
@@ -205,20 +238,20 @@ export default function EditEmployeePage() {
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <Field>
-                        <Label htmlFor="name">Name *</Label>
+                        <Label htmlFor="username">Full Name *</Label>
                         <Input
-                          id="name"
-                          name="name"
+                          id="username"
+                          name="username"
                           type="text"
                           placeholder="Enter full name"
-                          value={formData.name}
+                          value={formData.username}
                           onChange={handleInputChange}
                           required
                         />
                       </Field>
 
                       <Field>
-                        <Label htmlFor="email">Email *</Label>
+                        <Label htmlFor="email">Email</Label>
                         <Input
                           id="email"
                           name="email"
@@ -226,57 +259,98 @@ export default function EditEmployeePage() {
                           placeholder="Enter email address"
                           value={formData.email}
                           onChange={handleInputChange}
-                          required
+                        />
+                      </Field>
+
+                      <Field>
+                        <Label htmlFor="password">Password (leave empty to keep current)</Label>
+                        <Input
+                          id="password"
+                          name="password"
+                          type="password"
+                          placeholder="Enter new password"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                        />
+                      </Field>
+
+                      <Field>
+                        <Label htmlFor="phone_number">Phone Number</Label>
+                        <Input
+                          id="phone_number"
+                          name="phone_number"
+                          type="tel"
+                          placeholder="+62 812-3456-7890"
+                          value={formData.phone_number}
+                          onChange={handleInputChange}
                         />
                       </Field>
 
                       <Field>
                         <Label htmlFor="role">Role</Label>
                         <Select 
-                          value={formData.role} 
+                          value={formData.role?.toString()} 
                           onValueChange={(value) => handleSelectChange("role", value)}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select role" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Admin">Admin</SelectItem>
-                            <SelectItem value="Manager">Manager</SelectItem>
-                            <SelectItem value="Staff">Staff</SelectItem>
-                            <SelectItem value="Tracer_team">Tracer Team</SelectItem>
+                            {roles.map((role) => (
+                              <SelectItem key={role.id} value={role.id.toString()}>
+                                {role.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </Field>
 
                       <Field>
-                        <Label htmlFor="unit">Unit</Label>
+                        <Label htmlFor="program_study">Program Study</Label>
                         <Select 
-                          value={formData.unit} 
-                          onValueChange={(value) => handleSelectChange("unit", value)}
+                          value={formData.program_study?.toString()} 
+                          onValueChange={(value) => handleSelectChange("program_study", value)}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select unit" />
+                            <SelectValue placeholder="Select program study" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Computer Science">Computer Science</SelectItem>
-                            <SelectItem value="Information Technology">Information Technology</SelectItem>
-                            <SelectItem value="Electrical Engineering">Electrical Engineering</SelectItem>
-                            <SelectItem value="Mechanical Engineering">Mechanical Engineering</SelectItem>
-                            <SelectItem value="Civil Engineering">Civil Engineering</SelectItem>
-                            <SelectItem value="Institutional">Institutional</SelectItem>
+                            {programStudies.map((prodi) => (
+                              <SelectItem key={prodi.id} value={prodi.id.toString()}>
+                                {prodi.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+
+                      <Field>
+                        <Label htmlFor="last_survey">Last Survey</Label>
+                        <Select 
+                          value={formData.last_survey} 
+                          onValueChange={(value) => handleSelectChange("last_survey", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select last survey" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="exit">Exit</SelectItem>
+                            <SelectItem value="lv1">Level 1</SelectItem>
+                            <SelectItem value="lv2">Level 2</SelectItem>
                           </SelectContent>
                         </Select>
                       </Field>
 
                       <Field className="md:col-span-2">
-                        <Label htmlFor="phone">Phone</Label>
-                        <Input
-                          id="phone"
-                          name="phone"
-                          type="tel"
-                          placeholder="Enter phone number"
-                          value={formData.phone}
+                        <Label htmlFor="address">Address</Label>
+                        <Textarea
+                          id="address"
+                          name="address"
+                          placeholder="Enter address"
+                          value={formData.address}
                           onChange={handleInputChange}
+                          rows={3}
                         />
                       </Field>
                     </div>
@@ -311,12 +385,44 @@ export default function EditEmployeePage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Created at</Label>
-                    <p className="text-sm mt-1">10 months ago</p>
+                    <Label className="text-sm font-medium text-muted-foreground">User ID</Label>
+                    <p className="text-sm mt-1">{userData?.id || 'N/A'}</p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Last modified at</Label>
-                    <p className="text-sm mt-1">2 months ago</p>
+                    <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                    <p className="text-sm mt-1">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        formData.is_active 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {formData.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Date Joined</Label>
+                    <p className="text-sm mt-1">
+                      {userData?.date_joined 
+                        ? new Date(userData.date_joined).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })
+                        : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Last Login</Label>
+                    <p className="text-sm mt-1">
+                      {userData?.last_login 
+                        ? new Date(userData.last_login).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })
+                        : 'Never'}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
