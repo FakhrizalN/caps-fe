@@ -128,12 +128,17 @@ export function getRefreshToken(): string | null {
  */
 export function setTokens(accessToken: string, refreshToken: string) {
   if (typeof window !== 'undefined') {
+    console.log('Storing tokens...', { hasAccess: !!accessToken, hasRefresh: !!refreshToken })
+    
     localStorage.setItem('access_token', accessToken)
     localStorage.setItem('refresh_token', refreshToken)
     
-    // Also set as cookie for middleware
-    document.cookie = `access_token=${accessToken}; path=/; max-age=${60 * 60 * 24 * 7}` // 7 days
-    document.cookie = `refresh_token=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 30}` // 30 days
+    // Also set as cookie for middleware with proper attributes
+    document.cookie = `access_token=${accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax` // 7 days
+    document.cookie = `refresh_token=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax` // 30 days
+    
+    console.log('Tokens stored successfully')
+    console.log('LocalStorage access_token:', localStorage.getItem('access_token') ? 'exists' : 'missing')
   }
 }
 
@@ -199,7 +204,10 @@ export async function refreshAccessToken(): Promise<string> {
 export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   let accessToken = getAccessToken()
   
+  console.log('fetchWithAuth called for:', url, { hasToken: !!accessToken })
+  
   if (!accessToken) {
+    console.error('No access token found in localStorage')
     throw new Error('Not authenticated')
   }
 

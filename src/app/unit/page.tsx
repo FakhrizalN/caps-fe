@@ -1,42 +1,44 @@
+"use client"
+
 import { AppSidebar } from "@/components/app-sidebar"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbList,
+    BreadcrumbPage,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
+    SidebarInset,
+    SidebarProvider,
+    SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { getFaculties, getProgramStudiesDetailed } from "@/lib/api"
+import { useEffect, useState } from "react"
 import { UnitManagementClient } from "../../components/unit-management-client"
 
-// Fetch Fakultas data from API
-async function getFakultasData() {
-  try {
-    return await getFaculties()
-  } catch (error) {
-    console.error('Error fetching faculties:', error)
-    return []
-  }
-}
+export default function UnitManagementPage() {
+  const [fakultasData, setFakultasData] = useState<any[]>([])
+  const [prodiData, setProdiData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-// Fetch Program Studi data from API
-async function getProdiData() {
-  try {
-    return await getProgramStudiesDetailed()
-  } catch (error) {
-    console.error('Error fetching program studies:', error)
-    return []
-  }
-}
-
-export default async function UnitManagementPage() {
-  const fakultasData = await getFakultasData()
-  const prodiData = await getProdiData()
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [faculties, programStudies] = await Promise.all([
+          getFaculties(),
+          getProgramStudiesDetailed()
+        ])
+        setFakultasData(faculties)
+        setProdiData(programStudies)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
 
   return (
     <div className="flex flex-col h-screen">
@@ -59,10 +61,16 @@ export default async function UnitManagementPage() {
             </header>
             
             <div className="flex flex-1 flex-col gap-8 p-8">
-              <UnitManagementClient 
-                fakultasData={fakultasData}
-                prodiData={prodiData}
-              />
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <p>Loading...</p>
+                </div>
+              ) : (
+                <UnitManagementClient 
+                  fakultasData={fakultasData}
+                  prodiData={prodiData}
+                />
+              )}
             </div>
           </SidebarInset>
         </SidebarProvider>

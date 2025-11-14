@@ -4,7 +4,7 @@ import { DataTable } from "@/app/unit/data-table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState } from "react"
 import { AddUnitDialog } from "../app/unit/add-unit-dialog"
-import { Fakultas, fakultasColumns, prodiColumns, ProgramStudi } from "../app/unit/columns"
+import { createProdiColumns, Fakultas, fakultasColumns, ProgramStudi } from "../app/unit/columns"
 
 interface UnitManagementClientProps {
   fakultasData: Fakultas[]
@@ -16,6 +16,9 @@ export function UnitManagementClient({
   prodiData 
 }: UnitManagementClientProps) {
   const [activeTab, setActiveTab] = useState("fakultas")
+  
+  // Create prodi columns with fakultasData
+  const prodiColumns = createProdiColumns(fakultasData)
 
   return (
     <>

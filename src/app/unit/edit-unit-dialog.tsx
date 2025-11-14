@@ -2,22 +2,22 @@
 
 import { Button } from "@/components/ui/button"
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select"
 import { updateFaculty, updateProgramStudy } from "@/lib/api"
 import { Edit } from "lucide-react"
@@ -44,6 +44,10 @@ export function EditUnitDialog({
 
   // Initialize form with existing data
   useEffect(() => {
+    console.log('EditUnitDialog - activeTab:', activeTab)
+    console.log('EditUnitDialog - fakultasData:', fakultasData)
+    console.log('EditUnitDialog - unitData:', unitData)
+    
     if (unitData) {
       setName(unitData.name)
       
@@ -52,7 +56,7 @@ export function EditUnitDialog({
         setSelectedFakultas((unitData as ProgramStudi).faculty?.toString() || "")
       }
     }
-  }, [unitData, activeTab])
+  }, [unitData, activeTab, fakultasData])
 
   const resetForm = () => {
     setName(unitData?.name || "")
