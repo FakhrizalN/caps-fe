@@ -19,15 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { updateFaculty, updateProgramStudy } from "@/lib/api"
+import { updateDepartment, updateFaculty, updateProgramStudy } from "@/lib/api"
 import { Edit } from "lucide-react"
 import { useEffect, useState } from "react"
-import { Fakultas, ProgramStudi } from "./columns"
+import { Fakultas, Jurusan, ProgramStudi } from "./columns"
 
 interface EditUnitDialogProps {
   activeTab: string
   fakultasData: Fakultas[]
-  unitData: Fakultas | ProgramStudi
+  unitData: Fakultas | Jurusan | ProgramStudi
   trigger?: React.ReactNode
 }
 
@@ -44,24 +44,20 @@ export function EditUnitDialog({
 
   // Initialize form with existing data
   useEffect(() => {
-    console.log('EditUnitDialog - activeTab:', activeTab)
-    console.log('EditUnitDialog - fakultasData:', fakultasData)
-    console.log('EditUnitDialog - unitData:', unitData)
-    
     if (unitData) {
       setName(unitData.name)
       
-      // For program studi, get the faculty ID
-      if (activeTab === "prodi" && 'faculty' in unitData) {
-        setSelectedFakultas((unitData as ProgramStudi).faculty?.toString() || "")
+      // For jurusan and program studi, get the faculty ID
+      if ((activeTab === "jurusan" || activeTab === "prodi") && 'faculty' in unitData) {
+        setSelectedFakultas((unitData as Jurusan | ProgramStudi).faculty?.toString() || "")
       }
     }
   }, [unitData, activeTab, fakultasData])
 
   const resetForm = () => {
     setName(unitData?.name || "")
-    if (activeTab === "prodi" && 'faculty' in unitData) {
-      setSelectedFakultas((unitData as ProgramStudi).faculty?.toString() || "")
+    if ((activeTab === "jurusan" || activeTab === "prodi") && 'faculty' in unitData) {
+      setSelectedFakultas((unitData as Jurusan | ProgramStudi).faculty?.toString() || "")
     }
   }
 
@@ -69,7 +65,7 @@ export function EditUnitDialog({
     e.preventDefault()
     if (!name.trim()) return
 
-    if (activeTab === "prodi" && !selectedFakultas) {
+    if ((activeTab === "jurusan" || activeTab === "prodi") && !selectedFakultas) {
       alert("Please select a fakultas")
       return
     }
@@ -79,6 +75,11 @@ export function EditUnitDialog({
     try {
       if (activeTab === "fakultas") {
         await updateFaculty(unitData.id, { name: name.trim() })
+      } else if (activeTab === "jurusan") {
+        await updateDepartment(unitData.id, {
+          name: name.trim(),
+          faculty: parseInt(selectedFakultas)
+        })
       } else if (activeTab === "prodi") {
         await updateProgramStudy(unitData.id, {
           name: name.trim(),
@@ -103,6 +104,8 @@ export function EditUnitDialog({
     switch (activeTab) {
       case "fakultas":
         return "Edit Fakultas"
+      case "jurusan":
+        return "Edit Jurusan"
       case "prodi":
         return "Edit Program Studi"
       default:
@@ -114,6 +117,8 @@ export function EditUnitDialog({
     switch (activeTab) {
       case "fakultas":
         return "Update the fakultas information."
+      case "jurusan":
+        return "Update the jurusan information."
       case "prodi":
         return "Update the program studi information."
       default:
@@ -125,6 +130,8 @@ export function EditUnitDialog({
     switch (activeTab) {
       case "fakultas":
         return "Fakultas Name"
+      case "jurusan":
+        return "Jurusan Name"
       case "prodi":
         return "Program Studi Name"
       default:
@@ -136,6 +143,8 @@ export function EditUnitDialog({
     switch (activeTab) {
       case "fakultas":
         return "Enter fakultas name"
+      case "jurusan":
+        return "Enter jurusan name"
       case "prodi":
         return "Enter program studi name"
       default:
@@ -160,8 +169,8 @@ export function EditUnitDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
-            {/* Fakultas Selection for Program Studi */}
-            {activeTab === "prodi" && (
+            {/* Fakultas Selection for Jurusan and Program Studi */}
+            {(activeTab === "jurusan" || activeTab === "prodi") && (
               <div className="space-y-2">
                 <Label htmlFor="fakultas">Fakultas</Label>
                 <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>

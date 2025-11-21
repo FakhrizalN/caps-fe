@@ -19,7 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { createFaculty, createProgramStudy } from "@/lib/api"
+import { createDepartment, createFaculty, createProgramStudy } from "@/lib/api"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { Fakultas } from "./columns"
@@ -44,7 +44,7 @@ export function AddUnitDialog({ activeTab, fakultasData }: AddUnitDialogProps) {
     e.preventDefault()
     if (!name.trim()) return
 
-    if (activeTab === "prodi" && !selectedFakultas) {
+    if ((activeTab === "jurusan" || activeTab === "prodi") && !selectedFakultas) {
       alert("Please select a fakultas")
       return
     }
@@ -54,6 +54,11 @@ export function AddUnitDialog({ activeTab, fakultasData }: AddUnitDialogProps) {
     try {
       if (activeTab === "fakultas") {
         await createFaculty({ name: name.trim() })
+      } else if (activeTab === "jurusan") {
+        await createDepartment({
+          name: name.trim(),
+          faculty: parseInt(selectedFakultas)
+        })
       } else if (activeTab === "prodi") {
         await createProgramStudy({
           name: name.trim(),
@@ -79,6 +84,8 @@ export function AddUnitDialog({ activeTab, fakultasData }: AddUnitDialogProps) {
     switch (activeTab) {
       case "fakultas":
         return "Add New Fakultas"
+      case "jurusan":
+        return "Add New Jurusan"
       case "prodi":
         return "Add New Program Studi"
       default:
@@ -90,6 +97,8 @@ export function AddUnitDialog({ activeTab, fakultasData }: AddUnitDialogProps) {
     switch (activeTab) {
       case "fakultas":
         return "Create a new fakultas for your institution."
+      case "jurusan":
+        return "Create a new jurusan under a fakultas."
       case "prodi":
         return "Create a new program studi under a fakultas."
       default:
@@ -101,6 +110,8 @@ export function AddUnitDialog({ activeTab, fakultasData }: AddUnitDialogProps) {
     switch (activeTab) {
       case "fakultas":
         return "Fakultas Name"
+      case "jurusan":
+        return "Jurusan Name"
       case "prodi":
         return "Program Studi Name"
       default:
@@ -112,6 +123,8 @@ export function AddUnitDialog({ activeTab, fakultasData }: AddUnitDialogProps) {
     switch (activeTab) {
       case "fakultas":
         return "Enter fakultas name"
+      case "jurusan":
+        return "Enter jurusan name"
       case "prodi":
         return "Enter program studi name"
       default:
@@ -123,6 +136,8 @@ export function AddUnitDialog({ activeTab, fakultasData }: AddUnitDialogProps) {
     switch (activeTab) {
       case "fakultas":
         return "Fakultas"
+      case "jurusan":
+        return "Jurusan"
       case "prodi":
         return "Program Studi"
       default:
@@ -145,8 +160,8 @@ export function AddUnitDialog({ activeTab, fakultasData }: AddUnitDialogProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
-            {/* Fakultas Selection for Program Studi */}
-            {activeTab === "prodi" && (
+            {/* Fakultas Selection for Jurusan and Program Studi */}
+            {(activeTab === "jurusan" || activeTab === "prodi") && (
               <div className="space-y-2">
                 <Label htmlFor="fakultas">Fakultas</Label>
                 <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>

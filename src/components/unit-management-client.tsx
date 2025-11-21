@@ -4,20 +4,23 @@ import { DataTable } from "@/app/unit/data-table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState } from "react"
 import { AddUnitDialog } from "../app/unit/add-unit-dialog"
-import { createProdiColumns, Fakultas, fakultasColumns, ProgramStudi } from "../app/unit/columns"
+import { createJurusanColumns, createProdiColumns, Fakultas, fakultasColumns, Jurusan, ProgramStudi } from "../app/unit/columns"
 
 interface UnitManagementClientProps {
   fakultasData: Fakultas[]
+  jurusanData: Jurusan[]
   prodiData: ProgramStudi[]
 }
 
 export function UnitManagementClient({ 
   fakultasData, 
+  jurusanData,
   prodiData 
 }: UnitManagementClientProps) {
   const [activeTab, setActiveTab] = useState("fakultas")
   
-  // Create prodi columns with fakultasData
+  // Create jurusan and prodi columns with fakultasData
+  const jurusanColumns = createJurusanColumns(fakultasData)
   const prodiColumns = createProdiColumns(fakultasData)
 
   return (
@@ -28,6 +31,7 @@ export function UnitManagementClient({
         <div className="flex items-center justify-between">
           <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
             <TabsTrigger value="fakultas">Fakultas</TabsTrigger>
+            <TabsTrigger value="jurusan">Jurusan</TabsTrigger>
             <TabsTrigger value="prodi">Program Studi</TabsTrigger>
           </TabsList>
           
@@ -39,6 +43,10 @@ export function UnitManagementClient({
         
         <TabsContent value="fakultas">
           <DataTable columns={fakultasColumns} data={fakultasData} />
+        </TabsContent>
+        
+        <TabsContent value="jurusan">
+          <DataTable columns={jurusanColumns} data={jurusanData} />
         </TabsContent>
         
         <TabsContent value="prodi">

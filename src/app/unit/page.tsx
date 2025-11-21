@@ -2,34 +2,37 @@
 
 import { AppSidebar } from "@/components/app-sidebar"
 import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbList,
-    BreadcrumbPage,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import {
-    SidebarInset,
-    SidebarProvider,
-    SidebarTrigger,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { getFaculties, getProgramStudiesDetailed } from "@/lib/api"
+import { getDepartments, getFaculties, getProgramStudiesDetailed } from "@/lib/api"
 import { useEffect, useState } from "react"
 import { UnitManagementClient } from "../../components/unit-management-client"
 
 export default function UnitManagementPage() {
   const [fakultasData, setFakultasData] = useState<any[]>([])
+  const [jurusanData, setJurusanData] = useState<any[]>([])
   const [prodiData, setProdiData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [faculties, programStudies] = await Promise.all([
+        const [faculties, departments, programStudies] = await Promise.all([
           getFaculties(),
+          getDepartments(),
           getProgramStudiesDetailed()
         ])
         setFakultasData(faculties)
+        setJurusanData(departments)
         setProdiData(programStudies)
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -68,6 +71,7 @@ export default function UnitManagementPage() {
               ) : (
                 <UnitManagementClient 
                   fakultasData={fakultasData}
+                  jurusanData={jurusanData}
                   prodiData={prodiData}
                 />
               )}

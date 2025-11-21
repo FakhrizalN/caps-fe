@@ -8,7 +8,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { deleteFaculty, deleteProgramStudy } from "@/lib/api"
+import { deleteDepartment, deleteFaculty, deleteProgramStudy } from "@/lib/api"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 import { EditUnitDialog } from "./edit-unit-dialog"
@@ -17,6 +17,15 @@ import { EditUnitDialog } from "./edit-unit-dialog"
 export type Fakultas = {
   id: number
   name: string
+  created_at?: string
+  updated_at?: string
+}
+
+export type Jurusan = {
+  id: number
+  name: string
+  faculty?: number
+  faculty_name?: string
   created_at?: string
   updated_at?: string
 }
@@ -40,6 +49,8 @@ const createActionsCell = (activeTab: string, fakultasData?: Fakultas[]) =>
         try {
           if (activeTab === "fakultas") {
             await deleteFaculty(unit.id)
+          } else if (activeTab === "jurusan") {
+            await deleteDepartment(unit.id)
           } else if (activeTab === "prodi") {
             await deleteProgramStudy(unit.id)
           }
@@ -131,6 +142,71 @@ export const fakultasColumns: ColumnDef<Fakultas>[] = [
     id: "actions",
     enableHiding: false,
     cell: createActionsCell("fakultas"),
+  },
+]
+
+// Columns for Jurusan
+export const createJurusanColumns = (fakultasData: Fakultas[]): ColumnDef<Jurusan>[] => [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+    enableResizing: false,
+    size: 40,
+  },
+  {
+    accessorKey: "name",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="justify-start h-8 px-2 w-full"
+        >
+          Jurusan
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    enableResizing: false,
+  },
+  {
+    accessorKey: "faculty_name",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="justify-start h-8 px-2 w-full"
+        >
+          Fakultas
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    enableResizing: false,
+  },
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: createActionsCell("jurusan", fakultasData),
   },
 ]
 

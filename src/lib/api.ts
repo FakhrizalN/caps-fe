@@ -692,6 +692,76 @@ export async function deleteFaculty(id: number): Promise<void> {
 }
 
 // ==========================================
+// Department API Functions
+// ==========================================
+
+export interface Department {
+  id: number
+  name: string
+  faculty?: number
+  faculty_name?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface CreateDepartmentData {
+  name: string
+  faculty: number
+}
+
+export interface UpdateDepartmentData {
+  name?: string
+  faculty?: number
+}
+
+/**
+ * Get all departments
+ */
+export async function getDepartments(): Promise<Department[]> {
+  return fetchWithAuth('/api/unit/departments/', {
+    method: 'GET',
+  })
+}
+
+/**
+ * Get a single department by ID
+ */
+export async function getDepartment(id: number): Promise<Department> {
+  return fetchWithAuth(`/api/unit/departments/${id}/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Create a new department
+ */
+export async function createDepartment(data: CreateDepartmentData): Promise<Department> {
+  return fetchWithAuth('/api/unit/departments/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Update a department (PATCH for partial update)
+ */
+export async function updateDepartment(id: number, data: UpdateDepartmentData): Promise<Department> {
+  return fetchWithAuth(`/api/unit/departments/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Delete a department
+ */
+export async function deleteDepartment(id: number): Promise<void> {
+  return fetchWithAuth(`/api/unit/departments/${id}/`, {
+    method: 'DELETE',
+  })
+}
+
+// ==========================================
 // Program Study API Functions (Updated)
 // ==========================================
 
