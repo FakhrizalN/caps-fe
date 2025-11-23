@@ -1,16 +1,16 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select"
 import { Trash2, X } from "lucide-react"
 
@@ -68,8 +68,8 @@ export function QuestionContentGForm({
       case "multiple_choice":
         return (
           <RadioGroup className="space-y-3">
-            {options.map((opt) => (
-              <div key={opt.id} className="flex items-center space-x-3">
+            {options.map((opt, idx) => (
+              <div key={opt.id || `mc-${idx}`} className="flex items-center space-x-3">
                 <RadioGroupItem value={opt.id} id={`${questionId}-${opt.id}`} />
                 <Label htmlFor={`${questionId}-${opt.id}`} className="text-sm font-normal cursor-pointer">
                   {opt.isOther ? (
@@ -92,8 +92,8 @@ export function QuestionContentGForm({
       case "checkbox":
         return (
           <div className="space-y-3">
-            {options.map((opt) => (
-              <div key={opt.id} className="flex items-center space-x-3">
+            {options.map((opt, idx) => (
+              <div key={opt.id || `cb-${idx}`} className="flex items-center space-x-3">
                 <Checkbox id={`${questionId}-${opt.id}`} />
                 <Label htmlFor={`${questionId}-${opt.id}`} className="text-sm font-normal cursor-pointer">
                   {opt.isOther ? (
@@ -120,7 +120,7 @@ export function QuestionContentGForm({
               <div className="flex flex-col items-center gap-4 max-w-2xl w-full">
                 <RadioGroup className="flex justify-between w-full">
                   {Array.from({ length: maxValue - minValue + 1 }, (_, i) => minValue + i).map((val) => (
-                    <div key={val} className="flex flex-col items-center space-y-2">
+                    <div key={`scale-${val}`} className="flex flex-col items-center space-y-2">
                       <Label htmlFor={`${questionId}-${val}`} className="text-sm">{val}</Label>
                       <RadioGroupItem value={val.toString()} id={`${questionId}-${val}`} />
                     </div>
@@ -142,8 +142,8 @@ export function QuestionContentGForm({
               <SelectValue placeholder="Choose" />
             </SelectTrigger>
             <SelectContent>
-              {options.map((opt) => (
-                <SelectItem key={opt.id} value={opt.id}>
+              {options.map((opt, idx) => (
+                <SelectItem key={opt.id || `dd-${idx}`} value={opt.id || `dd-${idx}`}>
                   {opt.isOther ? "Other..." : opt.label}
                 </SelectItem>
               ))}
@@ -179,7 +179,7 @@ case "paragraph":
       return (
         <div className="space-y-3">
           {options.map((opt, idx) => (
-            <div key={opt.id} className="flex items-center gap-3 group">
+            <div key={opt.id || `option-${idx}`} className="flex items-center gap-3 group">
               {/* Icon di kiri */}
               {type === "checkbox" ? (
                 <Checkbox disabled className="mt-2" />
@@ -202,9 +202,9 @@ case "paragraph":
                   </Button>
                 </div>
               ) : (
-                <>
+                <div className="flex-1 flex items-center gap-3">
                   <Input
-                    value={opt.label}
+                    value={opt.label || ""}
                     onChange={(e) => onOptionUpdate?.(opt.id, e.target.value)}
                     placeholder={`Option ${idx + 1}`}
                     className="flex-1 border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-blue-600 px-0"
@@ -220,7 +220,7 @@ case "paragraph":
                       <Trash2 className="h-4 w-4 text-gray-500" />
                     </Button>
                   )}
-                </>
+                </div>
               )}
             </div>
           ))}
@@ -245,7 +245,7 @@ case "paragraph":
                 Add option
               </Button>
               {!hasOtherOption && (
-                <>
+                <div className="flex items-center gap-1">
                   <span className="text-sm text-gray-500">or</span>
                   <Button 
                     variant="link" 
@@ -255,7 +255,7 @@ case "paragraph":
                   >
                     add "Other"
                   </Button>
-                </>
+                </div>
               )}
             </div>
           </div>

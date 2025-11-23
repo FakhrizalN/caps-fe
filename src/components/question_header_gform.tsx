@@ -1,16 +1,15 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select"
-import { Bold, Italic, Underline, Link as LinkIcon, List, ListOrdered } from "lucide-react"
-import { useRef, useEffect } from "react"
+import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Underline } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 import { QuestionType } from "./question_content_gform"
 
 interface QuestionHeaderProps {
@@ -36,16 +35,32 @@ export function QuestionHeaderGForm({
 }: QuestionHeaderProps) {
   const titleRef = useRef<HTMLDivElement>(null)
   const descriptionRef = useRef<HTMLDivElement>(null)
+  const [focusedElement, setFocusedElement] = useState<'title' | 'description' | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
 
-  // Set initial content and ensure it's editable
+  // Set initial content only once when component mounts or when switching to edit mode
   useEffect(() => {
-    if (titleRef.current && isEditMode) {
-      titleRef.current.textContent = title || ""
+    if (isEditMode && !isInitialized) {
+      if (titleRef.current) {
+        titleRef.current.innerHTML = title || ""
+      }
+      if (descriptionRef.current) {
+        descriptionRef.current.innerHTML = description || ""
+      }
+      setIsInitialized(true)
     }
   }, [isEditMode])
 
-  const applyFormatting = (command: string, element: HTMLDivElement | null) => {
-    if (!element)return; 
+  // Reset initialization flag when switching between edit/preview mode
+  useEffect(() => {
+    if (!isEditMode) {
+      setIsInitialized(false)
+    }
+  }, [isEditMode])
+
+  const applyFormatting = (command: string) => {
+    const element = focusedElement === 'description' ? descriptionRef.current : titleRef.current
+    if (!element) return
     
     if (command === "link") {
       const url = prompt("Enter URL:")
@@ -61,21 +76,21 @@ export function QuestionHeaderGForm({
 
   const handleTitleInput = () => {
     if (titleRef.current) {
-      const content = titleRef.current.textContent || ""
+      const content = titleRef.current.innerHTML || ""
       onTitleChange?.(content)
     }
   }
 
   const handleDescriptionInput = () => {
     if (descriptionRef.current) {
-      const content = descriptionRef.current.textContent || ""
+      const content = descriptionRef.current.innerHTML || ""
       onDescriptionChange?.(content)
     }
   }
 
   const handleTitleFocus = () => {
-    if (titleRef.current && titleRef.current.textContent === "Untitled question") {
-      // Select all text on focus
+    if (titleRef.current && (titleRef.current.textContent === "Untitled question" || titleRef.current.textContent?.trim() === "")) {
+      // Select all text on focus if it's the default title
       const range = document.createRange()
       range.selectNodeContents(titleRef.current)
       const selection = window.getSelection()
@@ -89,11 +104,11 @@ export function QuestionHeaderGForm({
     return (
       <div className="space-y-2" dir="ltr">
         <h3 className="text-base font-normal text-gray-900">
-          {title}
+          <span dangerouslySetInnerHTML={{ __html: title }} />
           {required && <span className="text-red-500 ml-1">*</span>}
         </h3>
         {description && (
-          <p className="text-sm text-gray-600">{description}</p>
+          <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: description }} />
         )}
       </div>
     )
@@ -110,7 +125,11 @@ export function QuestionHeaderGForm({
             contentEditable
             suppressContentEditableWarning
             onInput={handleTitleInput}
-            onFocus={handleTitleFocus}
+            onFocus={() => {
+              setFocusedElement('title')
+              handleTitleFocus()
+            }}
+            onBlur={() => setFocusedElement(null)}
             className="text-base text-gray-900 border-b border-gray-300 px-0 py-2 outline-none focus:border-primary min-h-[32px]"
             dir="ltr"
           >
@@ -140,6 +159,8 @@ export function QuestionHeaderGForm({
         contentEditable
         suppressContentEditableWarning
         onInput={handleDescriptionInput}
+        onFocus={() => setFocusedElement('description')}
+        onBlur={() => setFocusedElement(null)}
         className="text-sm text-gray-600 border-b border-transparent px-0 py-1 outline-none focus:border-gray-300 min-h-[24px] empty:before:content-['Description'] empty:before:text-gray-400"
         dir="ltr"
       />
@@ -150,7 +171,7 @@ export function QuestionHeaderGForm({
           variant="ghost" 
           size="icon" 
           className="h-8 w-8 hover:bg-gray-100 rounded"
-          onClick={() => applyFormatting("bold", titleRef.current)}
+          onClick={() => applyFormatting("bold")}
           type="button"
           title="Bold"
         >
@@ -160,7 +181,7 @@ export function QuestionHeaderGForm({
           variant="ghost" 
           size="icon" 
           className="h-8 w-8 hover:bg-gray-100 rounded"
-          onClick={() => applyFormatting("italic", titleRef.current)}
+          onClick={() => applyFormatting("italic")}
           type="button"
           title="Italic"
         >
@@ -170,7 +191,7 @@ export function QuestionHeaderGForm({
           variant="ghost" 
           size="icon" 
           className="h-8 w-8 hover:bg-gray-100 rounded"
-          onClick={() => applyFormatting("underline", titleRef.current)}
+          onClick={() => applyFormatting("underline")}
           type="button"
           title="Underline"
         >
@@ -180,7 +201,7 @@ export function QuestionHeaderGForm({
           variant="ghost" 
           size="icon" 
           className="h-8 w-8 hover:bg-gray-100 rounded"
-          onClick={() => applyFormatting("link", titleRef.current)}
+          onClick={() => applyFormatting("link")}
           type="button"
           title="Insert link"
         >
@@ -190,7 +211,7 @@ export function QuestionHeaderGForm({
           variant="ghost" 
           size="icon" 
           className="h-8 w-8 hover:bg-gray-100 rounded"
-          onClick={() => applyFormatting("insertUnorderedList", titleRef.current)}
+          onClick={() => applyFormatting("insertUnorderedList")}
           type="button"
           title="Bulleted list"
         >
@@ -200,7 +221,7 @@ export function QuestionHeaderGForm({
           variant="ghost" 
           size="icon" 
           className="h-8 w-8 hover:bg-gray-100 rounded"
-          onClick={() => applyFormatting("insertOrderedList", titleRef.current)}
+          onClick={() => applyFormatting("insertOrderedList")}
           type="button"
           title="Numbered list"
         >

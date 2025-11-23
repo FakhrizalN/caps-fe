@@ -19,6 +19,8 @@ export interface QuestionData {
   maxValue?: number
   minLabel?: string
   maxLabel?: string
+  code?: string
+  source?: string
 
   selectedOption?: string       
   selectedOptions?: string[]    
@@ -56,7 +58,7 @@ export function QuestionCardGForm({
     
     // Initialize options for option-based question types
     if (["multiple_choice", "checkbox", "dropdown"].includes(type) && !localQuestion.options) {
-      updates.options = [{ id: "opt1", label: "Option 1" }]
+      updates.options = [{ id: "1", label: "Option 1" }]
     }
     
     // Initialize values for linear scale
@@ -69,9 +71,10 @@ export function QuestionCardGForm({
   }
 
   const handleOptionAdd = () => {
+    const nextId = (localQuestion.options?.length || 0) + 1
     const newOption = {
-      id: `opt${Date.now()}`,
-      label: `Option ${(localQuestion.options?.length || 0) + 1}`
+      id: `${nextId}`,
+      label: `Option ${nextId}`
     }
     updateQuestion({ options: [...(localQuestion.options || []), newOption] })
   }
@@ -95,8 +98,9 @@ export function QuestionCardGForm({
   }
 
   const handleAddOther = () => {
+  const nextId = (localQuestion.options?.length || 0) + 1
   const otherOption = {
-    id: `opt${Date.now()}`,
+    id: `${nextId}`,
     label: "Other",
     isOther: true
   }

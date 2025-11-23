@@ -835,3 +835,175 @@ export async function deleteProgramStudy(id: number): Promise<void> {
   })
 }
 
+// ==========================================
+// Section API Functions
+// ==========================================
+
+export interface Section {
+  id: number
+  title: string
+  description?: string
+  order: number
+  created_at?: string
+  survey_id: number
+}
+
+export interface CreateSectionData {
+  title: string
+  description?: string
+  order: number
+}
+
+export interface UpdateSectionData {
+  title?: string
+  description?: string
+  order?: number
+}
+
+/**
+ * Get all sections for a survey
+ */
+export async function getSections(surveyId: number): Promise<Section[]> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Get a single section by ID
+ */
+export async function getSection(surveyId: number, sectionId: number): Promise<Section> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Create a new section
+ */
+export async function createSection(surveyId: number, data: CreateSectionData): Promise<Section> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Update a section (PATCH for partial update)
+ */
+export async function updateSection(surveyId: number, sectionId: number, data: UpdateSectionData): Promise<Section> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Delete a section
+ */
+export async function deleteSection(surveyId: number, sectionId: number): Promise<void> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/`, {
+    method: 'DELETE',
+  })
+}
+
+// ==========================================
+// Question API Functions
+// ==========================================
+
+export interface Question {
+  id: number
+  text: string
+  question_type: string // Backend values: 'text', 'number', 'radio', 'checkbox', 'scale', 'dropdown'
+  options?: any // JSON field
+  code?: string
+  source?: string
+  description?: string
+  order: number
+  is_required: boolean
+  created_at?: string
+  section_id: number
+}
+
+export interface CreateQuestionData {
+  text: string
+  question_type: string // Backend values: 'text', 'number', 'radio', 'checkbox', 'scale', 'dropdown'
+  options?: any
+  code?: string
+  source?: string
+  description?: string
+  order: number
+  is_required: boolean
+}
+
+export interface UpdateQuestionData {
+  text?: string
+  question_type?: string
+  options?: any
+  code?: string
+  source?: string
+  description?: string
+  order?: number
+  is_required?: boolean
+}
+
+/**
+ * Get all questions for a section
+ */
+export async function getQuestions(surveyId: number, sectionId: number): Promise<Question[]> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/questions/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Get a single question by ID
+ */
+export async function getQuestion(surveyId: number, sectionId: number, questionId: number): Promise<Question> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/questions/${questionId}/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Create a new question for a section
+ */
+export async function createQuestion(surveyId: number, sectionId: number, data: CreateQuestionData): Promise<Question> {
+  // Stringify options if it's an array/object
+  const payload = {
+    ...data,
+    options: data.options ? JSON.stringify(data.options) : null
+  }
+  
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/questions/`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+/**
+ * Update a question (PATCH for partial update)
+ */
+export async function updateQuestion(surveyId: number, sectionId: number, questionId: number, data: UpdateQuestionData): Promise<Question> {
+  // Stringify options if it's an array/object
+  const payload = {
+    ...data,
+    options: data.options ? JSON.stringify(data.options) : undefined
+  }
+  
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/questions/${questionId}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+/**
+ * Delete a question
+ */
+export async function deleteQuestion(surveyId: number, sectionId: number, questionId: number): Promise<void> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/questions/${questionId}/`, {
+    method: 'DELETE',
+  })
+}
+
+
