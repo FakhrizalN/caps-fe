@@ -12,10 +12,11 @@ interface SectionCardProps {
   section: Section
   onUpdate: (sectionId: number, data: { title?: string; description?: string }) => void
   onDelete: (sectionId: number) => void
+  onFocus?: () => void
   children?: React.ReactNode
 }
 
-export function SectionCard({ section, onUpdate, onDelete, children }: SectionCardProps) {
+export function SectionCard({ section, onUpdate, onDelete, onFocus, children }: SectionCardProps) {
   const [title, setTitle] = useState(section.title)
   const [description, setDescription] = useState(section.description || "")
   const [isEditingTitle, setIsEditingTitle] = useState(false)
@@ -36,7 +37,7 @@ export function SectionCard({ section, onUpdate, onDelete, children }: SectionCa
   }
 
   return (
-    <Card className="mb-6">
+    <Card className="mb-6" onClick={() => onFocus?.()}>
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
         <div className="flex items-start gap-3 flex-1">
           <GripVertical className="h-5 w-5 text-muted-foreground mt-2 cursor-grab" />

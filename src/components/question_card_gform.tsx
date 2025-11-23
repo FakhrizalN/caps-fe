@@ -3,10 +3,10 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { GripVertical } from "lucide-react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { QuestionContentGForm, QuestionOption, QuestionType } from "./question_content_gform"
 import { QuestionFooterGForm } from "./question_footer_gform"
-import { QuestionHeaderGForm } from "./question_header_gform"
+import { QuestionHeaderGForm, QuestionHeaderGFormRef } from "./question_header_gform"
 
 export interface QuestionData {
   id: string
@@ -35,6 +35,7 @@ interface QuestionCardGFormProps {
   onUpdate?: (question: QuestionData) => void
   onDelete?: (questionId: string) => void
   onDuplicate?: (questionId: string) => void
+  onFocus?: () => void
 }
 
 export function QuestionCardGForm({
@@ -42,10 +43,24 @@ export function QuestionCardGForm({
   isEditMode = false,
   onUpdate,
   onDelete,
-  onDuplicate
+  onDuplicate,
+  onFocus
 }: QuestionCardGFormProps) {
   const [localQuestion, setLocalQuestion] = useState<QuestionData>(question)
   const [isFocused, setIsFocused] = useState(false)
+  const headerRef = useRef<QuestionHeaderGFormRef>(null)
+
+  const handleCardClick = () => {
+    if (!isEditMode) {
+      // Trigger focus to activate edit mode
+      onFocus?.()
+      // Focus title only when activating edit mode
+      setTimeout(() => {
+        headerRef.current?.focusTitle()
+      }, 50)
+    }
+    // If already in edit mode, don't focus title (allow clicking on other fields)
+  }
 
   const updateQuestion = (updates: Partial<QuestionData>) => {
     const updated = { ...localQuestion, ...updates }
@@ -109,16 +124,15 @@ export function QuestionCardGForm({
 
   return (
     <Card 
-      className={`transition-all ${
+      className={`transition-all cursor-pointer border-0 ${
         isEditMode && isFocused 
           ? 'shadow-md border-l-4 border-l-primary' 
           : 'shadow-sm hover:shadow-md'
       }`}
-      onFocus={() => setIsFocused(true)}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget)) {
-          setIsFocused(false)
-        }
+      onClick={handleCardClick}
+      onFocus={() => {
+        setIsFocused(true)
+        onFocus?.()
       }}
     >
       <CardHeader className="pt-0 -mt-4">
@@ -129,6 +143,7 @@ export function QuestionCardGForm({
               variant="ghost" 
               size="icon" 
               className="cursor-move mt-2 hover:bg-transparent h-8 w-8"
+              onClick={(e) => e.stopPropagation()}
             >
               <GripVertical className="h-5 w-5 text-gray-400" />
             </Button>
@@ -136,6 +151,7 @@ export function QuestionCardGForm({
           
           {/* Question Header Component */}
           <QuestionHeaderGForm
+            ref={headerRef}
             title={localQuestion.title}
             description={localQuestion.description}
             type={localQuestion.type}
@@ -148,7 +164,7 @@ export function QuestionCardGForm({
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
+      <CardContent className="pt-0" onClick={(e) => e.stopPropagation()}>
         {/* Question Content Component */}
         <QuestionContentGForm
           type={localQuestion.type}
@@ -169,7 +185,7 @@ export function QuestionCardGForm({
 
       {/* Footer - Only in Edit Mode */}
       {isEditMode && (
-        <CardFooter className="pt-0 pb-4">
+        <CardFooter className="pt-0 pb-4" onClick={(e) => e.stopPropagation()}>
           <QuestionFooterGForm
             required={localQuestion.required}
             questionId={localQuestion.id}

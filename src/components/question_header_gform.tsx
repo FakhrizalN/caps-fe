@@ -9,7 +9,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Underline } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { QuestionType } from "./question_content_gform"
 
 interface QuestionHeaderProps {
@@ -23,7 +23,12 @@ interface QuestionHeaderProps {
   onTypeChange?: (type: QuestionType) => void
 }
 
-export function QuestionHeaderGForm({
+export interface QuestionHeaderGFormRef {
+  focusTitle: () => void
+  focusDescription: () => void
+}
+
+export const QuestionHeaderGForm = forwardRef<QuestionHeaderGFormRef, QuestionHeaderProps>(function QuestionHeaderGForm({
   title,
   description,
   type,
@@ -32,11 +37,27 @@ export function QuestionHeaderGForm({
   onTitleChange,
   onDescriptionChange,
   onTypeChange
-}: QuestionHeaderProps) {
+}, ref) {
   const titleRef = useRef<HTMLDivElement>(null)
   const descriptionRef = useRef<HTMLDivElement>(null)
   const [focusedElement, setFocusedElement] = useState<'title' | 'description' | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    focusTitle: () => {
+      if (titleRef.current) {
+        titleRef.current.focus()
+        setFocusedElement('title')
+      }
+    },
+    focusDescription: () => {
+      if (descriptionRef.current) {
+        descriptionRef.current.focus()
+        setFocusedElement('description')
+      }
+    }
+  }))
 
   // Set initial content only once when component mounts or when switching to edit mode
   useEffect(() => {
@@ -230,4 +251,4 @@ export function QuestionHeaderGForm({
       </div>
     </div>
   )
-}
+})

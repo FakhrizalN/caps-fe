@@ -6,7 +6,7 @@ import { QuestionType } from "@/components/question_content_gform"
 import { QuestionFloatingToolbar } from "@/components/question_floating_toolbar"
 import { QuestionHeaderCard } from "@/components/question_header_card"
 import { QuestionToolbar } from "@/components/question_toolbar"
-import { SectionCard } from "@/components/section_card"
+import { SectionHeaderCard } from "@/components/section_header_card"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
@@ -40,26 +40,35 @@ export default function SurveyQuestionsPage() {
   const [surveyDescription, setSurveyDescription] = useState("")
   const [loading, setLoading] = useState(true)
   const [pendingQuestions, setPendingQuestions] = useState<Set<string>>(new Set())
+  const [activeQuestionId, setActiveQuestionId] = useState<number | string | null>(null)
+  const [activeSectionId, setActiveSectionId] = useState<number | null>(null)
+  const [activeElementType, setActiveElementType] = useState<'question' | 'header' | 'section'>('question')
 
   // Fetch survey data and sections
   useEffect(() => {
+    let isMounted = true
+    
     async function fetchData() {
       try {
         // Fetch survey details
         const survey = await getSurvey(surveyId.toString())
+        if (!isMounted) return
+        
         setSurveyTitle(survey.title)
         setSurveyDescription(survey.description || "")
 
         // Fetch sections
         let sectionsData = await getSections(surveyId)
+        if (!isMounted) return
         
         // If no sections exist, create a default one
         if (sectionsData.length === 0) {
           const defaultSection = await createSection(surveyId, {
-            title: "Default Section",
+            title: "Section1",
             description: "",
             order: 1
           })
+          if (!isMounted) return
           sectionsData = [defaultSection]
         }
         
@@ -70,6 +79,7 @@ export default function SurveyQuestionsPage() {
             return { ...section, questions }
           })
         )
+        if (!isMounted) return
         
         setSections(sectionsWithQuestions)
 
@@ -83,6 +93,7 @@ export default function SurveyQuestionsPage() {
             order: 1,
             is_required: false
           })
+          if (!isMounted) return
           
           setSections([{
             ...sectionsWithQuestions[0],
@@ -92,16 +103,60 @@ export default function SurveyQuestionsPage() {
       } catch (error) {
         console.error("Error fetching survey data:", error)
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
     fetchData()
+    
+    return () => {
+      isMounted = false
+    }
   }, [surveyId])
 
   const handleAddQuestion = () => {
-    // Use the last section (most recently added/current section)
-    const currentSection = sections[sections.length - 1]
-    if (!currentSection) return
+    // Find the target section and insertion position
+    let targetSection: SectionWithQuestions | undefined
+    let insertIndex = -1
+
+    // Check if we're at header - add to first section at the beginning
+    if (activeElementType === 'header') {
+      targetSection = sections[0]
+      insertIndex = 0 // Add at the beginning of first section
+    }
+    // Check if we're at section header - add to that section at the beginning
+    else if (activeElementType === 'section' && activeSectionId) {
+      targetSection = sections.find(s => s.id === activeSectionId)
+      insertIndex = 0 // Add at the beginning of the section
+    }
+    // First priority: use active section ID for questions
+    else if (activeSectionId) {
+      targetSection = sections.find(s => s.id === activeSectionId)
+      
+      if (targetSection) {
+        // If there's an active question in this section, insert after it
+        if (activeQuestionId) {
+          const questionIndex = targetSection.questions.findIndex(q => q.id === activeQuestionId)
+          if (questionIndex !== -1) {
+            insertIndex = questionIndex + 1
+          } else {
+            insertIndex = targetSection.questions.length
+          }
+        } else {
+          // No active question, add to end of section
+          insertIndex = targetSection.questions.length
+        }
+      }
+    }
+
+    // Fallback: use the last section and append to end
+    if (!targetSection) {
+      targetSection = sections[sections.length - 1]
+      insertIndex = targetSection ? targetSection.questions.length : 0
+    }
+
+    if (!targetSection) return
 
     // Create temporary question with temp ID
     const tempId = `temp-${Date.now()}`
@@ -111,36 +166,46 @@ export default function SurveyQuestionsPage() {
       question_type: "radio",
       options: [{ id: "1", label: "Option 1" }],
       description: "",
-      order: currentSection.questions.length + 1,
+      order: insertIndex + 1,
       is_required: false,
-      section_id: currentSection.id
+      section_id: targetSection.id
     }
 
     // Add to pending set
     setPendingQuestions(prev => new Set(prev).add(tempId))
 
-    // Immediately show in UI
+    // Immediately show in UI at the correct position
     setSections(prevSections => prevSections.map(s => 
-      s.id === currentSection.id 
-        ? { ...s, questions: [...s.questions, tempQuestion] }
+      s.id === targetSection!.id 
+        ? { 
+            ...s, 
+            questions: [
+              ...s.questions.slice(0, insertIndex),
+              tempQuestion,
+              ...s.questions.slice(insertIndex)
+            ]
+          }
         : s
     ))
+
+    // Set the new question as active
+    setActiveQuestionId(tempId)
 
     // Save to DB after delay
     setTimeout(async () => {
       try {
-        const newQuestion = await createQuestion(surveyId, currentSection.id, {
+        const newQuestion = await createQuestion(surveyId, targetSection!.id, {
           text: "Untitled question",
           question_type: "radio",
           options: [{ id: "1", label: "Option 1" }],
           description: "",
-          order: currentSection.questions.length + 1,
+          order: insertIndex + 1,
           is_required: false
         })
 
         // Replace temp question with real one
         setSections(prevSections => prevSections.map(s => 
-          s.id === currentSection.id 
+          s.id === targetSection!.id 
             ? { 
                 ...s, 
                 questions: s.questions.map(q => 
@@ -149,6 +214,9 @@ export default function SurveyQuestionsPage() {
               }
             : s
         ))
+
+        // Update active question ID to the new real ID
+        setActiveQuestionId(newQuestion.id)
 
         // Remove from pending
         setPendingQuestions(prev => {
@@ -162,7 +230,7 @@ export default function SurveyQuestionsPage() {
         
         // Remove temp question on error
         setSections(prevSections => prevSections.map(s => 
-          s.id === currentSection.id 
+          s.id === targetSection!.id 
             ? { ...s, questions: s.questions.filter(q => q.id !== tempId) }
             : s
         ))
@@ -293,8 +361,22 @@ export default function SurveyQuestionsPage() {
         order: sections.length + 1
       })
 
-      // Add the new section with empty questions array
-      setSections([...sections, { ...newSection, questions: [] }])
+      // Create a default question for the new section
+      const defaultQuestion = await createQuestion(surveyId, newSection.id, {
+        text: "Untitled question",
+        question_type: "radio",
+        options: [{ id: "1", label: "Option 1" }],
+        description: "",
+        order: 1,
+        is_required: false
+      })
+
+      // Add the new section with the default question
+      setSections([...sections, { ...newSection, questions: [defaultQuestion] }])
+      
+      // Set the new section and question as active
+      setActiveSectionId(newSection.id)
+      setActiveQuestionId(defaultQuestion.id)
     } catch (error) {
       console.error("Error creating section:", error)
       alert("Failed to create section")
@@ -486,34 +568,54 @@ export default function SurveyQuestionsPage() {
             onAddText={() => console.log("Add text")}
             onImportQuestion={() => console.log("Import question")}
             onAddSection={handleAddSection}
+            activeQuestionId={activeQuestionId}
+            activeElementType={activeElementType}
           />
         )}
         
         <div className="p-6 bg-gray-50 min-h-screen">
           <div className="ml-0 w-full space-y-3 pr-24">
             {/* Question Header Card */}
-            <QuestionHeaderCard
-              title={surveyTitle}
-              description={surveyDescription}
-              onTitleChange={setSurveyTitle}
-              onDescriptionChange={setSurveyDescription}
-            />
+            <div onClick={() => {
+              setActiveElementType('header')
+              setActiveQuestionId(null)
+              setActiveSectionId(null)
+            }}>
+              <QuestionHeaderCard
+                title={surveyTitle}
+                description={surveyDescription}
+                onTitleChange={setSurveyTitle}
+                onDescriptionChange={setSurveyDescription}
+                sectionNumber={sections.length > 1 ? 1 : undefined}
+                totalSections={sections.length > 1 ? sections.length : undefined}
+                isActive={activeElementType === 'header'}
+              />
+            </div>
 
             {/* Sections and Questions List */}
             <div className="space-y-6">
-              {sections.map((section, sectionIndex) => (
-                <SectionCard
-                  key={section.id}
-                  section={section}
-                  onUpdate={handleUpdateSection}
-                  onDelete={handleDeleteSection}
-                >
-                  <div className="space-y-3">
+              {sections.map((section, sectionIndex) => {
+                // Show section header only for section 2 and beyond (section index >= 1)
+                const showSectionHeader = sectionIndex >= 1
+                
+                const questionsContent = (
+                  <div 
+                    className="space-y-3"
+                    onClick={() => setActiveSectionId(section.id)}
+                  >
                     {section.questions.map((question, questionIndex) => {
                       const isPending = typeof question.id === 'string' && pendingQuestions.has(question.id)
                       const globalIndex = sections.slice(0, sectionIndex).reduce((acc, s) => acc + s.questions.length, 0) + questionIndex
+                      const isQuestionActive = activeQuestionId === question.id
+                      // Question is editable only if not in preview mode AND it's the active question
+                      const isQuestionEditable = !isPreviewMode && isQuestionActive
+                      
                       return (
-                        <div key={question.id} className="relative">
+                        <div 
+                          key={question.id} 
+                          className="relative"
+                          data-question-id={question.id}
+                        >
                           {!isPreviewMode && (
                             <div className="absolute -left-8 top-4 text-sm text-gray-400">
                               {globalIndex + 1}
@@ -522,21 +624,52 @@ export default function SurveyQuestionsPage() {
                           <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
                             <QuestionCardGForm
                               question={questionToQuestionData(question)}
-                              isEditMode={!isPreviewMode}
+                              isEditMode={isQuestionEditable}
                               onUpdate={(updatedQuestionData) => {
                                 const updatedQuestion = questionDataToQuestion(updatedQuestionData, section.id)
                                 handleUpdateQuestion(updatedQuestion)
                               }}
                               onDelete={() => handleDeleteQuestion(question.id)}
                               onDuplicate={() => handleDuplicateQuestion(question.id)}
+                              onFocus={() => {
+                                setActiveQuestionId(question.id)
+                                setActiveSectionId(section.id)
+                                setActiveElementType('question')
+                              }}
                             />
                           </div>
                         </div>
                       )
                     })}
                   </div>
-                </SectionCard>
-              ))}
+                )
+                
+                return (
+                  <div key={section.id} className="space-y-3">
+                    {/* Show section header BEFORE questions for section 2+ */}
+                    {showSectionHeader && (
+                      <div onClick={() => {
+                        setActiveElementType('section')
+                        setActiveQuestionId(section.id)
+                        setActiveSectionId(section.id)
+                      }}>
+                        <SectionHeaderCard
+                          sectionNumber={sectionIndex + 1}
+                          totalSections={sections.length}
+                          title={section.title}
+                          description={section.description || ""}
+                          sectionId={section.id}
+                          isActive={activeElementType === 'section' && activeQuestionId === section.id}
+                          onTitleChange={(title) => handleUpdateSection(section.id, { title })}
+                          onDescriptionChange={(description) => handleUpdateSection(section.id, { description })}
+                          onDelete={() => handleDeleteSection(section.id)}
+                        />
+                      </div>
+                    )}
+                    {questionsContent}
+                  </div>
+                )
+              })}
             </div>
 
             {/* Summary */}
