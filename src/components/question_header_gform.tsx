@@ -2,11 +2,11 @@
 
 import { Button } from "@/components/ui/button"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select"
 import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Underline } from "lucide-react"
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
@@ -18,6 +18,7 @@ interface QuestionHeaderProps {
   type: QuestionType
   required?: boolean
   isEditMode?: boolean
+  showDescription?: boolean
   onTitleChange?: (title: string) => void
   onDescriptionChange?: (description: string) => void
   onTypeChange?: (type: QuestionType) => void
@@ -34,6 +35,7 @@ export const QuestionHeaderGForm = forwardRef<QuestionHeaderGFormRef, QuestionHe
   type,
   required = false,
   isEditMode = false,
+  showDescription = true,
   onTitleChange,
   onDescriptionChange,
   onTypeChange
@@ -174,17 +176,19 @@ export const QuestionHeaderGForm = forwardRef<QuestionHeaderGFormRef, QuestionHe
         </Select>
       </div>
 
-      {/* Description Field */}
-      <div
-        ref={descriptionRef}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={handleDescriptionInput}
-        onFocus={() => setFocusedElement('description')}
-        onBlur={() => setFocusedElement(null)}
-        className="text-sm text-gray-600 border-b border-transparent px-0 py-1 outline-none focus:border-gray-300 min-h-[24px] empty:before:content-['Description'] empty:before:text-gray-400"
-        dir="ltr"
-      />
+      {/* Description Field - Only show if showDescription is true */}
+      {showDescription && (
+        <div
+          ref={descriptionRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={handleDescriptionInput}
+          onFocus={() => setFocusedElement('description')}
+          onBlur={() => setFocusedElement(null)}
+          className="text-sm text-gray-600 border-b border-transparent px-0 py-1 outline-none focus:border-gray-300 min-h-[24px] empty:before:content-['Description'] empty:before:text-gray-400"
+          dir="ltr"
+        />
+      )}
 
       {/* Formatting Toolbar */}
       <div className="flex items-center gap-0 -mt-1">

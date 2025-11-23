@@ -1,32 +1,53 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Copy, Trash2, MoreVertical, FileText, ShieldCheck, Shuffle } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
+import { Copy, FileText, MoreVertical, ShieldCheck, Trash2 } from "lucide-react"
+import { useState } from "react"
 
 interface QuestionFooterProps {
   required: boolean
   questionId: string
+  showDescription?: boolean
+  responseValidation?: boolean
   onRequiredChange?: (required: boolean) => void
   onDuplicate?: () => void
   onDelete?: () => void
+  onDescriptionToggle?: (show: boolean) => void
+  onResponseValidationToggle?: (enabled: boolean) => void
 }
 
 export function QuestionFooterGForm({
   required,
   questionId,
+  showDescription = false,
+  responseValidation = false,
   onRequiredChange,
   onDuplicate,
-  onDelete
+  onDelete,
+  onDescriptionToggle,
+  onResponseValidationToggle
 }: QuestionFooterProps) {
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const handleDescriptionClick = () => {
+    onDescriptionToggle?.(!showDescription)
+    setMenuOpen(false)
+  }
+
+  const handleResponseValidationClick = () => {
+    onResponseValidationToggle?.(!responseValidation)
+    setMenuOpen(false)
+  }
+
   return (
     <div className="flex justify-between items-center border-t pt-4">
       <div className="flex gap-2 items-center">
@@ -68,24 +89,22 @@ export function QuestionFooterGForm({
       </div>
 
       {/* More Options Menu */}
-      <DropdownMenu>
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="hover:bg-gray-100">
             <MoreVertical className="h-4 w-4 text-gray-600" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={handleDescriptionClick}>
             <FileText className="h-4 w-4 mr-2" />
             Description
+            {showDescription && <span className="ml-auto text-xs text-primary">✓</span>}
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={handleResponseValidationClick}>
             <ShieldCheck className="h-4 w-4 mr-2" />
             Response validation
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Shuffle className="h-4 w-4 mr-2" />
-            Shuffle option order
+            {responseValidation && <span className="ml-auto text-xs text-primary">✓</span>}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

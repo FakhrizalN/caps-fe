@@ -53,7 +53,7 @@ export function QuestionHeaderCard({
         </div>
       )}
 
-      <Card className={`border-t-[6px] border-t-primary shadow-sm hover:shadow-md transition-all ${
+      <Card className={`border-t-[8px] border-t-primary shadow-sm hover:shadow-md transition-all ${
         showSectionBadge ? 'mt-[-8px]' : ''
       } ${
         isActive ? 'border-l-4 border-l-primary' : ''

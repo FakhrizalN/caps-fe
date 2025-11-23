@@ -5,13 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Trash2, X } from "lucide-react"
 
 export type QuestionType = 
@@ -28,6 +22,11 @@ export interface QuestionOption {
   isOther?: boolean
 }
 
+export interface SectionInfo {
+  id: number
+  title: string
+}
+
 interface QuestionContentProps {
   type: QuestionType
   options?: QuestionOption[]
@@ -37,11 +36,14 @@ interface QuestionContentProps {
   maxLabel?: string
   isEditMode?: boolean
   questionId: string
+  responseValidation?: boolean
+  sections?: SectionInfo[]
   onOptionUpdate?: (optionId: string, label: string) => void
   onOptionDelete?: (optionId: string) => void
   onOptionAdd?: () => void
   onAddOther?: () => void
   onScaleUpdate?: (updates: { minValue?: number; maxValue?: number; minLabel?: string; maxLabel?: string }) => void
+  onNavigationChange?: (optionId: string, navigation: string) => void
 }
 
 export function QuestionContentGForm({
@@ -53,11 +55,14 @@ export function QuestionContentGForm({
   maxLabel,
   isEditMode = false,
   questionId,
+  responseValidation = false,
+  sections = [],
   onOptionUpdate,
   onOptionDelete,
   onOptionAdd,
   onAddOther,
-  onScaleUpdate
+  onScaleUpdate,
+  onNavigationChange
 }: QuestionContentProps) {
 
   const hasOtherOption = options.some(opt => opt.isOther)
@@ -209,6 +214,25 @@ case "paragraph":
                     placeholder={`Option ${idx + 1}`}
                     className="flex-1 border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-blue-600 px-0"
                   />
+                  
+                  {/* Response Validation Dropdown */}
+                  {responseValidation && (
+                    <Select 
+                      onValueChange={(value) => onNavigationChange?.(opt.id, value)}
+                    >
+                      <SelectTrigger className="w-[200px] h-8">
+                        <SelectValue placeholder="Select navigation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="next">Go to next section</SelectItem>
+                        {sections.map((section, sectionIdx) => (
+                          <SelectItem key={section.id} value={`section-${section.id}`}>
+                            Open section {sectionIdx + 1} ({section.title})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                   
                   {options.length > 1 && (
                     <Button 

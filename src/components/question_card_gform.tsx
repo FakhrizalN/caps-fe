@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { GripVertical } from "lucide-react"
 import { useRef, useState } from "react"
-import { QuestionContentGForm, QuestionOption, QuestionType } from "./question_content_gform"
+import { QuestionContentGForm, QuestionOption, QuestionType, SectionInfo } from "./question_content_gform"
 import { QuestionFooterGForm } from "./question_footer_gform"
 import { QuestionHeaderGForm, QuestionHeaderGFormRef } from "./question_header_gform"
 
@@ -32,6 +32,7 @@ export interface QuestionData {
 interface QuestionCardGFormProps {
   question: QuestionData
   isEditMode?: boolean
+  sections?: SectionInfo[]
   onUpdate?: (question: QuestionData) => void
   onDelete?: (questionId: string) => void
   onDuplicate?: (questionId: string) => void
@@ -41,6 +42,7 @@ interface QuestionCardGFormProps {
 export function QuestionCardGForm({
   question,
   isEditMode = false,
+  sections = [],
   onUpdate,
   onDelete,
   onDuplicate,
@@ -48,6 +50,8 @@ export function QuestionCardGForm({
 }: QuestionCardGFormProps) {
   const [localQuestion, setLocalQuestion] = useState<QuestionData>(question)
   const [isFocused, setIsFocused] = useState(false)
+  const [showDescription, setShowDescription] = useState(!!question.description)
+  const [responseValidation, setResponseValidation] = useState(false)
   const headerRef = useRef<QuestionHeaderGFormRef>(null)
 
   const handleCardClick = () => {
@@ -157,6 +161,7 @@ export function QuestionCardGForm({
             type={localQuestion.type}
             required={localQuestion.required}
             isEditMode={isEditMode}
+            showDescription={showDescription}
             onTitleChange={(title) => updateQuestion({ title })}
             onDescriptionChange={(description) => updateQuestion({ description })}
             onTypeChange={handleTypeChange}
@@ -175,6 +180,8 @@ export function QuestionCardGForm({
           maxLabel={localQuestion.maxLabel}
           isEditMode={isEditMode}
           questionId={localQuestion.id}
+          responseValidation={responseValidation}
+          sections={sections}
           onOptionUpdate={handleOptionUpdate}
           onOptionDelete={handleOptionDelete}
           onOptionAdd={handleOptionAdd}
@@ -189,9 +196,20 @@ export function QuestionCardGForm({
           <QuestionFooterGForm
             required={localQuestion.required}
             questionId={localQuestion.id}
+            showDescription={showDescription}
+            responseValidation={responseValidation}
             onRequiredChange={(required) => updateQuestion({ required })}
             onDuplicate={() => onDuplicate?.(localQuestion.id)}
             onDelete={() => onDelete?.(localQuestion.id)}
+            onDescriptionToggle={(show) => {
+              setShowDescription(show)
+              if (show) {
+                setTimeout(() => {
+                  headerRef.current?.focusDescription()
+                }, 50)
+              }
+            }}
+            onResponseValidationToggle={setResponseValidation}
           />
         </CardFooter>
       )}

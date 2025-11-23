@@ -2,7 +2,7 @@
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { QuestionCardGForm, QuestionData } from "@/components/question_card_gform"
-import { QuestionType } from "@/components/question_content_gform"
+import { QuestionType, SectionInfo } from "@/components/question_content_gform"
 import { QuestionFloatingToolbar } from "@/components/question_floating_toolbar"
 import { QuestionHeaderCard } from "@/components/question_header_card"
 import { QuestionToolbar } from "@/components/question_toolbar"
@@ -535,6 +535,12 @@ export default function SurveyQuestionsPage() {
   const totalQuestions = allQuestions.length
   const requiredQuestions = allQuestions.filter(q => q.is_required).length
 
+  // Prepare sections info for response validation dropdown
+  const sectionsInfo: SectionInfo[] = sections.map((section, index) => ({
+    id: section.id,
+    title: section.title || `Section${index + 1}`
+  }))
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -625,6 +631,7 @@ export default function SurveyQuestionsPage() {
                             <QuestionCardGForm
                               question={questionToQuestionData(question)}
                               isEditMode={isQuestionEditable}
+                              sections={sectionsInfo}
                               onUpdate={(updatedQuestionData) => {
                                 const updatedQuestion = questionDataToQuestion(updatedQuestionData, section.id)
                                 handleUpdateQuestion(updatedQuestion)
