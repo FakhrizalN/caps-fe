@@ -912,7 +912,7 @@ export async function deleteSection(surveyId: number, sectionId: number): Promis
 // ==========================================
 
 export interface Question {
-  id: number
+  id: number | string // Support both number (DB) and string (temp-xxx)
   text: string
   question_type: string // Backend values: 'text', 'number', 'radio', 'checkbox', 'scale', 'dropdown'
   options?: any // JSON field

@@ -2,22 +2,26 @@
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { QuestionCardGForm, QuestionData } from "@/components/question_card_gform"
+import { QuestionType } from "@/components/question_content_gform"
 import { QuestionFloatingToolbar } from "@/components/question_floating_toolbar"
 import { QuestionHeaderCard } from "@/components/question_header_card"
 import { QuestionToolbar } from "@/components/question_toolbar"
+import { SectionCard } from "@/components/section_card"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
-    createQuestion,
-    createSection,
-    deleteQuestion,
-    getQuestions,
-    getSections,
-    getSurvey,
-    Question,
-    Section,
-    updateQuestion,
+  createQuestion,
+  createSection,
+  deleteQuestion,
+  deleteSection,
+  getQuestions,
+  getSections,
+  getSurvey,
+  Question,
+  Section,
+  updateQuestion,
+  updateSection,
 } from "@/lib/api"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -42,7 +46,7 @@ export default function SurveyQuestionsPage() {
     async function fetchData() {
       try {
         // Fetch survey details
-        const survey = await getSurvey(surveyId)
+        const survey = await getSurvey(surveyId.toString())
         setSurveyTitle(survey.title)
         setSurveyDescription(survey.description || "")
 
@@ -95,9 +99,9 @@ export default function SurveyQuestionsPage() {
   }, [surveyId])
 
   const handleAddQuestion = () => {
-    // Use the first (default) section
-    const defaultSection = sections[0]
-    if (!defaultSection) return
+    // Use the last section (most recently added/current section)
+    const currentSection = sections[sections.length - 1]
+    if (!currentSection) return
 
     // Create temporary question with temp ID
     const tempId = `temp-${Date.now()}`
@@ -107,9 +111,9 @@ export default function SurveyQuestionsPage() {
       question_type: "radio",
       options: [{ id: "1", label: "Option 1" }],
       description: "",
-      order: defaultSection.questions.length + 1,
+      order: currentSection.questions.length + 1,
       is_required: false,
-      section_id: defaultSection.id
+      section_id: currentSection.id
     }
 
     // Add to pending set
@@ -117,7 +121,7 @@ export default function SurveyQuestionsPage() {
 
     // Immediately show in UI
     setSections(prevSections => prevSections.map(s => 
-      s.id === defaultSection.id 
+      s.id === currentSection.id 
         ? { ...s, questions: [...s.questions, tempQuestion] }
         : s
     ))
@@ -125,18 +129,18 @@ export default function SurveyQuestionsPage() {
     // Save to DB after delay
     setTimeout(async () => {
       try {
-        const newQuestion = await createQuestion(surveyId, defaultSection.id, {
+        const newQuestion = await createQuestion(surveyId, currentSection.id, {
           text: "Untitled question",
           question_type: "radio",
           options: [{ id: "1", label: "Option 1" }],
           description: "",
-          order: defaultSection.questions.length + 1,
+          order: currentSection.questions.length + 1,
           is_required: false
         })
 
         // Replace temp question with real one
         setSections(prevSections => prevSections.map(s => 
-          s.id === defaultSection.id 
+          s.id === currentSection.id 
             ? { 
                 ...s, 
                 questions: s.questions.map(q => 
@@ -158,7 +162,7 @@ export default function SurveyQuestionsPage() {
         
         // Remove temp question on error
         setSections(prevSections => prevSections.map(s => 
-          s.id === defaultSection.id 
+          s.id === currentSection.id 
             ? { ...s, questions: s.questions.filter(q => q.id !== tempId) }
             : s
         ))
@@ -173,21 +177,22 @@ export default function SurveyQuestionsPage() {
 
   const handleUpdateQuestion = async (question: Question) => {
     try {
-      const defaultSection = sections[0]
-      if (!defaultSection) return
+      // Find the section that contains this question
+      const section = sections.find(s => s.id === question.section_id)
+      if (!section) return
 
       // Skip update for temporary questions (they haven't been saved yet)
       if (typeof question.id === 'string' && question.id.startsWith('temp-')) {
         // Just update in local state
         setSections(sections.map(s => 
-          s.id === defaultSection.id
+          s.id === section.id
             ? { ...s, questions: s.questions.map(q => q.id === question.id ? question : q) }
             : s
         ))
         return
       }
 
-      const updatedQuestion = await updateQuestion(surveyId, defaultSection.id, question.id as number, {
+      const updatedQuestion = await updateQuestion(surveyId, section.id, question.id as number, {
         text: question.text,
         question_type: question.question_type,
         options: question.options,
@@ -196,7 +201,7 @@ export default function SurveyQuestionsPage() {
       })
 
       setSections(sections.map(s => 
-        s.id === defaultSection.id
+        s.id === section.id
           ? { ...s, questions: s.questions.map(q => q.id === question.id ? updatedQuestion : q) }
           : s
       ))
@@ -208,13 +213,14 @@ export default function SurveyQuestionsPage() {
 
   const handleDeleteQuestion = async (questionId: number | string) => {
     try {
-      const defaultSection = sections[0]
-      if (!defaultSection) return
+      // Find the section that contains this question
+      const section = sections.find(s => s.questions.some(q => q.id === questionId))
+      if (!section) return
 
       // If it's a temporary question, just remove from UI
       if (typeof questionId === 'string' && questionId.startsWith('temp-')) {
         setSections(sections.map(s => 
-          s.id === defaultSection.id
+          s.id === section.id
             ? { ...s, questions: s.questions.filter(q => q.id !== questionId) }
             : s
         ))
@@ -226,9 +232,9 @@ export default function SurveyQuestionsPage() {
         return
       }
 
-      await deleteQuestion(surveyId, defaultSection.id, questionId as number)
+      await deleteQuestion(surveyId, section.id, questionId as number)
       setSections(sections.map(s => 
-        s.id === defaultSection.id
+        s.id === section.id
           ? { ...s, questions: s.questions.filter(q => q.id !== questionId) }
           : s
       ))
@@ -240,9 +246,10 @@ export default function SurveyQuestionsPage() {
 
   const handleDuplicateQuestion = async (questionId: number | string) => {
     try {
-      const defaultSection = sections[0]
-      const question = defaultSection?.questions.find(q => q.id === questionId)
-      if (!question || !defaultSection) return
+      // Find the section that contains this question
+      const section = sections.find(s => s.questions.some(q => q.id === questionId))
+      const question = section?.questions.find(q => q.id === questionId)
+      if (!question || !section) return
 
       // Can't duplicate temporary questions
       if (typeof questionId === 'string' && questionId.startsWith('temp-')) {
@@ -250,7 +257,7 @@ export default function SurveyQuestionsPage() {
         return
       }
 
-      const duplicate = await createQuestion(surveyId, defaultSection.id, {
+      const duplicate = await createQuestion(surveyId, section.id, {
         text: `${question.text} (Copy)`,
         question_type: question.question_type,
         options: question.options,
@@ -260,7 +267,7 @@ export default function SurveyQuestionsPage() {
       })
 
       setSections(sections.map(s => 
-        s.id === defaultSection.id
+        s.id === section.id
           ? { 
               ...s, 
               questions: [
@@ -274,6 +281,49 @@ export default function SurveyQuestionsPage() {
     } catch (error) {
       console.error("Error duplicating question:", error)
       alert("Failed to duplicate question")
+    }
+  }
+
+  const handleAddSection = async () => {
+    try {
+      // Create new section with incremental order
+      const newSection = await createSection(surveyId, {
+        title: `Section ${sections.length + 1}`,
+        description: "",
+        order: sections.length + 1
+      })
+
+      // Add the new section with empty questions array
+      setSections([...sections, { ...newSection, questions: [] }])
+    } catch (error) {
+      console.error("Error creating section:", error)
+      alert("Failed to create section")
+    }
+  }
+
+  const handleUpdateSection = async (sectionId: number, data: { title?: string; description?: string }) => {
+    try {
+      const updatedSection = await updateSection(surveyId, sectionId, data)
+      setSections(sections.map(s => s.id === sectionId ? { ...s, ...updatedSection } : s))
+    } catch (error) {
+      console.error("Error updating section:", error)
+      alert("Failed to update section")
+    }
+  }
+
+  const handleDeleteSection = async (sectionId: number) => {
+    try {
+      // Don't allow deleting if it's the only section
+      if (sections.length === 1) {
+        alert("Cannot delete the last section")
+        return
+      }
+
+      await deleteSection(surveyId, sectionId)
+      setSections(sections.filter(s => s.id !== sectionId))
+    } catch (error) {
+      console.error("Error deleting section:", error)
+      alert("Failed to delete section")
     }
   }
 
@@ -350,7 +400,7 @@ export default function SurveyQuestionsPage() {
     
     return {
       id: question.id.toString(),
-      type: backendToFrontendType(question.question_type),
+      type: backendToFrontendType(question.question_type) as QuestionType,
       title: question.text,
       description: question.description || "",
       required: question.is_required,
@@ -398,8 +448,8 @@ export default function SurveyQuestionsPage() {
     )
   }
 
-  // Get all questions from the first (default) section
-  const allQuestions = sections[0]?.questions || []
+  // Get all questions from all sections
+  const allQuestions = sections.flatMap(s => s.questions)
   const totalQuestions = allQuestions.length
   const requiredQuestions = allQuestions.filter(q => q.is_required).length
 
@@ -435,7 +485,7 @@ export default function SurveyQuestionsPage() {
             onAddQuestion={handleAddQuestion}
             onAddText={() => console.log("Add text")}
             onImportQuestion={() => console.log("Import question")}
-            onAddSection={() => console.log("Add section")}
+            onAddSection={handleAddSection}
           />
         )}
         
@@ -449,32 +499,44 @@ export default function SurveyQuestionsPage() {
               onDescriptionChange={setSurveyDescription}
             />
 
-            {/* Questions List */}
-            <div className="space-y-3">
-              {allQuestions.map((question, index) => {
-                const isPending = typeof question.id === 'string' && pendingQuestions.has(question.id)
-                return (
-                  <div key={question.id} className="relative">
-                    {!isPreviewMode && (
-                      <div className="absolute -left-8 top-4 text-sm text-gray-400">
-                        {index + 1}
-                      </div>
-                    )}
-                    <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
-                      <QuestionCardGForm
-                        question={questionToQuestionData(question)}
-                        isEditMode={!isPreviewMode}
-                        onUpdate={(updatedQuestionData) => {
-                          const updatedQuestion = questionDataToQuestion(updatedQuestionData, sections[0].id)
-                          handleUpdateQuestion(updatedQuestion)
-                        }}
-                        onDelete={() => handleDeleteQuestion(question.id)}
-                        onDuplicate={() => handleDuplicateQuestion(question.id)}
-                      />
-                    </div>
+            {/* Sections and Questions List */}
+            <div className="space-y-6">
+              {sections.map((section, sectionIndex) => (
+                <SectionCard
+                  key={section.id}
+                  section={section}
+                  onUpdate={handleUpdateSection}
+                  onDelete={handleDeleteSection}
+                >
+                  <div className="space-y-3">
+                    {section.questions.map((question, questionIndex) => {
+                      const isPending = typeof question.id === 'string' && pendingQuestions.has(question.id)
+                      const globalIndex = sections.slice(0, sectionIndex).reduce((acc, s) => acc + s.questions.length, 0) + questionIndex
+                      return (
+                        <div key={question.id} className="relative">
+                          {!isPreviewMode && (
+                            <div className="absolute -left-8 top-4 text-sm text-gray-400">
+                              {globalIndex + 1}
+                            </div>
+                          )}
+                          <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
+                            <QuestionCardGForm
+                              question={questionToQuestionData(question)}
+                              isEditMode={!isPreviewMode}
+                              onUpdate={(updatedQuestionData) => {
+                                const updatedQuestion = questionDataToQuestion(updatedQuestionData, section.id)
+                                handleUpdateQuestion(updatedQuestion)
+                              }}
+                              onDelete={() => handleDeleteQuestion(question.id)}
+                              onDuplicate={() => handleDuplicateQuestion(question.id)}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
-                )
-              })}
+                </SectionCard>
+              ))}
             </div>
 
             {/* Summary */}
