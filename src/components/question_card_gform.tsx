@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { useSortable } from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import { GripVertical } from "lucide-react"
 import { useRef, useState } from "react"
 import { QuestionContentGForm, QuestionOption, QuestionType, SectionInfo } from "./question_content_gform"
@@ -53,6 +55,28 @@ export function QuestionCardGForm({
   const [showDescription, setShowDescription] = useState(!!question.description)
   const [responseValidation, setResponseValidation] = useState(false)
   const headerRef = useRef<QuestionHeaderGFormRef>(null)
+
+  // Drag and drop setup
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: question.id,
+    disabled: !isEditMode
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    // Prevent collapse during drag
+    height: isDragging ? 'auto' : undefined,
+    minHeight: isDragging ? 'fit-content' : undefined,
+  }
 
   const handleCardClick = () => {
     if (!isEditMode) {
@@ -128,6 +152,8 @@ export function QuestionCardGForm({
 
   return (
     <Card 
+      ref={setNodeRef}
+      style={style}
       className={`transition-all cursor-pointer border-0 ${
         isEditMode && isFocused 
           ? 'shadow-md border-l-4 border-l-primary' 
@@ -144,9 +170,11 @@ export function QuestionCardGForm({
           {/*Edit Mode */}
           {isEditMode && (
             <Button 
+              {...attributes}
+              {...listeners}
               variant="ghost" 
               size="icon" 
-              className="cursor-move mt-2 hover:bg-transparent h-8 w-8"
+              className="cursor-grab active:cursor-grabbing mt-2 hover:bg-gray-100 h-8 w-8 touch-none"
               onClick={(e) => e.stopPropagation()}
             >
               <GripVertical className="h-5 w-5 text-gray-400" />

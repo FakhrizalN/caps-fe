@@ -7,6 +7,7 @@ import { QuestionFloatingToolbar } from "@/components/question_floating_toolbar"
 import { QuestionHeaderCard } from "@/components/question_header_card"
 import { QuestionToolbar } from "@/components/question_toolbar"
 import { SectionHeaderCard } from "@/components/section_header_card"
+import { TextCard } from "@/components/text_card"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
@@ -23,11 +24,38 @@ import {
   updateQuestion,
   updateSection,
 } from "@/lib/api"
+import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 
+interface TextElement {
+  id: string
+  title: string
+  description: string
+  sectionId: number
+  order: number
+}
+
 interface SectionWithQuestions extends Section {
   questions: Question[]
+  texts: TextElement[]
 }
 
 export default function SurveyQuestionsPage() {
@@ -42,7 +70,90 @@ export default function SurveyQuestionsPage() {
   const [pendingQuestions, setPendingQuestions] = useState<Set<string>>(new Set())
   const [activeQuestionId, setActiveQuestionId] = useState<number | string | null>(null)
   const [activeSectionId, setActiveSectionId] = useState<number | null>(null)
-  const [activeElementType, setActiveElementType] = useState<'question' | 'header' | 'section'>('question')
+  const [activeElementType, setActiveElementType] = useState<'question' | 'header' | 'section' | 'text'>('question')
+  const [activeId, setActiveId] = useState<string | null>(null)
+
+  // Drag and drop sensors - only vertical dragging
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement required before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  // Handle drag start
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string)
+  }
+
+  // Handle drag end for reordering questions
+  const handleDragEnd = async (event: DragEndEvent, sectionId: number) => {
+    const { active, over } = event
+
+    setActiveId(null)
+
+    if (!over || active.id === over.id) return
+
+    const section = sections.find(s => s.id === sectionId)
+    if (!section) return
+
+    const oldIndex = section.questions.findIndex(q => q.id.toString() === active.id)
+    const newIndex = section.questions.findIndex(q => q.id.toString() === over.id)
+
+    if (oldIndex === -1 || newIndex === -1) return
+
+    // Don't allow reordering temporary questions
+    const draggedQuestion = section.questions[oldIndex]
+    if (typeof draggedQuestion.id === 'string' && draggedQuestion.id.startsWith('temp-')) {
+      console.log("Cannot reorder temporary question")
+      return
+    }
+
+    // Calculate new order and update state immediately for smooth UX
+    const newQuestions = arrayMove(section.questions, oldIndex, newIndex).map((q, index) => ({
+      ...q,
+      order: index + 1 // Update order field immediately
+    }))
+    
+    // Update local state immediately
+    setSections(prevSections => prevSections.map(s => 
+      s.id === sectionId ? { ...s, questions: newQuestions } : s
+    ))
+    
+    // Update order in backend - only for saved questions (with numeric IDs)
+    try {
+      // Filter out temporary questions and update only saved ones
+      const updatePromises = newQuestions
+        .filter(question => typeof question.id === 'number')
+        .map((question) => {
+          // Find the actual index in the full array (including temp questions)
+          const actualIndex = newQuestions.indexOf(question)
+          return updateQuestion(surveyId, sectionId, question.id as number, {
+            text: question.text,
+            question_type: question.question_type,
+            options: question.options,
+            description: question.description,
+            is_required: question.is_required,
+            order: actualIndex + 1
+          })
+        })
+      
+      // Wait for all updates - no need to update state again since it's already correct
+      await Promise.all(updatePromises)
+      console.log("Question order updated successfully")
+    } catch (error) {
+      console.error("Error updating question order:", error)
+      // Revert on error
+      setSections(prevSections => prevSections.map(s => 
+        s.id === sectionId ? { ...s, questions: section.questions } : s
+      ))
+      alert("Failed to update question order")
+    }
+  }
 
   // Fetch survey data and sections
   useEffect(() => {
@@ -76,7 +187,7 @@ export default function SurveyQuestionsPage() {
         const sectionsWithQuestions = await Promise.all(
           sectionsData.map(async (section) => {
             const questions = await getQuestions(surveyId, section.id)
-            return { ...section, questions }
+            return { ...section, questions, texts: [] }
           })
         )
         if (!isMounted) return
@@ -243,6 +354,69 @@ export default function SurveyQuestionsPage() {
     }, 500) // 500ms delay
   }
 
+  const handleAddText = () => {
+    // Find the target section and insertion position
+    let targetSection: SectionWithQuestions | undefined
+    let insertIndex = -1
+
+    if (activeElementType === 'header') {
+      targetSection = sections[0]
+      insertIndex = 0
+    } else if (activeElementType === 'section' && activeSectionId) {
+      targetSection = sections.find(s => s.id === activeSectionId)
+      insertIndex = 0
+    } else if (activeSectionId) {
+      targetSection = sections.find(s => s.id === activeSectionId)
+      
+      if (targetSection) {
+        if (activeQuestionId) {
+          // Find position in combined array of questions and texts
+          const combinedItems = [...targetSection.questions, ...targetSection.texts].sort((a, b) => a.order - b.order)
+          const itemIndex = combinedItems.findIndex(item => item.id === activeQuestionId)
+          if (itemIndex !== -1) {
+            insertIndex = itemIndex + 1
+          } else {
+            insertIndex = combinedItems.length
+          }
+        } else {
+          insertIndex = targetSection.questions.length + targetSection.texts.length
+        }
+      }
+    }
+
+    if (!targetSection) {
+      targetSection = sections[sections.length - 1]
+      insertIndex = targetSection ? (targetSection.questions.length + targetSection.texts.length) : 0
+    }
+
+    if (!targetSection) return
+
+    // Create text element
+    const tempId = `text-${Date.now()}`
+    const textElement: TextElement = {
+      id: tempId,
+      title: "",
+      description: "",
+      sectionId: targetSection.id,
+      order: insertIndex + 1
+    }
+
+    // Add to section
+    setSections(prevSections => prevSections.map(s => 
+      s.id === targetSection!.id 
+        ? { 
+            ...s, 
+            texts: [...s.texts, textElement]
+          }
+        : s
+    ))
+
+    // Set as active
+    setActiveQuestionId(tempId)
+    setActiveSectionId(targetSection.id)
+    setActiveElementType('text')
+  }
+
   const handleUpdateQuestion = async (question: Question) => {
     try {
       // Find the section that contains this question
@@ -312,6 +486,22 @@ export default function SurveyQuestionsPage() {
     }
   }
 
+  const handleUpdateText = (textId: string, updates: { title?: string; description?: string }) => {
+    setSections(prevSections => prevSections.map(s => ({
+      ...s,
+      texts: s.texts.map(t => 
+        t.id === textId ? { ...t, ...updates } : t
+      )
+    })))
+  }
+
+  const handleDeleteText = (textId: string) => {
+    setSections(prevSections => prevSections.map(s => ({
+      ...s,
+      texts: s.texts.filter(t => t.id !== textId)
+    })))
+  }
+
   const handleDuplicateQuestion = async (questionId: number | string) => {
     try {
       // Find the section that contains this question
@@ -372,7 +562,7 @@ export default function SurveyQuestionsPage() {
       })
 
       // Add the new section with the default question
-      setSections([...sections, { ...newSection, questions: [defaultQuestion] }])
+      setSections([...sections, { ...newSection, questions: [defaultQuestion], texts: [] }])
       
       // Set the new section and question as active
       setActiveSectionId(newSection.id)
@@ -571,7 +761,7 @@ export default function SurveyQuestionsPage() {
         {!isPreviewMode && (
           <QuestionFloatingToolbar 
             onAddQuestion={handleAddQuestion}
-            onAddText={() => console.log("Add text")}
+            onAddText={handleAddText}
             onImportQuestion={() => console.log("Import question")}
             onAddSection={handleAddSection}
             activeQuestionId={activeQuestionId}
@@ -604,51 +794,110 @@ export default function SurveyQuestionsPage() {
                 // Show section header only for section 2 and beyond (section index >= 1)
                 const showSectionHeader = sectionIndex >= 1
                 
-                const questionsContent = (
-                  <div 
-                    className="space-y-3"
-                    onClick={() => setActiveSectionId(section.id)}
+                // Get question IDs for sortable context
+                const questionIds = section.questions.map(q => q.id.toString())
+                
+                // Combine questions and texts, then sort by order
+                const combinedItems = [
+                  ...section.questions.map(q => ({ type: 'question' as const, item: q, order: q.order })),
+                  ...section.texts.map(t => ({ type: 'text' as const, item: t, order: t.order }))
+                ].sort((a, b) => a.order - b.order)
+                
+                const contentItems = (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragEnd={(event) => handleDragEnd(event, section.id)}
+                    modifiers={[restrictToVerticalAxis]}
                   >
-                    {section.questions.map((question, questionIndex) => {
-                      const isPending = typeof question.id === 'string' && pendingQuestions.has(question.id)
-                      const globalIndex = sections.slice(0, sectionIndex).reduce((acc, s) => acc + s.questions.length, 0) + questionIndex
-                      const isQuestionActive = activeQuestionId === question.id
-                      // Question is editable only if not in preview mode AND it's the active question
-                      const isQuestionEditable = !isPreviewMode && isQuestionActive
-                      
-                      return (
-                        <div 
-                          key={question.id} 
-                          className="relative"
-                          data-question-id={question.id}
-                        >
-                          {!isPreviewMode && (
-                            <div className="absolute -left-8 top-4 text-sm text-gray-400">
-                              {globalIndex + 1}
+                    <SortableContext
+                      items={questionIds}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div 
+                        className="space-y-3"
+                        onClick={() => setActiveSectionId(section.id)}
+                      >
+                        {combinedItems.map((combined, itemIndex) => {
+                          if (combined.type === 'question') {
+                            const question = combined.item
+                            const isPending = typeof question.id === 'string' && pendingQuestions.has(question.id)
+                            const globalIndex = sections.slice(0, sectionIndex).reduce((acc, s) => acc + s.questions.length, 0) + itemIndex
+                            const isQuestionActive = activeQuestionId === question.id
+                            const isQuestionEditable = !isPreviewMode && isQuestionActive
+                            
+                            return (
+                              <div 
+                                key={question.id} 
+                                className="relative"
+                                data-question-id={question.id}
+                              >
+                            <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
+                              <QuestionCardGForm
+                                question={questionToQuestionData(question)}
+                                isEditMode={isQuestionEditable}
+                                sections={sectionsInfo}
+                                onUpdate={(updatedQuestionData) => {
+                                  const updatedQuestion = questionDataToQuestion(updatedQuestionData, section.id)
+                                  handleUpdateQuestion(updatedQuestion)
+                                }}
+                                onDelete={() => handleDeleteQuestion(question.id)}
+                                onDuplicate={() => handleDuplicateQuestion(question.id)}
+                                onFocus={() => {
+                                  setActiveQuestionId(question.id)
+                                  setActiveSectionId(section.id)
+                                  setActiveElementType('question')
+                                }}
+                              />
                             </div>
-                          )}
-                          <div className={isPending ? "opacity-60 pointer-events-none" : ""}>
-                            <QuestionCardGForm
-                              question={questionToQuestionData(question)}
-                              isEditMode={isQuestionEditable}
-                              sections={sectionsInfo}
-                              onUpdate={(updatedQuestionData) => {
-                                const updatedQuestion = questionDataToQuestion(updatedQuestionData, section.id)
-                                handleUpdateQuestion(updatedQuestion)
-                              }}
-                              onDelete={() => handleDeleteQuestion(question.id)}
-                              onDuplicate={() => handleDuplicateQuestion(question.id)}
+                          </div>
+                        )
+                      } else {
+                        // Text element
+                        const textItem = combined.item
+                        const isTextActive = activeQuestionId === textItem.id && activeElementType === 'text'
+                        
+                        return (
+                          <div 
+                            key={textItem.id}
+                            data-text-id={textItem.id}
+                          >
+                            <TextCard
+                              title={textItem.title}
+                              description={textItem.description}
+                              isActive={isTextActive}
+                              onTitleChange={(title) => handleUpdateText(textItem.id, { title })}
+                              onDescriptionChange={(description) => handleUpdateText(textItem.id, { description })}
                               onFocus={() => {
-                                setActiveQuestionId(question.id)
+                                setActiveQuestionId(textItem.id)
                                 setActiveSectionId(section.id)
-                                setActiveElementType('question')
+                                setActiveElementType('text')
                               }}
                             />
                           </div>
-                        </div>
-                      )
+                        )
+                      }
                     })}
-                  </div>
+                      </div>
+                    </SortableContext>
+                    <DragOverlay>
+                      {activeId && section.questions.find(q => q.id.toString() === activeId) ? (
+                        <div style={{ width: '100%', maxWidth: '800px' }}>
+                          <QuestionCardGForm
+                            question={questionToQuestionData(
+                              section.questions.find(q => q.id.toString() === activeId)!
+                            )}
+                            isEditMode={true}
+                            sections={sectionsInfo}
+                            onUpdate={() => {}}
+                            onDelete={() => {}}
+                            onDuplicate={() => {}}
+                          />
+                        </div>
+                      ) : null}
+                    </DragOverlay>
+                  </DndContext>
                 )
                 
                 return (
@@ -673,7 +922,7 @@ export default function SurveyQuestionsPage() {
                         />
                       </div>
                     )}
-                    {questionsContent}
+                    {contentItems}
                   </div>
                 )
               })}

@@ -16,7 +16,7 @@ interface QuestionFloatingToolbarProps {
   onImportQuestion?: () => void
   onAddSection?: () => void
   activeQuestionId?: number | string | null
-  activeElementType?: 'question' | 'header' | 'section'
+  activeElementType?: 'question' | 'header' | 'section' | 'text'
 }
 
 export function QuestionFloatingToolbar({
@@ -55,6 +55,8 @@ export function QuestionFloatingToolbar({
         targetElement = document.querySelector(`[data-header-card="true"]`)
       } else if (activeElementType === 'section') {
         targetElement = document.querySelector(`[data-section-id="${activeQuestionId}"]`)
+      } else if (activeElementType === 'text') {
+        targetElement = document.querySelector(`[data-text-id="${activeQuestionId}"]`)
       }
       
       if (!targetElement) return
