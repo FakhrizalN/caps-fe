@@ -7,10 +7,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Copy, EllipsisVertical, Merge, Move, Trash } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Bold, Copy, EllipsisVertical, Italic, Link as LinkIcon, List, ListOrdered, Merge, Move, Trash, Underline } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 
 interface SectionHeaderCardProps {
   sectionNumber: number
@@ -41,22 +39,73 @@ export function SectionHeaderCard({
   onMove,
   onMerge
 }: SectionHeaderCardProps) {
-  const [isEditingTitle, setIsEditingTitle] = useState(false)
-  const [isEditingDescription, setIsEditingDescription] = useState(false)
   const [localTitle, setLocalTitle] = useState(title)
   const [localDescription, setLocalDescription] = useState(description)
+  const [focusedElement, setFocusedElement] = useState<'title' | 'description' | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const titleRef = useRef<HTMLDivElement>(null)
+  const descriptionRef = useRef<HTMLDivElement>(null)
   
   // Check if this is the first section (survey header)
   const isFirstSection = sectionNumber === 1
   
-  // Sync local state with props when they change
+  // Initialize contentEditable with HTML content
   useEffect(() => {
-    setLocalTitle(title)
-  }, [title])
+    if (!isInitialized && titleRef.current) {
+      titleRef.current.innerHTML = title || ""
+      setIsInitialized(true)
+    }
+  }, [title, isInitialized])
   
   useEffect(() => {
-    setLocalDescription(description)
+    if (descriptionRef.current) {
+      descriptionRef.current.innerHTML = description || ""
+    }
   }, [description])
+
+  const applyFormatting = (command: string) => {
+    const element = focusedElement === 'description' ? descriptionRef.current : titleRef.current
+    if (!element) return
+    
+    if (command === "link") {
+      const url = prompt("Enter URL:")
+      if (url) {
+        document.execCommand("createLink", false, url)
+        element.focus()
+      }
+    } else {
+      document.execCommand(command, false, undefined)
+      element.focus()
+    }
+  }
+
+  const handleTitleInput = () => {
+    if (titleRef.current) {
+      const content = titleRef.current.innerHTML
+      setLocalTitle(content)
+    }
+  }
+
+  const handleTitleBlur = () => {
+    setFocusedElement(null)
+    if (localTitle !== title) {
+      onTitleChange?.(localTitle)
+    }
+  }
+
+  const handleDescriptionInput = () => {
+    if (descriptionRef.current) {
+      const content = descriptionRef.current.innerHTML
+      setLocalDescription(content)
+    }
+  }
+
+  const handleDescriptionBlur = () => {
+    setFocusedElement(null)
+    if (localDescription !== description) {
+      onDescriptionChange?.(localDescription)
+    }
+  }
 
   return (
     <div data-section-id={sectionId}>
@@ -76,107 +125,101 @@ export function SectionHeaderCard({
         <div className="flex items-start justify-between gap-4">
           <div className={`flex-1 ${isFirstSection ? 'space-y-2' : 'space-y-4'}`}>
             {/* Section Title */}
-            {isEditingTitle ? (
-              <Input
-                value={localTitle}
-                onChange={(e) => setLocalTitle(e.target.value)}
-                onBlur={() => {
-                  setIsEditingTitle(false)
-                  if (localTitle !== title) {
-                    onTitleChange?.(localTitle)
-                  }
-                }}
-                className={`${isFirstSection ? 'text-3xl font-normal' : 'text-lg font-medium text-gray-800'} border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-b-primary px-0 py-1`}
-                autoFocus
-                dir="ltr"
-              />
-            ) : (
-              isFirstSection ? (
-                <h1 
-                  className="text-3xl font-normal cursor-text hover:bg-gray-50 px-1 py-1 -mx-1 rounded transition-colors"
-                  onClick={() => setIsEditingTitle(true)}
-                  dir="ltr"
-                >
-                  {localTitle}
-                </h1>
-              ) : (
-                <div>
-                  <h2 
-                    className="text-lg font-medium text-gray-800 cursor-text hover:bg-gray-50 px-1 py-1 -mx-1 rounded transition-colors"
-                    onClick={() => setIsEditingTitle(true)}
-                    dir="ltr"
-                  >
-                    {localTitle}
-                  </h2>
-                  <div className="w-full h-0 mt-2 border-t border-gray-300" />
-                </div>
-              )
-            )}
+            <div
+              ref={titleRef}
+              contentEditable
+              suppressContentEditableWarning
+              onInput={handleTitleInput}
+              onFocus={() => setFocusedElement('title')}
+              onBlur={handleTitleBlur}
+              className={`${isFirstSection ? 'text-3xl font-normal' : 'text-lg font-medium text-gray-800'} border-b border-transparent px-0 py-1 outline-none focus:border-gray-300 min-h-[28px] empty:before:content-['Section_title'] empty:before:text-gray-400`}
+              dir="ltr"
+            />
+            {!isFirstSection && <div className="w-full h-0 mt-2 border-t border-gray-300" />}
 
             {/* Section Description */}
-            {isEditingDescription ? (
-              isFirstSection ? (
-                <Input
-                  value={localDescription}
-                  onChange={(e) => setLocalDescription(e.target.value)}
-                  onBlur={() => {
-                    setIsEditingDescription(false)
-                    if (localDescription !== description) {
-                      onDescriptionChange?.(localDescription)
-                    }
-                  }}
-                  className="text-sm border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-b-primary px-0 py-1"
-                  placeholder="Form description"
-                  autoFocus
-                  dir="ltr"
-                />
-              ) : (
-                <Textarea
-                  value={localDescription}
-                  onChange={(e) => setLocalDescription(e.target.value)}
-                  onBlur={() => {
-                    setIsEditingDescription(false)
-                    if (localDescription !== description) {
-                      onDescriptionChange?.(localDescription)
-                    }
-                  }}
-                  className="text-sm font-medium text-gray-900 border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-b-primary px-0 py-1 min-h-[60px] resize-none"
-                  placeholder="Description"
-                  autoFocus
-                  dir="ltr"
-                />
-              )
-            ) : (
-              isFirstSection ? (
-                <p 
-                  className="text-sm text-gray-600 cursor-text hover:bg-gray-50 px-1 py-1 -mx-1 rounded transition-colors min-h-[24px]"
-                  onClick={() => setIsEditingDescription(true)}
-                  dir="ltr"
-                >
-                  {localDescription || "Form description"}
-                </p>
-              ) : (
-                localDescription ? (
-                  <div>
-                    <p 
-                      className="text-sm font-medium text-gray-900 cursor-text hover:bg-gray-50 px-1 py-1 -mx-1 rounded transition-colors min-h-[24px]"
-                      onClick={() => setIsEditingDescription(true)}
-                      dir="ltr"
-                    >
-                      {localDescription}
-                    </p>
-                    <div className="w-full h-0 mt-2 border-t border-gray-300" />
-                  </div>
-                ) : (
-                  <div 
-                    className="text-sm font-medium text-gray-400 cursor-text hover:bg-gray-50 px-1 py-1 -mx-1 rounded transition-colors min-h-[24px]"
-                    onClick={() => setIsEditingDescription(true)}
-                    dir="ltr"
-                  >
-                    Description
-                  </div>
-                )
-              )
+            <div
+              ref={descriptionRef}
+              contentEditable
+              suppressContentEditableWarning
+              onInput={handleDescriptionInput}
+              onFocus={() => setFocusedElement('description')}
+              onBlur={handleDescriptionBlur}
+              className={`${isFirstSection ? 'text-sm text-gray-600' : 'text-sm font-medium text-gray-900'} border-b border-transparent px-0 py-1 outline-none focus:border-gray-300 min-h-[24px] empty:before:content-['${isFirstSection ? 'Form_description' : 'Description'}'] empty:before:text-gray-400`}
+              dir="ltr"
+            />
+            {!isFirstSection && <div className="w-full h-0 mt-2 border-t border-gray-300" />}
+
+            {/* Formatting Toolbar - Only show when focused */}
+            {focusedElement && (
+            <div className="flex items-center gap-0 -mt-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-gray-100 rounded"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyFormatting("bold")}
+                type="button"
+                title="Bold"
+              >
+                <Bold className="h-4 w-4 text-gray-600" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-gray-100 rounded"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyFormatting("italic")}
+                type="button"
+                title="Italic"
+              >
+                <Italic className="h-4 w-4 text-gray-600" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-gray-100 rounded"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyFormatting("underline")}
+                type="button"
+                title="Underline"
+              >
+                <Underline className="h-4 w-4 text-gray-600" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-gray-100 rounded"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyFormatting("link")}
+                type="button"
+                title="Insert link"
+              >
+                <LinkIcon className="h-4 w-4 text-gray-600" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-gray-100 rounded"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyFormatting("insertUnorderedList")}
+                type="button"
+                title="Bulleted list"
+              >
+                <List className="h-4 w-4 text-gray-600" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-gray-100 rounded"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyFormatting("insertOrderedList")}
+                type="button"
+                title="Numbered list"
+              >
+                <ListOrdered className="h-4 w-4 text-gray-600" />
+              </Button>
+            </div>
             )}
           </div>
 

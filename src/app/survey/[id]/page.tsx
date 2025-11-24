@@ -189,17 +189,30 @@ export default function SurveyQuestionsPage() {
         const sectionsWithQuestions = await Promise.all(
           sectionsData.map(async (section, index) => {
             const questions = await getQuestions(surveyId, section.id)
+            
+            // Separate text elements (questions with type "text") from regular questions
+            const regularQuestions = questions.filter(q => q.question_type !== 'text')
+            const textElements: TextElement[] = questions
+              .filter(q => q.question_type === 'text')
+              .map(q => ({
+                id: q.id.toString(),
+                title: q.text,
+                description: q.description || "",
+                sectionId: q.section_id,
+                order: q.order
+              }))
+            
             // For the first section, ensure title and description match survey
             if (index === 0) {
               return { 
                 ...section, 
                 title: survey.title,
                 description: survey.description || "",
-                questions, 
-                texts: [] 
+                questions: regularQuestions, 
+                texts: textElements 
               }
             }
-            return { ...section, questions, texts: [] }
+            return { ...section, questions: regularQuestions, texts: textElements }
           })
         )
         if (!isMounted) return
@@ -366,7 +379,7 @@ export default function SurveyQuestionsPage() {
     }, 500) // 500ms delay
   }
 
-  const handleAddText = () => {
+  const handleAddText = async () => {
     // Find the target section and insertion position
     let targetSection: SectionWithQuestions | undefined
     let insertIndex = -1
@@ -403,9 +416,9 @@ export default function SurveyQuestionsPage() {
 
     if (!targetSection) return
 
-    // Create text element
+    // Create temporary text element for immediate UI update
     const tempId = `text-${Date.now()}`
-    const textElement: TextElement = {
+    const tempTextElement: TextElement = {
       id: tempId,
       title: "",
       description: "",
@@ -413,12 +426,15 @@ export default function SurveyQuestionsPage() {
       order: insertIndex + 1
     }
 
-    // Add to section
+    // Add to pending
+    setPendingQuestions(prev => new Set(prev).add(tempId))
+
+    // Add temporary element to section
     setSections(prevSections => prevSections.map(s => 
       s.id === targetSection!.id 
         ? { 
             ...s, 
-            texts: [...s.texts, textElement]
+            texts: [...s.texts, tempTextElement]
           }
         : s
     ))
@@ -427,6 +443,114 @@ export default function SurveyQuestionsPage() {
     setActiveQuestionId(tempId)
     setActiveSectionId(targetSection.id)
     setActiveElementType('text')
+
+    // Save to database as question with type "text"
+    try {
+      const newQuestion = await createQuestion(surveyId, targetSection.id, {
+        text: "Text",
+        question_type: "text",
+        options: [],
+        description: "",
+        order: insertIndex + 1,
+        is_required: false
+      })
+
+      // Convert question to text element
+      const textElement: TextElement = {
+        id: newQuestion.id.toString(),
+        title: newQuestion.text,
+        description: newQuestion.description || "",
+        sectionId: newQuestion.section_id,
+        order: newQuestion.order
+      }
+
+      // Replace temp text with real one from database
+      setSections(prevSections => prevSections.map(s => 
+        s.id === targetSection!.id 
+          ? { 
+              ...s, 
+              texts: s.texts.map(t => 
+                t.id === tempId ? textElement : t
+              )
+            }
+          : s
+      ))
+
+      // Update active ID
+      setActiveQuestionId(textElement.id)
+
+      // Remove from pending
+      setPendingQuestions(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(tempId)
+        return newSet
+      })
+    } catch (error) {
+      console.error("Error creating text element:", error)
+      alert("Failed to create text element")
+      
+      // Remove temp text on error
+      setSections(prevSections => prevSections.map(s => 
+        s.id === targetSection!.id 
+          ? { ...s, texts: s.texts.filter(t => t.id !== tempId) }
+          : s
+      ))
+      setPendingQuestions(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(tempId)
+        return newSet
+      })
+    }
+  }
+
+  const handleUpdateText = async (textId: string | number, data: { title?: string; description?: string }) => {
+    try {
+      // Find the section that contains this text
+      const section = sections.find(s => s.texts.some(t => t.id === textId))
+      if (!section) return
+
+      // Skip update for temporary texts (they haven't been saved yet)
+      if (typeof textId === 'string' && textId.startsWith('text-')) {
+        // Just update in local state
+        setSections(sections.map(s => 
+          s.id === section.id
+            ? { ...s, texts: s.texts.map(t => t.id === textId ? { ...t, ...data } : t) }
+            : s
+        ))
+        return
+      }
+
+      // Update in database as question with type "text"
+      const textItem = section.texts.find(t => t.id === textId)
+      if (!textItem) return
+
+      const updatedQuestion = await updateQuestion(surveyId, section.id, parseInt(textId.toString()), {
+        text: data.title !== undefined ? data.title : textItem.title,
+        description: data.description !== undefined ? data.description : textItem.description,
+        question_type: "text",
+        options: [],
+        is_required: false
+      })
+
+      // Convert back to text element
+      const updatedText: TextElement = {
+        id: updatedQuestion.id.toString(),
+        title: updatedQuestion.text,
+        description: updatedQuestion.description || "",
+        sectionId: updatedQuestion.section_id,
+        order: updatedQuestion.order
+      }
+
+      // Update in state
+      setSections(sections.map(s => 
+        s.id === section.id
+          ? { ...s, texts: s.texts.map(t => t.id === textId ? updatedText : t) }
+          : s
+      ))
+    } catch (error) {
+      console.error("Error updating text:", error)
+      alert("Failed to update text")
+    }
   }
 
   const handleUpdateQuestion = async (question: Question) => {
@@ -498,20 +622,38 @@ export default function SurveyQuestionsPage() {
     }
   }
 
-  const handleUpdateText = (textId: string, updates: { title?: string; description?: string }) => {
-    setSections(prevSections => prevSections.map(s => ({
-      ...s,
-      texts: s.texts.map(t => 
-        t.id === textId ? { ...t, ...updates } : t
-      )
-    })))
-  }
+  const handleDeleteText = async (textId: string | number) => {
+    try {
+      // Find the section that contains this text
+      const section = sections.find(s => s.texts.some(t => t.id === textId))
+      if (!section) return
 
-  const handleDeleteText = (textId: string) => {
-    setSections(prevSections => prevSections.map(s => ({
-      ...s,
-      texts: s.texts.filter(t => t.id !== textId)
-    })))
+      // If it's a temporary text, just remove from UI
+      if (typeof textId === 'string' && textId.startsWith('text-')) {
+        setSections(sections.map(s => 
+          s.id === section.id
+            ? { ...s, texts: s.texts.filter(t => t.id !== textId) }
+            : s
+        ))
+        setPendingQuestions(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(textId)
+          return newSet
+        })
+        return
+      }
+
+      // Delete from database (it's stored as a question)
+      await deleteQuestion(surveyId, section.id, parseInt(textId.toString()))
+      setSections(sections.map(s => 
+        s.id === section.id
+          ? { ...s, texts: s.texts.filter(t => t.id !== textId) }
+          : s
+      ))
+    } catch (error) {
+      console.error("Error deleting text:", error)
+      alert("Failed to delete text")
+    }
   }
 
   const handleDuplicateQuestion = async (questionId: number | string) => {

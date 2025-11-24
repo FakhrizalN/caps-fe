@@ -1,7 +1,7 @@
 "use client"
 
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Underline } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 interface TextCardProps {
@@ -23,26 +23,68 @@ export function TextCard({
 }: TextCardProps) {
   const [localTitle, setLocalTitle] = useState(title)
   const [localDescription, setLocalDescription] = useState(description)
-  const [isEditingTitle, setIsEditingTitle] = useState(false)
-  const [isEditingDescription, setIsEditingDescription] = useState(false)
-  const titleRef = useRef<HTMLInputElement>(null)
+  const [focusedElement, setFocusedElement] = useState<'title' | 'description' | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const titleRef = useRef<HTMLDivElement>(null)
+  const descriptionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setLocalTitle(title)
-  }, [title])
+    if (!isInitialized && titleRef.current) {
+      titleRef.current.innerHTML = title || ""
+      setIsInitialized(true)
+    }
+  }, [title, isInitialized])
 
   useEffect(() => {
-    setLocalDescription(description)
+    if (descriptionRef.current) {
+      descriptionRef.current.innerHTML = description || ""
+    }
   }, [description])
 
-  const handleTitleChange = (value: string) => {
-    setLocalTitle(value)
-    onTitleChange?.(value)
+  const applyFormatting = (command: string) => {
+    const element = focusedElement === 'description' ? descriptionRef.current : titleRef.current
+    if (!element) return
+    
+    if (command === "link") {
+      const url = prompt("Enter URL:")
+      if (url) {
+        document.execCommand("createLink", false, url)
+        element.focus()
+      }
+    } else {
+      document.execCommand(command, false, undefined)
+      element.focus()
+    }
   }
 
-  const handleDescriptionChange = (value: string) => {
-    setLocalDescription(value)
-    onDescriptionChange?.(value)
+  const handleTitleInput = () => {
+    if (titleRef.current) {
+      const content = titleRef.current.innerHTML
+      setLocalTitle(content)
+    }
+  }
+
+  const handleTitleBlur = () => {
+    setFocusedElement(null)
+    if (titleRef.current) {
+      const content = titleRef.current.innerHTML
+      onTitleChange?.(content)
+    }
+  }
+
+  const handleDescriptionInput = () => {
+    if (descriptionRef.current) {
+      const content = descriptionRef.current.innerHTML
+      setLocalDescription(content)
+    }
+  }
+
+  const handleDescriptionBlur = () => {
+    setFocusedElement(null)
+    if (descriptionRef.current) {
+      const content = descriptionRef.current.innerHTML
+      onDescriptionChange?.(content)
+    }
   }
 
   return (
@@ -54,62 +96,103 @@ export function TextCard({
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 space-y-4">
             {/* Title */}
-            {isEditingTitle ? (
-              <Input
+            <div>
+              <div
                 ref={titleRef}
-                value={localTitle}
-                onChange={(e) => handleTitleChange(e.target.value)}
-                onBlur={() => setIsEditingTitle(false)}
-                className="text-lg font-medium text-gray-800 border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-b-primary px-0 py-1"
-                placeholder="Title"
-                autoFocus
+                contentEditable
+                suppressContentEditableWarning
+                onInput={handleTitleInput}
+                onFocus={() => setFocusedElement('title')}
+                onBlur={handleTitleBlur}
+                className="text-lg font-medium text-gray-800 border-b border-transparent px-0 py-1 outline-none focus:border-gray-300 min-h-[28px] empty:before:content-['Title'] empty:before:text-gray-400"
                 dir="ltr"
               />
-            ) : (
-              <div>
-                <h2 
-                  className="text-lg font-medium text-gray-800 cursor-text hover:bg-gray-50 px-1 py-1 -mx-1 rounded transition-colors min-h-[28px]"
-                  onClick={() => setIsEditingTitle(true)}
-                  dir="ltr"
-                >
-                  {localTitle || "Title"}
-                </h2>
-                <div className="w-full h-0 mt-2 border-t border-gray-300" />
-              </div>
-            )}
+            </div>
 
             {/* Description */}
-            {isEditingDescription ? (
-              <Textarea
-                value={localDescription}
-                onChange={(e) => handleDescriptionChange(e.target.value)}
-                onBlur={() => setIsEditingDescription(false)}
-                className="text-sm font-medium text-gray-900 border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-b-primary px-0 py-1 min-h-[60px] resize-none"
-                placeholder="Description"
-                autoFocus
+            <div>
+              <div
+                ref={descriptionRef}
+                contentEditable
+                suppressContentEditableWarning
+                onInput={handleDescriptionInput}
+                onFocus={() => setFocusedElement('description')}
+                onBlur={handleDescriptionBlur}
+                className="text-sm font-medium text-gray-900 border-b border-transparent px-0 py-1 outline-none focus:border-gray-300 min-h-[24px] empty:before:content-['Description'] empty:before:text-gray-400"
                 dir="ltr"
               />
-            ) : (
-              localDescription ? (
-                <div>
-                  <p 
-                    className="text-sm font-medium text-gray-900 cursor-text hover:bg-gray-50 px-1 py-1 -mx-1 rounded transition-colors min-h-[24px]"
-                    onClick={() => setIsEditingDescription(true)}
-                    dir="ltr"
-                  >
-                    {localDescription}
-                  </p>
-                  <div className="w-full h-0 mt-2 border-t border-gray-300" />
-                </div>
-              ) : (
-                <div 
-                  className="text-sm font-medium text-gray-400 cursor-text hover:bg-gray-50 px-1 py-1 -mx-1 rounded transition-colors min-h-[24px]"
-                  onClick={() => setIsEditingDescription(true)}
-                  dir="ltr"
-                >
-                  Description
-                </div>
-              )
+            </div>
+
+            {/* Formatting Toolbar - Only show when focused */}
+            {focusedElement && (
+            <div className="flex items-center gap-0 -mt-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-gray-100 rounded"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyFormatting("bold")}
+                type="button"
+                title="Bold"
+              >
+                <Bold className="h-4 w-4 text-gray-600" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-gray-100 rounded"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyFormatting("italic")}
+                type="button"
+                title="Italic"
+              >
+                <Italic className="h-4 w-4 text-gray-600" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-gray-100 rounded"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyFormatting("underline")}
+                type="button"
+                title="Underline"
+              >
+                <Underline className="h-4 w-4 text-gray-600" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-gray-100 rounded"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyFormatting("link")}
+                type="button"
+                title="Insert link"
+              >
+                <LinkIcon className="h-4 w-4 text-gray-600" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-gray-100 rounded"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyFormatting("insertUnorderedList")}
+                type="button"
+                title="Bulleted list"
+              >
+                <List className="h-4 w-4 text-gray-600" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-gray-100 rounded"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyFormatting("insertOrderedList")}
+                type="button"
+                title="Numbered list"
+              >
+                <ListOrdered className="h-4 w-4 text-gray-600" />
+              </Button>
+            </div>
             )}
           </div>
         </div>
