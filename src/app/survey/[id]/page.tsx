@@ -4,8 +4,8 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { QuestionCardGForm, QuestionData } from "@/components/question_card_gform"
 import { QuestionType, SectionInfo } from "@/components/question_content_gform"
 import { QuestionFloatingToolbar } from "@/components/question_floating_toolbar"
-import { QuestionHeaderCard } from "@/components/question_header_card"
 import { QuestionToolbar } from "@/components/question_toolbar"
+import { ReorderSectionsDialog } from "@/components/reorder-sections-dialog"
 import { SectionHeaderCard } from "@/components/section_header_card"
 import { TextCard } from "@/components/text_card"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
@@ -23,6 +23,7 @@ import {
   Section,
   updateQuestion,
   updateSection,
+  updateSurvey,
 } from "@/lib/api"
 import {
   closestCenter,
@@ -72,6 +73,7 @@ export default function SurveyQuestionsPage() {
   const [activeSectionId, setActiveSectionId] = useState<number | null>(null)
   const [activeElementType, setActiveElementType] = useState<'question' | 'header' | 'section' | 'text'>('question')
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false)
 
   // Drag and drop sensors - only vertical dragging
   const sensors = useSensors(
@@ -185,8 +187,18 @@ export default function SurveyQuestionsPage() {
         
         // Fetch questions for each section
         const sectionsWithQuestions = await Promise.all(
-          sectionsData.map(async (section) => {
+          sectionsData.map(async (section, index) => {
             const questions = await getQuestions(surveyId, section.id)
+            // For the first section, ensure title and description match survey
+            if (index === 0) {
+              return { 
+                ...section, 
+                title: survey.title,
+                description: survey.description || "",
+                questions, 
+                texts: [] 
+              }
+            }
             return { ...section, questions, texts: [] }
           })
         )
@@ -599,6 +611,87 @@ export default function SurveyQuestionsPage() {
     }
   }
 
+  const handleReorderSections = async (reorderedSections: { id: number; title: string; order: number }[]) => {
+    try {
+      // Get the section that will be first after reordering
+      const newFirstSection = reorderedSections.find(s => s.order === 1)
+      const oldFirstSection = sections.find(s => s.order === 1)
+      
+      if (!newFirstSection || !oldFirstSection) return
+
+      // Check if first section changed
+      const firstSectionChanged = newFirstSection.id !== oldFirstSection.id
+
+      // Update state immediately for smooth UX
+      let updatedSections = sections.map(section => {
+        const reordered = reorderedSections.find(s => s.id === section.id)
+        return reordered ? { ...section, order: reordered.order } : section
+      }).sort((a, b) => a.order - b.order)
+      
+      setSections(updatedSections)
+
+      // Prepare backend updates
+      const updatePromises: Promise<any>[] = []
+
+      if (firstSectionChanged) {
+        // Get the section that's becoming first
+        const newFirstSectionOriginal = sections.find(s => s.id === newFirstSection.id)
+        
+        if (!newFirstSectionOriginal) return
+
+        // Update survey title to match new first section's title
+        const newSurveyTitle = newFirstSectionOriginal.title
+
+        console.log("First section changed, updating survey title", {
+          oldFirstSectionId: oldFirstSection.id,
+          newFirstSectionId: newFirstSection.id,
+          newSurveyTitle
+        })
+
+        // Update survey title in state and backend
+        setSurveyTitle(newSurveyTitle)
+        updatePromises.push(
+          updateSurvey(surveyId.toString(), { title: newSurveyTitle })
+        )
+      }
+
+      // Update ALL sections with their new order ONLY (no title changes)
+      console.log("Updating section orders")
+      reorderedSections.forEach(section => {
+        const updateData = { order: section.order }
+        console.log(`Updating section ${section.id}:`, updateData)
+        updatePromises.push(
+          updateSection(surveyId, section.id, updateData).then(response => {
+            console.log(`Response for section ${section.id}:`, response)
+            return response
+          })
+        )
+      })
+      
+      await Promise.all(updatePromises)
+      console.log("Sections reordered successfully")
+      
+      // Give a small delay to ensure state is updated before dialog might reopen
+      await new Promise(resolve => setTimeout(resolve, 100))
+    } catch (error) {
+      console.error("Error reordering sections:", error)
+      alert("Failed to reorder sections")
+      // Revert on error - refetch sections and survey
+      const survey = await getSurvey(surveyId.toString())
+      setSurveyTitle(survey.title)
+      setSurveyDescription(survey.description || "")
+      
+      const sectionsData = await getSections(surveyId)
+      const sectionsWithQuestions = await Promise.all(
+        sectionsData.map(async (section) => {
+          const questions = await getQuestions(surveyId, section.id)
+          return { ...section, questions, texts: [] }
+        })
+      )
+      setSections(sectionsWithQuestions)
+    }
+  }
+
   // Mapping between frontend type names and backend type names
   const QUESTION_TYPE_MAPPING = {
     // Frontend -> Backend
@@ -777,14 +870,44 @@ export default function SurveyQuestionsPage() {
               setActiveQuestionId(null)
               setActiveSectionId(null)
             }}>
-              <QuestionHeaderCard
+              <SectionHeaderCard
+                sectionNumber={1}
+                totalSections={sections.length}
                 title={surveyTitle}
                 description={surveyDescription}
-                onTitleChange={setSurveyTitle}
-                onDescriptionChange={setSurveyDescription}
-                sectionNumber={sections.length > 1 ? 1 : undefined}
-                totalSections={sections.length > 1 ? sections.length : undefined}
+                sectionId={sections[0]?.id}
                 isActive={activeElementType === 'header'}
+                onTitleChange={async (newTitle) => {
+                  setSurveyTitle(newTitle)
+                  try {
+                    await updateSurvey(surveyId.toString(), { title: newTitle })
+                    // Also update the first section's title to keep them in sync
+                    if (sections[0]) {
+                      await updateSection(surveyId, sections[0].id, { title: newTitle })
+                      setSections(sections.map((s, idx) => 
+                        idx === 0 ? { ...s, title: newTitle } : s
+                      ))
+                    }
+                  } catch (error) {
+                    console.error("Error updating survey title:", error)
+                  }
+                }}
+                onDescriptionChange={async (newDesc) => {
+                  setSurveyDescription(newDesc)
+                  try {
+                    await updateSurvey(surveyId.toString(), { description: newDesc })
+                    // Also update the first section's description to keep them in sync
+                    if (sections[0]) {
+                      await updateSection(surveyId, sections[0].id, { description: newDesc })
+                      setSections(sections.map((s, idx) => 
+                        idx === 0 ? { ...s, description: newDesc } : s
+                      ))
+                    }
+                  } catch (error) {
+                    console.error("Error updating survey description:", error)
+                  }
+                }}
+                onMove={() => setIsReorderDialogOpen(true)}
               />
             </div>
 
@@ -919,6 +1042,7 @@ export default function SurveyQuestionsPage() {
                           onTitleChange={(title) => handleUpdateSection(section.id, { title })}
                           onDescriptionChange={(description) => handleUpdateSection(section.id, { description })}
                           onDelete={() => handleDeleteSection(section.id)}
+                          onMove={() => setIsReorderDialogOpen(true)}
                         />
                       </div>
                     )}
@@ -937,6 +1061,18 @@ export default function SurveyQuestionsPage() {
             )}
           </div>
         </div>
+
+        {/* Reorder Sections Dialog */}
+        <ReorderSectionsDialog
+          open={isReorderDialogOpen}
+          onOpenChange={setIsReorderDialogOpen}
+          sections={sections.map((s, index) => ({
+            id: s.id,
+            title: index === 0 ? surveyTitle : (s.title || `Section ${index + 1}`),
+            order: s.order
+          }))}
+          onReorder={handleReorderSections}
+        />
       </SidebarInset>
     </SidebarProvider>
   )
