@@ -16,6 +16,7 @@ interface SectionHeaderCardProps {
   title: string
   description: string
   sectionId?: number
+  sectionOrder?: number
   isActive?: boolean
   onTitleChange?: (title: string) => void
   onDescriptionChange?: (description: string) => void
@@ -31,6 +32,7 @@ export function SectionHeaderCard({
   title,
   description,
   sectionId,
+  sectionOrder = 1,
   isActive = false,
   onTitleChange,
   onDescriptionChange,
@@ -125,7 +127,7 @@ export function SectionHeaderCard({
         isActive ? 'border-l-4 border-l-primary' : ''
       }`}>
         <div className="flex items-start justify-between gap-4">
-          <div className={`flex-1 ${isFirstSection ? 'space-y-2' : 'space-y-4'}`}>
+          <div className={`flex-1 ${isFirstSection ? 'space-y-2' : 'space-y-2'}`}>
             {/* Section Title */}
             <div
               ref={titleRef}
@@ -137,7 +139,6 @@ export function SectionHeaderCard({
               className={`${isFirstSection ? 'text-3xl font-normal' : 'text-lg font-medium text-gray-800'} border-b border-transparent px-0 py-1 outline-none focus:border-gray-300 min-h-[28px] empty:before:content-['Section_title'] empty:before:text-gray-400`}
               dir="ltr"
             />
-            {!isFirstSection && <div className="w-full h-0 mt-2 border-t border-gray-300" />}
 
             {/* Section Description */}
             <div
@@ -150,7 +151,6 @@ export function SectionHeaderCard({
               className={`${isFirstSection ? 'text-sm text-gray-600' : 'text-sm font-medium text-gray-900'} border-b border-transparent px-0 py-1 outline-none focus:border-gray-300 min-h-[24px] empty:before:content-['${isFirstSection ? 'Form_description' : 'Description'}'] empty:before:text-gray-400`}
               dir="ltr"
             />
-            {!isFirstSection && <div className="w-full h-0 mt-2 border-t border-gray-300" />}
 
             {/* Formatting Toolbar - Only show when focused */}
             {focusedElement && (
@@ -238,22 +238,28 @@ export function SectionHeaderCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={onDuplicate}>
-                  <Copy className="mr-2 h-4 w-4" />
-                  Duplicate Section
-                </DropdownMenuItem>
+                {onDuplicate && (
+                  <DropdownMenuItem onClick={onDuplicate}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Duplicate Section
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={onMove}>
                   <Move className="mr-2 h-4 w-4" />
                   Move Section
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
-                  <Trash className="mr-2 h-4 w-4" />
-                  Delete Section
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onMerge}>
-                  <Merge className="mr-2 h-4 w-4" />
-                  Merge with above
-                </DropdownMenuItem>
+                {onDelete && (
+                  <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+                    <Trash className="mr-2 h-4 w-4" />
+                    Delete Section
+                  </DropdownMenuItem>
+                )}
+                {sectionOrder !== 1 && onMerge && (
+                  <DropdownMenuItem onClick={onMerge}>
+                    <Merge className="mr-2 h-4 w-4" />
+                    Merge with above
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

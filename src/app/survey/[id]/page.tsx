@@ -12,36 +12,36 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/co
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
-    createQuestion,
-    createSection,
-    deleteQuestion,
-    deleteSection,
-    getQuestions,
-    getSections,
-    getSurvey,
-    Question,
-    Section,
-    updateQuestion,
-    updateSection,
-    updateSurvey,
+  createQuestion,
+  createSection,
+  deleteQuestion,
+  deleteSection,
+  getQuestions,
+  getSections,
+  getSurvey,
+  Question,
+  Section,
+  updateQuestion,
+  updateSection,
+  updateSurvey,
 } from "@/lib/api"
 import {
-    closestCenter,
-    DndContext,
-    DragEndEvent,
-    DragOverlay,
-    DragStartEvent,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core"
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import {
-    arrayMove,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    verticalListSortingStrategy,
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -753,6 +753,163 @@ export default function SurveyQuestionsPage() {
     }
   }
 
+  const handleDuplicateSection = async (sectionId: number) => {
+    try {
+      const section = sections.find(s => s.id === sectionId)
+      if (!section) return
+
+      // Create duplicate section
+      const duplicateSection = await createSection(surveyId, {
+        title: `${section.title} (Copy)`,
+        description: section.description || "",
+        order: section.order + 1
+      })
+
+      // Duplicate all questions in the section
+      const duplicatedQuestions = await Promise.all(
+        section.questions.map(async (question) => {
+          return await createQuestion(surveyId, duplicateSection.id, {
+            text: question.text,
+            question_type: question.question_type,
+            options: question.options,
+            description: question.description,
+            order: question.order,
+            is_required: question.is_required
+          })
+        })
+      )
+
+      // Duplicate all text elements in the section
+      const duplicatedTexts = await Promise.all(
+        section.texts.map(async (text) => {
+          return await createQuestion(surveyId, duplicateSection.id, {
+            text: text.title,
+            question_type: "text",
+            options: [],
+            description: text.description,
+            order: text.order,
+            is_required: false
+          })
+        })
+      )
+
+      // Convert duplicated text questions to TextElement format
+      const textElements: TextElement[] = duplicatedTexts.map(q => ({
+        id: q.id.toString(),
+        title: q.text,
+        description: q.description || "",
+        sectionId: q.section_id,
+        order: q.order
+      }))
+
+      // Insert the duplicated section after the original
+      setSections(prevSections => {
+        const sectionIndex = prevSections.findIndex(s => s.id === sectionId)
+        return [
+          ...prevSections.slice(0, sectionIndex + 1),
+          { ...duplicateSection, questions: duplicatedQuestions, texts: textElements },
+          ...prevSections.slice(sectionIndex + 1)
+        ]
+      })
+    } catch (error) {
+      console.error("Error duplicating section:", error)
+      alert("Failed to duplicate section")
+    }
+  }
+
+  const handleMergeSection = async (sectionId: number) => {
+    try {
+      const sectionIndex = sections.findIndex(s => s.id === sectionId)
+      if (sectionIndex <= 0) {
+        alert("Cannot merge the first section")
+        return
+      }
+
+      const currentSection = sections[sectionIndex]
+      const previousSection = sections[sectionIndex - 1]
+
+      if (!currentSection || !previousSection) return
+
+      // Get the highest order in the previous section
+      const allItemsInPrevious = [...previousSection.questions, ...previousSection.texts]
+      const maxOrder = allItemsInPrevious.length > 0 
+        ? Math.max(...allItemsInPrevious.map(item => item.order))
+        : 0
+
+      // Move all questions from current section to previous section
+      // We need to create new questions in the previous section and delete from current
+      const movedQuestions = await Promise.all(
+        currentSection.questions.map(async (question, index) => {
+          // Create new question in previous section
+          const newQuestion = await createQuestion(surveyId, previousSection.id, {
+            text: question.text,
+            question_type: question.question_type,
+            options: question.options,
+            description: question.description,
+            is_required: question.is_required,
+            order: maxOrder + index + 1
+          })
+          
+          // Delete old question from current section
+          await deleteQuestion(surveyId, currentSection.id, question.id as number)
+          
+          return newQuestion
+        })
+      )
+
+      // Move all text elements from current section to previous section
+      const movedTexts = await Promise.all(
+        currentSection.texts.map(async (text, index) => {
+          // Create new text question in previous section
+          const newText = await createQuestion(surveyId, previousSection.id, {
+            text: text.title,
+            question_type: "text",
+            options: [],
+            description: text.description,
+            is_required: false,
+            order: maxOrder + currentSection.questions.length + index + 1
+          })
+          
+          // Delete old text from current section
+          await deleteQuestion(surveyId, currentSection.id, parseInt(text.id))
+          
+          return newText
+        })
+      )
+
+      // Convert moved text questions to TextElement format
+      const textElements: TextElement[] = movedTexts.map(q => ({
+        id: q.id.toString(),
+        title: q.text,
+        description: q.description || "",
+        sectionId: q.section_id,
+        order: q.order
+      }))
+
+      // Delete the current section
+      await deleteSection(surveyId, sectionId)
+
+      // Update state
+      setSections(prevSections => {
+        return prevSections
+          .filter(s => s.id !== sectionId)
+          .map(s => {
+            if (s.id === previousSection.id) {
+              return {
+                ...s,
+                questions: [...s.questions, ...movedQuestions],
+                texts: [...s.texts, ...textElements]
+              }
+            }
+            return s
+          })
+      })
+    } catch (error) {
+      console.error("Error merging section:", error)
+      alert("Failed to merge section")
+    }
+  }
+
   const handleReorderSections = async (reorderedSections: { id: number; title: string; order: number }[]) => {
     try {
       // Get the section that will be first after reordering
@@ -1018,6 +1175,7 @@ export default function SurveyQuestionsPage() {
                 title={surveyTitle}
                 description={surveyDescription}
                 sectionId={sections[0]?.id}
+                sectionOrder={sections[0]?.order}
                 isActive={activeElementType === 'header'}
                 onTitleChange={async (newTitle) => {
                   setSurveyTitle(newTitle)
@@ -1050,6 +1208,7 @@ export default function SurveyQuestionsPage() {
                   }
                 }}
                 onMove={() => setIsReorderDialogOpen(true)}
+                onDuplicate={sections[0] ? () => handleDuplicateSection(sections[0].id) : undefined}
               />
             </div>
 
@@ -1180,11 +1339,14 @@ export default function SurveyQuestionsPage() {
                           title={section.title}
                           description={section.description || ""}
                           sectionId={section.id}
+                          sectionOrder={section.order}
                           isActive={activeElementType === 'section' && activeQuestionId === section.id}
                           onTitleChange={(title) => handleUpdateSection(section.id, { title })}
                           onDescriptionChange={(description) => handleUpdateSection(section.id, { description })}
                           onDelete={() => handleDeleteSection(section.id)}
+                          onDuplicate={() => handleDuplicateSection(section.id)}
                           onMove={() => setIsReorderDialogOpen(true)}
+                          onMerge={() => handleMergeSection(section.id)}
                         />
                       </div>
                     )}
