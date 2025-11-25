@@ -29,15 +29,17 @@ export function TextCard({
   const descriptionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!isInitialized && titleRef.current) {
+    if (titleRef.current) {
       titleRef.current.innerHTML = title || ""
+      setLocalTitle(title)
       setIsInitialized(true)
     }
-  }, [title, isInitialized])
+  }, [title])
 
   useEffect(() => {
     if (descriptionRef.current) {
       descriptionRef.current.innerHTML = description || ""
+      setLocalDescription(description)
     }
   }, [description])
 

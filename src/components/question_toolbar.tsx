@@ -20,6 +20,10 @@ interface QuestionToolbarProps {
   onTabChange?: (tab: "questions" | "responses" | "settings") => void
   onPreviewToggle?: () => void
   onPublish?: () => void
+  onUndo?: () => void
+  onRedo?: () => void
+  canUndo?: boolean
+  canRedo?: boolean
 }
 
 export function QuestionToolbar({
@@ -29,7 +33,11 @@ export function QuestionToolbar({
   surveyId,
   onTabChange,
   onPreviewToggle,
-  onPublish
+  onPublish,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false
 }: QuestionToolbarProps) {
   const router = useRouter()
   const [currentTab, setCurrentTab] = useState(activeTab)
@@ -108,10 +116,22 @@ export function QuestionToolbar({
 
         {/* Right: Action Buttons */}
         <div className="flex items-center gap-2 min-w-[280px] justify-end">
-          <Button variant="ghost" size="icon" title="Undo">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            title="Undo"
+            onClick={onUndo}
+            disabled={!canUndo}
+          >
             <Undo2 className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" title="Redo">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            title="Redo"
+            onClick={onRedo}
+            disabled={!canRedo}
+          >
             <Redo2 className="h-4 w-4" />
           </Button>
           

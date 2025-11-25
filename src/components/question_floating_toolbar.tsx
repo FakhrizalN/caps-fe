@@ -1,5 +1,6 @@
 "use client"
 
+import { ImportQuestionDialog } from "@/components/import-question-dialog"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -13,7 +14,7 @@ import { useEffect, useState } from "react"
 interface QuestionFloatingToolbarProps {
   onAddQuestion?: () => void
   onAddText?: () => void
-  onImportQuestion?: () => void
+  onImportQuestion?: (file: File) => void
   onAddSection?: () => void
   activeQuestionId?: number | string | null
   activeElementType?: 'question' | 'header' | 'section' | 'text'
@@ -33,6 +34,7 @@ export function QuestionFloatingToolbar({
     top: '50%',
     transform: 'translateY(-50%)',
   })
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
 
   useEffect(() => {
     const updateToolbarPosition = () => {
@@ -169,7 +171,7 @@ export function QuestionFloatingToolbar({
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={onImportQuestion}
+                onClick={() => setIsImportDialogOpen(true)}
                 className="h-12 w-12 hover:bg-gray-100"
               >
                 <Upload className="h-6 w-6 text-gray-600" />
@@ -200,6 +202,15 @@ export function QuestionFloatingToolbar({
           </Tooltip>
         </TooltipProvider>
       </div>
+
+      {/* Import Question Dialog */}
+      <ImportQuestionDialog
+        open={isImportDialogOpen}
+        onOpenChange={setIsImportDialogOpen}
+        onImport={(file) => {
+          onImportQuestion?.(file)
+        }}
+      />
     </div>
   )
 }
