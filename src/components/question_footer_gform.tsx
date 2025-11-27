@@ -16,6 +16,7 @@ import { useState } from "react"
 interface QuestionFooterProps {
   required: boolean
   questionId: string
+  questionType?: string
   showDescription?: boolean
   responseValidation?: boolean
   onRequiredChange?: (required: boolean) => void
@@ -28,6 +29,7 @@ interface QuestionFooterProps {
 export function QuestionFooterGForm({
   required,
   questionId,
+  questionType,
   showDescription = false,
   responseValidation = false,
   onRequiredChange,
@@ -101,11 +103,13 @@ export function QuestionFooterGForm({
             Description
             {showDescription && <span className="ml-auto text-xs text-primary">✓</span>}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleResponseValidationClick}>
-            <ShieldCheck className="h-4 w-4 mr-2" />
-            Response validation
-            {responseValidation && <span className="ml-auto text-xs text-primary">✓</span>}
-          </DropdownMenuItem>
+          {questionType === 'multiple_choice' && (
+            <DropdownMenuItem onClick={handleResponseValidationClick}>
+              <ShieldCheck className="h-4 w-4 mr-2" />
+              Response validation
+              {responseValidation && <span className="ml-auto text-xs text-primary">✓</span>}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

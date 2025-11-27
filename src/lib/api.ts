@@ -206,6 +206,11 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   
   console.log('fetchWithAuth called for:', url, { hasToken: !!accessToken })
   
+  // Log request body for debugging
+  if (options.body) {
+    console.log('Request body:', options.body)
+  }
+  
   if (!accessToken) {
     console.error('No access token found in localStorage')
     throw new Error('Not authenticated')
@@ -243,8 +248,15 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   }
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
+    const errorText = await response.text()
+    let error: any = {}
+    try {
+      error = JSON.parse(errorText)
+    } catch (e) {
+      error = { detail: errorText }
+    }
     console.error('API Error Response:', error)
+    console.error('Response status:', response.status)
     throw new Error(error.detail || JSON.stringify(error) || 'Request failed')
   }
 
@@ -923,6 +935,19 @@ export interface Question {
   is_required: boolean
   created_at?: string
   section_id: number
+  branches?: QuestionBranch[]
+}
+
+export interface QuestionBranch {
+  id?: number
+  question_id?: number
+  answer_value: string // The option ID or value that triggers this branch
+  next_section: number // Section ID to navigate to
+}
+
+export interface CreateQuestionBranchData {
+  answer_value: string
+  next_section: number
 }
 
 export interface CreateQuestionData {
@@ -945,6 +970,7 @@ export interface UpdateQuestionData {
   description?: string
   order?: number
   is_required?: boolean
+  branches?: Array<{ answer_value: string; next_section: number }>
 }
 
 /**
@@ -985,11 +1011,38 @@ export async function createQuestion(surveyId: number, sectionId: number, data: 
  * Update a question (PATCH for partial update)
  */
 export async function updateQuestion(surveyId: number, sectionId: number, questionId: number, data: UpdateQuestionData): Promise<Question> {
-  // Stringify options if it's an array/object
-  const payload = {
-    ...data,
-    options: data.options ? JSON.stringify(data.options) : undefined
+  // Build payload
+  const payload: any = { ...data }
+  
+  // If branches are present, options should already be cleaned (array of strings)
+  // Otherwise, handle backward compatibility with old format
+  if (data.branches && data.branches.length > 0) {
+    // Options should be array of strings for branch validation
+    // Send as-is (already cleaned in handleUpdateQuestion)
+    payload.options = data.options
+  } else {
+    // Parse and stringify options for backward compatibility
+    let parsedOptions = data.options
+    if (data.options !== undefined) {
+      if (typeof data.options === 'string') {
+        try {
+          parsedOptions = JSON.parse(data.options)
+        } catch (e) {
+          parsedOptions = data.options
+        }
+      }
+    }
+    
+    // Stringify options if it's an array/object
+    if (typeof parsedOptions === 'string') {
+      payload.options = parsedOptions
+    } else {
+      payload.options = JSON.stringify(parsedOptions)
+    }
   }
+  
+  // Branches should be sent as-is (array of objects)
+  // Backend expects: [{ answer_value: string, next_section: number }]
   
   return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/questions/${questionId}/`, {
     method: 'PATCH',
@@ -1002,6 +1055,44 @@ export async function updateQuestion(surveyId: number, sectionId: number, questi
  */
 export async function deleteQuestion(surveyId: number, sectionId: number, questionId: number): Promise<void> {
   return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/questions/${questionId}/`, {
+    method: 'DELETE',
+  })
+}
+
+/**
+ * Get all branches for a question
+ */
+export async function getQuestionBranches(surveyId: number, sectionId: number, questionId: number): Promise<QuestionBranch[]> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/questions/${questionId}/branches/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Create a new branch for a question
+ */
+export async function createQuestionBranch(surveyId: number, sectionId: number, questionId: number, data: CreateQuestionBranchData): Promise<QuestionBranch> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/questions/${questionId}/branches/`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Update a question branch
+ */
+export async function updateQuestionBranch(surveyId: number, sectionId: number, questionId: number, branchId: number, data: Partial<CreateQuestionBranchData>): Promise<QuestionBranch> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/questions/${questionId}/branches/${branchId}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Delete a question branch
+ */
+export async function deleteQuestionBranch(surveyId: number, sectionId: number, questionId: number, branchId: number): Promise<void> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/questions/${questionId}/branches/${branchId}/`, {
     method: 'DELETE',
   })
 }

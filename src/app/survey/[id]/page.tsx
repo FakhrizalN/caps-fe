@@ -190,9 +190,44 @@ export default function SurveyQuestionsPage() {
           sectionsData.map(async (section, index) => {
             const questions = await getQuestions(surveyId, section.id)
             
+            // Process questions to merge branches into options navigation
+            const processedQuestions = questions.map(q => {
+              // Parse options
+              let options = q.options
+              if (typeof options === 'string') {
+                try {
+                  options = JSON.parse(options)
+                } catch (e) {
+                  options = []
+                }
+              }
+
+              // Convert simple string array to object format if needed
+              // Backend stores as ["label1", "label2"] but frontend needs [{id, label}]
+              if (Array.isArray(options) && options.length > 0 && typeof options[0] === 'string') {
+                options = options.map((label, idx) => ({
+                  id: String(idx + 1),
+                  label: label
+                }))
+              }
+
+              // Add navigation to options based on branches
+              if (q.branches && q.branches.length > 0 && Array.isArray(options)) {
+                options = options.map(opt => {
+                  const branch = q.branches?.find(b => b.answer_value === opt.label)
+                  if (branch) {
+                    return { ...opt, navigation: `section-${branch.next_section}` }
+                  }
+                  return opt
+                })
+              }
+
+              return { ...q, options }
+            })
+            
             // Separate text elements (questions with type "text") from regular questions
-            const regularQuestions = questions.filter(q => q.question_type !== 'text')
-            const textElements: TextElement[] = questions
+            const regularQuestions = processedQuestions.filter(q => q.question_type !== 'text')
+            const textElements: TextElement[] = processedQuestions
               .filter(q => q.question_type === 'text')
               .map(q => ({
                 id: q.id.toString(),
@@ -570,13 +605,58 @@ export default function SurveyQuestionsPage() {
         return
       }
 
-      const updatedQuestion = await updateQuestion(surveyId, section.id, question.id as number, {
+      // Parse options to extract branches
+      let parsedOptions = question.options
+      if (typeof question.options === 'string') {
+        try {
+          parsedOptions = JSON.parse(question.options)
+        } catch (e) {
+          parsedOptions = question.options
+        }
+      }
+
+      // Build branches array from options with navigation (only for radio type)
+      const branches: Array<{ answer_value: string; next_section: number }> = []
+      
+      if (question.question_type === 'radio' && Array.isArray(parsedOptions)) {
+        for (const option of parsedOptions) {
+          if (option.navigation && option.navigation.startsWith('section-')) {
+            // Extract section ID from navigation (e.g., "section-123" -> 123)
+            const targetSectionId = parseInt(option.navigation.replace('section-', ''))
+            if (!isNaN(targetSectionId)) {
+              branches.push({
+                answer_value: option.label,
+                next_section: targetSectionId
+              })
+            }
+          }
+        }
+      }
+
+      // Build update payload
+      const payload: any = {
         text: question.text,
         question_type: question.question_type,
-        options: question.options,
         description: question.description,
         is_required: question.is_required
-      })
+      }
+
+      // Clean options - remove navigation field and keep only labels for backend
+      if (Array.isArray(parsedOptions)) {
+        // For branches validation, backend expects simple array of strings (labels)
+        payload.options = parsedOptions.map(opt => opt.label)
+      } else {
+        payload.options = question.options
+      }
+
+      // Add branches only for radio type questions
+      if (question.question_type === 'radio') {
+        payload.branches = branches
+      }
+
+      console.log('Updating question with payload:', payload)
+
+      const updatedQuestion = await updateQuestion(surveyId, section.id, question.id as number, payload)
 
       setSections(sections.map(s => 
         s.id === section.id
@@ -585,7 +665,12 @@ export default function SurveyQuestionsPage() {
       ))
     } catch (error) {
       console.error("Error updating question:", error)
-      alert("Failed to update question")
+      // Check if error has response data
+      if (error && typeof error === 'object' && 'message' in error) {
+        alert(`Failed to update question: ${error.message}`)
+      } else {
+        alert("Failed to update question. Please check console for details.")
+      }
     }
   }
 

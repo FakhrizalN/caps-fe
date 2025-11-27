@@ -20,6 +20,7 @@ export interface QuestionOption {
   id: string
   label: string
   isOther?: boolean
+  navigation?: string // e.g., "next" or "section-123"
 }
 
 export interface SectionInfo {
@@ -218,18 +219,20 @@ case "paragraph":
                   {/* Response Validation Dropdown */}
                   {responseValidation && (
                     <Select 
+                      value={opt.navigation || ""}
                       onValueChange={(value) => onNavigationChange?.(opt.id, value)}
                     >
                       <SelectTrigger className="w-[200px] h-8">
-                        <SelectValue placeholder="Select navigation" />
+                        <SelectValue placeholder="Continue to next section" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="next">Go to next section</SelectItem>
+                        <SelectItem value="next">Continue to next section</SelectItem>
                         {sections.map((section, sectionIdx) => (
                           <SelectItem key={section.id} value={`section-${section.id}`}>
-                            Open section {sectionIdx + 1} ({section.title})
+                            Go to section {sectionIdx + 1} ({section.title})
                           </SelectItem>
                         ))}
+                        <SelectItem value="submit">Submit form</SelectItem>
                       </SelectContent>
                     </Select>
                   )}

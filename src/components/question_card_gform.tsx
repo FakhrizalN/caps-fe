@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { GripVertical } from "lucide-react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { QuestionContentGForm, QuestionOption, QuestionType, SectionInfo } from "./question_content_gform"
 import { QuestionFooterGForm } from "./question_footer_gform"
 import { QuestionHeaderGForm, QuestionHeaderGFormRef } from "./question_header_gform"
@@ -55,6 +55,14 @@ export function QuestionCardGForm({
   const [showDescription, setShowDescription] = useState(!!question.description)
   const [responseValidation, setResponseValidation] = useState(false)
   const headerRef = useRef<QuestionHeaderGFormRef>(null)
+
+  // Auto-enable response validation if branches exist
+  useEffect(() => {
+    const hasBranches = localQuestion.options?.some(opt => opt.navigation && opt.navigation !== 'next')
+    if (hasBranches && localQuestion.type === 'multiple_choice') {
+      setResponseValidation(true)
+    }
+  }, [localQuestion.options, localQuestion.type])
 
   // Drag and drop setup
   const {
@@ -150,6 +158,13 @@ export function QuestionCardGForm({
   updateQuestion({ options: [...(localQuestion.options || []), otherOption] })
 }
 
+  const handleNavigationChange = (optionId: string, navigation: string) => {
+    const updatedOptions = localQuestion.options?.map(opt => 
+      opt.id === optionId ? { ...opt, navigation } : opt
+    )
+    updateQuestion({ options: updatedOptions })
+  }
+
   return (
     <Card 
       ref={setNodeRef}
@@ -215,6 +230,7 @@ export function QuestionCardGForm({
           onOptionAdd={handleOptionAdd}
           onAddOther={handleAddOther}
           onScaleUpdate={handleScaleUpdate}
+          onNavigationChange={handleNavigationChange}
         />
       </CardContent>
 
@@ -224,6 +240,7 @@ export function QuestionCardGForm({
           <QuestionFooterGForm
             required={localQuestion.required}
             questionId={localQuestion.id}
+            questionType={localQuestion.type}
             showDescription={showDescription}
             responseValidation={responseValidation}
             onRequiredChange={(required) => updateQuestion({ required })}
