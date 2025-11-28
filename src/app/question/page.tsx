@@ -166,7 +166,7 @@ export default function QuestionsPage() {
         <QuestionFloatingToolbar 
         onAddQuestion={handleAddQuestion}
         onAddText={() => console.log("Add text")}
-        onImportQuestion={() => console.log("Import question")}
+        onImportSuccess={() => console.log("Import success")}
         onAddSection={() => console.log("Add section")}
           />
         )}

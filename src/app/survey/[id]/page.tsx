@@ -12,36 +12,36 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/co
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
-  createQuestion,
-  createSection,
-  deleteQuestion,
-  deleteSection,
-  getQuestions,
-  getSections,
-  getSurvey,
-  Question,
-  Section,
-  updateQuestion,
-  updateSection,
-  updateSurvey,
+    createQuestion,
+    createSection,
+    deleteQuestion,
+    deleteSection,
+    getQuestions,
+    getSections,
+    getSurvey,
+    Question,
+    Section,
+    updateQuestion,
+    updateSection,
+    updateSurvey,
 } from "@/lib/api"
 import {
-  closestCenter,
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    DragOverlay,
+    DragStartEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
 } from "@dnd-kit/core"
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -158,132 +158,121 @@ export default function SurveyQuestionsPage() {
   }
 
   // Fetch survey data and sections
-  useEffect(() => {
-    let isMounted = true
-    
-    async function fetchData() {
-      try {
-        // Fetch survey details
-        const survey = await getSurvey(surveyId.toString())
-        if (!isMounted) return
-        
-        setSurveyTitle(survey.title)
-        setSurveyDescription(survey.description || "")
+  const fetchSurveyData = async () => {
+    try {
+      setLoading(true)
+      
+      // Fetch survey details
+      const survey = await getSurvey(surveyId.toString())
+      setSurveyTitle(survey.title)
+      setSurveyDescription(survey.description || "")
 
-        // Fetch sections
-        let sectionsData = await getSections(surveyId)
-        if (!isMounted) return
-        
-        // If no sections exist, create a default one
-        if (sectionsData.length === 0) {
-          const defaultSection = await createSection(surveyId, {
-            title: "Section1",
-            description: "",
-            order: 1
-          })
-          if (!isMounted) return
-          sectionsData = [defaultSection]
-        }
-        
-        // Fetch questions for each section
-        const sectionsWithQuestions = await Promise.all(
-          sectionsData.map(async (section, index) => {
-            const questions = await getQuestions(surveyId, section.id)
-            
-            // Process questions to merge branches into options navigation
-            const processedQuestions = questions.map(q => {
-              // Parse options
-              let options = q.options
-              if (typeof options === 'string') {
-                try {
-                  options = JSON.parse(options)
-                } catch (e) {
-                  options = []
-                }
-              }
-
-              // Convert simple string array to object format if needed
-              // Backend stores as ["label1", "label2"] but frontend needs [{id, label}]
-              if (Array.isArray(options) && options.length > 0 && typeof options[0] === 'string') {
-                options = options.map((label, idx) => ({
-                  id: String(idx + 1),
-                  label: label
-                }))
-              }
-
-              // Add navigation to options based on branches
-              if (q.branches && q.branches.length > 0 && Array.isArray(options)) {
-                options = options.map(opt => {
-                  const branch = q.branches?.find(b => b.answer_value === opt.label)
-                  if (branch) {
-                    return { ...opt, navigation: `section-${branch.next_section}` }
-                  }
-                  return opt
-                })
-              }
-
-              return { ...q, options }
-            })
-            
-            // Separate text elements (questions with type "text") from regular questions
-            const regularQuestions = processedQuestions.filter(q => q.question_type !== 'text')
-            const textElements: TextElement[] = processedQuestions
-              .filter(q => q.question_type === 'text')
-              .map(q => ({
-                id: q.id.toString(),
-                title: q.text,
-                description: q.description || "",
-                sectionId: q.section_id,
-                order: q.order
-              }))
-            
-            // For the first section, ensure title and description match survey
-            if (index === 0) {
-              return { 
-                ...section, 
-                title: survey.title,
-                description: survey.description || "",
-                questions: regularQuestions, 
-                texts: textElements 
+      // Fetch sections
+      let sectionsData = await getSections(surveyId)
+      
+      // If no sections exist, create a default one
+      if (sectionsData.length === 0) {
+        const defaultSection = await createSection(surveyId, {
+          title: "Section1",
+          description: "",
+          order: 1
+        })
+        sectionsData = [defaultSection]
+      }
+      
+      // Fetch questions for each section
+      const sectionsWithQuestions = await Promise.all(
+        sectionsData.map(async (section, index) => {
+          const questions = await getQuestions(surveyId, section.id)
+          
+          // Process questions to merge branches into options navigation
+          const processedQuestions = questions.map(q => {
+            // Parse options
+            let options = q.options
+            if (typeof options === 'string') {
+              try {
+                options = JSON.parse(options)
+              } catch (e) {
+                options = []
               }
             }
-            return { ...section, questions: regularQuestions, texts: textElements }
-          })
-        )
-        if (!isMounted) return
-        
-        setSections(sectionsWithQuestions)
 
-        // If no questions exist, create a default one
-        if (sectionsWithQuestions[0] && sectionsWithQuestions[0].questions.length === 0) {
-          const defaultQuestion = await createQuestion(surveyId, sectionsWithQuestions[0].id, {
-            text: "Untitled question",
-            question_type: "radio",
-            options: [{ id: "1", label: "Option 1" }],
-            description: "",
-            order: 1,
-            is_required: false
+            // Convert simple string array to object format if needed
+            // Backend stores as ["label1", "label2"] but frontend needs [{id, label}]
+            if (Array.isArray(options) && options.length > 0 && typeof options[0] === 'string') {
+              options = options.map((label, idx) => ({
+                id: String(idx + 1),
+                label: label
+              }))
+            }
+
+            // Add navigation to options based on branches
+            if (q.branches && q.branches.length > 0 && Array.isArray(options)) {
+              options = options.map(opt => {
+                const branch = q.branches?.find(b => b.answer_value === opt.label)
+                if (branch) {
+                  return { ...opt, navigation: `section-${branch.next_section}` }
+                }
+                return opt
+              })
+            }
+
+            return { ...q, options }
           })
-          if (!isMounted) return
           
-          setSections([{
-            ...sectionsWithQuestions[0],
-            questions: [defaultQuestion]
-          }])
-        }
-      } catch (error) {
-        console.error("Error fetching survey data:", error)
-      } finally {
-        if (isMounted) {
-          setLoading(false)
-        }
+          // Separate text elements (questions with type "description") from regular questions
+          const regularQuestions = processedQuestions.filter(q => q.question_type !== 'description')
+          const textElements: TextElement[] = processedQuestions
+            .filter(q => q.question_type === 'description')
+            .map(q => ({
+              id: q.id.toString(),
+              title: q.text,
+              description: q.description || "",
+              sectionId: q.section_id,
+              order: q.order
+            }))
+          
+          // For the first section, ensure title and description match survey
+          if (index === 0) {
+            return { 
+              ...section, 
+              title: survey.title,
+              description: survey.description || "",
+              questions: regularQuestions, 
+              texts: textElements 
+            }
+          }
+          return { ...section, questions: regularQuestions, texts: textElements }
+        })
+      )
+      
+      setSections(sectionsWithQuestions)
+
+      // If no questions exist, create a default one
+      if (sectionsWithQuestions[0] && sectionsWithQuestions[0].questions.length === 0) {
+        const defaultQuestion = await createQuestion(surveyId, sectionsWithQuestions[0].id, {
+          text: "Untitled question",
+          question_type: "radio",
+          options: [{ id: "1", label: "Option 1" }],
+          description: "",
+          order: 1,
+          is_required: false
+        })
+        
+        setSections([{
+          ...sectionsWithQuestions[0],
+          questions: [defaultQuestion]
+        }])
       }
+    } catch (error) {
+      console.error("Error fetching survey data:", error)
+    } finally {
+      setLoading(false)
     }
-    fetchData()
-    
-    return () => {
-      isMounted = false
-    }
+  }
+
+  useEffect(() => {
+    fetchSurveyData()
   }, [surveyId])
 
   const handleAddQuestion = () => {
@@ -1239,10 +1228,12 @@ export default function SurveyQuestionsPage() {
           <QuestionFloatingToolbar 
             onAddQuestion={handleAddQuestion}
             onAddText={handleAddText}
-            onImportQuestion={() => console.log("Import question")}
+            onImportSuccess={fetchSurveyData}
             onAddSection={handleAddSection}
             activeQuestionId={activeQuestionId}
             activeElementType={activeElementType}
+            surveyId={surveyId}
+            sectionId={activeSectionId || sections[0]?.id}
           />
         )}
         

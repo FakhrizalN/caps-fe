@@ -3,10 +3,10 @@
 import { ImportQuestionDialog } from "@/components/import-question-dialog"
 import { Button } from "@/components/ui/button"
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { AlignVerticalSpaceAround, PlusCircle, Type, Upload } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -14,19 +14,23 @@ import { useEffect, useState } from "react"
 interface QuestionFloatingToolbarProps {
   onAddQuestion?: () => void
   onAddText?: () => void
-  onImportQuestion?: (file: File) => void
+  onImportSuccess?: () => void
   onAddSection?: () => void
   activeQuestionId?: number | string | null
   activeElementType?: 'question' | 'header' | 'section' | 'text'
+  surveyId?: number
+  sectionId?: number
 }
 
 export function QuestionFloatingToolbar({
   onAddQuestion,
   onAddText,
-  onImportQuestion,
+  onImportSuccess,
   onAddSection,
   activeQuestionId,
-  activeElementType = 'question'
+  activeElementType = 'question',
+  surveyId,
+  sectionId
 }: QuestionFloatingToolbarProps) {
   const [toolbarStyle, setToolbarStyle] = useState<React.CSSProperties>({
     position: 'fixed',
@@ -204,13 +208,17 @@ export function QuestionFloatingToolbar({
       </div>
 
       {/* Import Question Dialog */}
-      <ImportQuestionDialog
-        open={isImportDialogOpen}
-        onOpenChange={setIsImportDialogOpen}
-        onImport={(file) => {
-          onImportQuestion?.(file)
-        }}
-      />
+      {surveyId && sectionId && (
+        <ImportQuestionDialog
+          open={isImportDialogOpen}
+          onOpenChange={setIsImportDialogOpen}
+          surveyId={surveyId}
+          sectionId={sectionId}
+          onSuccess={() => {
+            onImportSuccess?.()
+          }}
+        />
+      )}
     </div>
   )
 }
