@@ -6,20 +6,66 @@ import { ResponseData, ResponseListTable } from "@/components/response_list_tabl
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { Answer, getAnswers } from "@/lib/api"
 import { useParams } from "next/navigation"
+import { useEffect, useState } from "react"
 
-
-const mockResponses: ResponseData[] = [
-  { id: "1", nama: "Diva Rajestiadi", email: "divr@gmail.com", nim: "11221015" },
-  { id: "2", nama: "Diva Rajestiadi", email: "divr@gmail.com", nim: "11221015" },
-  { id: "3", nama: "Diva Rajestiadi", email: "divr@gmail.com", nim: "11221015" },
-  { id: "4", nama: "Diva Rajestiadi", email: "divr@gmail.com", nim: "11221015" },
-  { id: "5", nama: "Diva Rajestiadi", email: "divr@gmail.com", nim: "11221015" },
-]
+interface UniqueUser {
+  id: string
+  nama: string
+  email: string
+  nim: string
+}
 
 export default function ResponsesPage() {
   const params = useParams()
-  const surveyId = params.id as string
+  const surveyId = Number(params?.id)
+  
+  const [responses, setResponses] = useState<ResponseData[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true)
+        setError("")
+
+        console.log("surveyId dari params", surveyId)
+        
+        if (!surveyId || isNaN(surveyId)) {
+          throw new Error("Invalid survey ID")
+        }
+
+        const answers: Answer[] = await getAnswers(surveyId)
+
+        const uniqueUsers = new Map<string, UniqueUser>()
+        
+        answers.forEach(answer => {
+          if (!uniqueUsers.has(answer.user_id)) {
+            uniqueUsers.set(answer.user_id, {
+              id: answer.user_id,
+              nama: answer.user_username,
+              email: answer.user_email,
+              nim: answer.user_id,
+            })
+          }
+        })
+
+        const userList: ResponseData[] = Array.from(uniqueUsers.values())
+        setResponses(userList)
+      } catch (err) {
+        console.error(err)
+        setError(
+          err instanceof Error ? err.message : "Gagal mengambil data responses",
+        )
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (surveyId) fetchData()
+  }, [surveyId])
 
   return (
     <SidebarProvider>
@@ -39,13 +85,33 @@ export default function ResponsesPage() {
         <QuestionToolbar 
           title={`Survey ${surveyId}`}
           activeTab="responses"
-          surveyId={surveyId}
+          surveyId={surveyId.toString()}
           onPublish={() => console.log("Publish")}
         />
         
         <div className="p-6 bg-gray-50 min-h-screen pt-24">
           <div className="max-w-6xl ml-0 w-full space-y-3 pr-20">
-            <ResponseListTable data={mockResponses} surveyId={surveyId} />
+            {isLoading && (
+              <div className="flex justify-center items-center py-12">
+                <p className="text-gray-500">Loading responses...</p>
+              </div>
+            )}
+            
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
+            
+            {!isLoading && !error && responses.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-500">Belum ada responses</p>
+              </div>
+            )}
+            
+            {!isLoading && !error && responses.length > 0 && (
+              <ResponseListTable data={responses} surveyId={surveyId} />
+            )}
           </div>
         </div>
       </SidebarInset>

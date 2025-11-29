@@ -1,16 +1,16 @@
 "use client"
 
 import {
-    ColumnDef,
-    ColumnFiltersState,
-    SortingState,
-    VisibilityState,
-    flexRender,
-    getCoreRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useReactTable,
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
 } from "@tanstack/react-table"
 import { ChevronDown, Eye, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -21,12 +21,12 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table"
 
 export type ResponseData = {
@@ -38,7 +38,7 @@ export type ResponseData = {
 
 interface ResponseListTableProps {
   data: ResponseData[]
-  surveyId?: string
+  surveyId?: string | number
 }
 
 export function ResponseListTable({ data, surveyId }: ResponseListTableProps) {
@@ -129,7 +129,7 @@ export function ResponseListTable({ data, surveyId }: ResponseListTableProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push(surveyId ? `/survey/${surveyId}/response/${response.id}` : `/response/${response.id}`)}
+              onClick={() => router.push(`/survey/${surveyId}/response/${response.id}`)}
             >
               <Eye className="h-4 w-4 mr-2" />
               View

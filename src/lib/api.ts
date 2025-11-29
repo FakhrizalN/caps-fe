@@ -1097,4 +1097,60 @@ export async function deleteQuestionBranch(surveyId: number, sectionId: number, 
   })
 }
 
+// ==========================================
+// Survey Answers API Functions
+// ==========================================
+
+export interface Answer {
+  id: number
+  user_id: string
+  user_username: string
+  user_email: string
+  survey: number
+  question: number
+  question_text: string
+  question_type: string
+  program_specific_question: null | any
+  answer_value: string | number | boolean
+  created_at: string
+  updated_at: string
+}
+
+/**
+ * Get all answers for a survey
+ */
+export async function getAnswers(surveyId: number): Promise<Answer[]> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/answers/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Get answers for a specific user in a survey
+ */
+export async function getUserAnswers(surveyId: number, userId: string): Promise<Answer[]> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/answers/?user_id=${userId}`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Get a single answer by ID
+ */
+export async function getAnswer(surveyId: number, answerId: number): Promise<Answer> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/answers/${answerId}/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Delete an answer by ID
+ */
+export async function deleteAnswer(surveyId: number, answerId: number): Promise<void> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/answers/${answerId}/`, {
+    method: 'DELETE',
+  })
+}
+
+
 
