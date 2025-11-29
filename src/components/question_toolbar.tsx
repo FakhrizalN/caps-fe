@@ -46,18 +46,17 @@ export function QuestionToolbar({
     setCurrentTab(tab)
     onTabChange?.(tab)
     
-    // Navigate based on tab
-    if (surveyId) {
-      if (tab === "questions") {
+    // Navigate based on tab - always use surveyId from URL if available
+    if (tab === "questions") {
+      if (surveyId) {
         router.push(`/survey/${surveyId}`)
-      } else if (tab === "responses") {
-        router.push(`/survey/${surveyId}/response`)
-      }
-    } else {
-      // Fallback to old routes if no surveyId
-      if (tab === "questions") {
+      } else {
         router.push("/question")
-      } else if (tab === "responses") {
+      }
+    } else if (tab === "responses") {
+      if (surveyId) {
+        router.push(`/survey/${surveyId}/response`)
+      } else {
         router.push("/response")
       }
     }

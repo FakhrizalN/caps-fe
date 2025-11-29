@@ -1,11 +1,8 @@
 "use client"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { QuestionCardGForm, QuestionData } from "@/components/question_card_gform"
 import { QuestionToolbar } from "@/components/question_toolbar"
-import {
-  ResponseAnswer,
-  ResponseAnswerCard,
-} from "@/components/response_answer_card"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -26,7 +23,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Answer, deleteAnswer, getAnswers } from "@/lib/api"
+import { Answer, deleteAnswer, getAnswers, getQuestions, getSections, Question } from "@/lib/api"
 import { ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -44,6 +41,7 @@ export default function ResponseDetailPage() {
   const [allUsers, setAllUsers] = useState<UniqueUser[]>([])
   const [currentUserNim, setCurrentUserNim] = useState<string>("")
   const [userAnswers, setUserAnswers] = useState<Answer[]>([])
+  const [questions, setQuestions] = useState<Question[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState("")
@@ -58,6 +56,30 @@ export default function ResponseDetailPage() {
         if (!surveyId || isNaN(surveyId)) {
           throw new Error("Invalid survey ID")
         }
+
+        // Fetch semua sections
+        const sections = await getSections(surveyId)
+        
+        // Fetch questions dari setiap section
+        const allQuestions: Question[] = []
+        for (const section of sections) {
+          const sectionQuestions = await getQuestions(surveyId, section.id)
+          allQuestions.push(...sectionQuestions)
+        }
+        
+        setQuestions(allQuestions)
+        console.log("📚 Questions with options:", allQuestions)
+        
+        // Log detail untuk setiap question yang punya options
+        allQuestions.forEach(q => {
+          if (q.options) {
+            console.log(`Question ${q.id} (${q.question_type}):`, {
+              optionsType: typeof q.options,
+              optionsRaw: q.options,
+              optionsParsed: typeof q.options === 'string' ? JSON.parse(q.options) : q.options
+            })
+          }
+        })
 
         const allAnswers: Answer[] = await getAnswers(surveyId)
         console.log("📋 All answers:", allAnswers)
@@ -186,7 +208,37 @@ export default function ResponseDetailPage() {
   const convertAnswerToResponseAnswer = (
     answer: Answer,
     idx: number,
-  ): ResponseAnswer => {
+  ): QuestionData => {
+    // Cari question yang sesuai untuk mendapatkan options
+    const question = questions.find(q => Number(q.id) === answer.question)
+    
+    console.log(`🔍 Converting answer for question ${answer.question}:`, {
+      questionType: answer.question_type,
+      answerValue: answer.answer_value,
+      foundQuestion: !!question,
+      questionOptions: question?.options
+    })
+    
+    // Parse options dari question.options (bisa berupa string JSON atau array)
+    const parseOptions = (opts: any): any[] => {
+      if (!opts) return []
+      
+      // Jika sudah array, return langsung
+      if (Array.isArray(opts)) return opts
+      
+      // Jika string JSON, parse dulu
+      if (typeof opts === 'string') {
+        try {
+          const parsed = JSON.parse(opts)
+          return Array.isArray(parsed) ? parsed : []
+        } catch {
+          return []
+        }
+      }
+      
+      return []
+    }
+    
     switch (answer.question_type) {
       case "text":
         return {
@@ -210,31 +262,137 @@ export default function ResponseDetailPage() {
           selectedValue: Number(answer.answer_value),
         }
 
+      case "radio":
       case "multiple_choice":
+        // Parse options dari question
+        const mcOptionsRaw = parseOptions(question?.options)
+        
+        // Map options dengan ID yang benar (dimulai dari 1)
+        const mcOptions = mcOptionsRaw.map((opt: any, optIdx: number) => ({
+          id: String(opt.id || opt.value || (optIdx + 1)),
+          label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
+        }))
+        
+        // answer_value bisa berupa object {id, label} atau langsung ID
+        let selectedOptionId: string
+        if (typeof answer.answer_value === 'object' && answer.answer_value !== null && 'id' in answer.answer_value) {
+          selectedOptionId = String((answer.answer_value as any).id)
+        } else {
+          selectedOptionId = String(answer.answer_value)
+        }
+        
+        console.log(`📻 Multiple choice options:`, mcOptions, `Selected:`, selectedOptionId)
+        
         return {
           id: `q${idx}`,
           type: "multiple_choice",
           title: answer.question_text,
           required: true,
-          options: [{ id: "opt1", label: String(answer.answer_value) }],
-          selectedOption: "opt1",
+          options: mcOptions,
+          selectedOption: selectedOptionId,
         }
 
       case "checkbox":
+        // Parse options dari question
+        const cbOptionsRaw = parseOptions(question?.options)
+        
+        // Parse answer_value untuk mendapatkan options yang sudah ada labelnya
+        let cbOptions: any[] = []
+        let selectedIds: string[] = []
+        
+        if (Array.isArray(answer.answer_value)) {
+          // Cek apakah array berisi objects dengan struktur {id, label}
+          if (answer.answer_value.length > 0 && typeof answer.answer_value[0] === 'object' && answer.answer_value[0].id) {
+            // Format: [{"id": "1", "label": "testesdasddads"}, {"id": "3", "label": "Option3"}]
+            // answer_value SUDAH mengandung label yang benar dari database!
+            const answerOptions = answer.answer_value.map((item: any) => ({
+              id: String(item.id),
+              label: item.label
+            }))
+            
+            // Ambil semua options dari question, tapi override dengan label dari answer_value
+            const questionOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
+              id: String(opt.id || opt.value || (optIdx + 1)),
+              label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
+            }))
+            
+            // Merge: gunakan label dari answer_value jika ada, fallback ke question options
+            const answerMap = new Map(answerOptions.map(o => [o.id, o.label]))
+            cbOptions = questionOptions.map(opt => ({
+              id: opt.id,
+              label: answerMap.get(opt.id) || opt.label
+            }))
+            
+            selectedIds = answerOptions.map((item: any) => String(item.id))
+          } else {
+            // Format: ["1", "3"] atau [1, 3]
+            cbOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
+              id: String(opt.id || opt.value || (optIdx + 1)),
+              label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
+            }))
+            selectedIds = answer.answer_value.map((id: any) => String(id))
+          }
+        } else if (typeof answer.answer_value === 'string') {
+          try {
+            const parsed = JSON.parse(answer.answer_value)
+            if (Array.isArray(parsed)) {
+              // Cek apakah array berisi objects
+              if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0].id) {
+                const answerOptions = parsed.map((item: any) => ({
+                  id: String(item.id),
+                  label: item.label
+                }))
+                
+                const questionOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
+                  id: String(opt.id || opt.value || (optIdx + 1)),
+                  label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
+                }))
+                
+                const answerMap = new Map(answerOptions.map(o => [o.id, o.label]))
+                cbOptions = questionOptions.map(opt => ({
+                  id: opt.id,
+                  label: answerMap.get(opt.id) || opt.label
+                }))
+                
+                selectedIds = answerOptions.map((item: any) => String(item.id))
+              } else {
+                cbOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
+                  id: String(opt.id || opt.value || (optIdx + 1)),
+                  label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
+                }))
+                selectedIds = parsed.map(String)
+              }
+            } else {
+              cbOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
+                id: String(opt.id || opt.value || (optIdx + 1)),
+                label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
+              }))
+              selectedIds = [String(answer.answer_value)]
+            }
+          } catch {
+            cbOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
+              id: String(opt.id || opt.value || (optIdx + 1)),
+              label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
+            }))
+            selectedIds = [String(answer.answer_value)]
+          }
+        } else {
+          cbOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
+            id: String(opt.id || opt.value || (optIdx + 1)),
+            label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
+          }))
+          selectedIds = [String(answer.answer_value)]
+        }
+        
+        console.log(`☑️ Checkbox options:`, cbOptions, `Selected:`, selectedIds)
+        
         return {
           id: `q${idx}`,
           type: "checkbox",
           title: answer.question_text,
           required: true,
-          options: Array.isArray(answer.answer_value)
-            ? answer.answer_value.map((val, i) => ({
-                id: `opt${i}`,
-                label: String(val),
-              }))
-            : [{ id: "opt1", label: String(answer.answer_value) }],
-          selectedOptions: Array.isArray(answer.answer_value)
-            ? answer.answer_value.map((_, i) => `opt${i}`)
-            : ["opt1"],
+          options: cbOptions,
+          selectedOptions: selectedIds,
         }
 
       default:
@@ -280,6 +438,7 @@ export default function ResponseDetailPage() {
         <QuestionToolbar
           title={`Survey ${surveyId}`}
           activeTab="responses"
+          surveyId={surveyId.toString()}
           onPublish={() => console.log("Publish")}
         />
 
@@ -363,9 +522,10 @@ export default function ResponseDetailPage() {
                 </p>
               ) : (
                 userAnswers.map((answer, idx) => (
-                  <ResponseAnswerCard
+                  <QuestionCardGForm
                     key={answer.id}
-                    answer={convertAnswerToResponseAnswer(answer, idx + 1)}
+                    question={convertAnswerToResponseAnswer(answer, idx + 1)}
+                    isEditMode={false}
                   />
                 ))
               )}

@@ -225,6 +225,10 @@ export function QuestionCardGForm({
           questionId={localQuestion.id}
           responseValidation={responseValidation}
           sections={sections}
+          selectedOption={localQuestion.selectedOption}
+          selectedOptions={localQuestion.selectedOptions}
+          selectedValue={localQuestion.selectedValue}
+          textAnswer={localQuestion.textAnswer}
           onOptionUpdate={handleOptionUpdate}
           onOptionDelete={handleOptionDelete}
           onOptionAdd={handleOptionAdd}

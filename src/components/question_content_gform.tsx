@@ -39,6 +39,11 @@ interface QuestionContentProps {
   questionId: string
   responseValidation?: boolean
   sections?: SectionInfo[]
+  // Props untuk menampilkan jawaban yang sudah dipilih
+  selectedOption?: string       // untuk multiple_choice
+  selectedOptions?: string[]    // untuk checkbox
+  selectedValue?: number        // untuk linear_scale
+  textAnswer?: string          // untuk short_answer/paragraph
   onOptionUpdate?: (optionId: string, label: string) => void
   onOptionDelete?: (optionId: string) => void
   onOptionAdd?: () => void
@@ -58,6 +63,10 @@ export function QuestionContentGForm({
   questionId,
   responseValidation = false,
   sections = [],
+  selectedOption,
+  selectedOptions = [],
+  selectedValue,
+  textAnswer,
   onOptionUpdate,
   onOptionDelete,
   onOptionAdd,
@@ -73,21 +82,31 @@ export function QuestionContentGForm({
     switch (type) {
       case "multiple_choice":
         return (
-          <RadioGroup className="space-y-3">
+          <RadioGroup value={selectedOption} disabled className="space-y-3">
             {options.map((opt, idx) => (
               <div key={opt.id || `mc-${idx}`} className="flex items-center space-x-3">
-                <RadioGroupItem value={opt.id} id={`${questionId}-${opt.id}`} />
-                <Label htmlFor={`${questionId}-${opt.id}`} className="text-sm font-normal cursor-pointer">
+                <RadioGroupItem 
+                  value={opt.id} 
+                  id={`${questionId}-${opt.id}`}
+                  checked={selectedOption === opt.id}
+                  disabled
+                />
+                <Label 
+                  htmlFor={`${questionId}-${opt.id}`} 
+                  className="text-sm font-normal cursor-default"
+                >
                   {opt.isOther ? (
                     <div className="flex items-center gap-2">
                       <span>Other:</span>
                       <Input      
-                      placeholder="Your answer" 
-                      className="w-full border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-blue-600 px-0"
-                      dir="ltr" />
+                        placeholder="Your answer" 
+                        className="w-full border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-blue-600 px-0"
+                        dir="ltr" 
+                        disabled
+                      />
                     </div>
                   ) : (
-                    opt.label
+                    <span dangerouslySetInnerHTML={{ __html: opt.label }} />
                   )}
                 </Label>
               </div>
@@ -100,18 +119,27 @@ export function QuestionContentGForm({
           <div className="space-y-3">
             {options.map((opt, idx) => (
               <div key={opt.id || `cb-${idx}`} className="flex items-center space-x-3">
-                <Checkbox id={`${questionId}-${opt.id}`} />
-                <Label htmlFor={`${questionId}-${opt.id}`} className="text-sm font-normal cursor-pointer">
+                <Checkbox 
+                  id={`${questionId}-${opt.id}`}
+                  checked={selectedOptions.includes(opt.id)}
+                  disabled
+                />
+                <Label 
+                  htmlFor={`${questionId}-${opt.id}`} 
+                  className="text-sm font-normal cursor-default"
+                >
                   {opt.isOther ? (
                     <div className="flex items-center gap-2">
                       <span>Other:</span>
                       <Input 
-                      placeholder="Your answer" 
-                      className="w-full border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-blue-600 px-0"
-                      dir="ltr" />
+                        placeholder="Your answer" 
+                        className="w-full border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-blue-600 px-0"
+                        dir="ltr" 
+                        disabled
+                      />
                     </div>
                   ) : (
-                    opt.label
+                    <span dangerouslySetInnerHTML={{ __html: opt.label }} />
                   )}
                 </Label>
               </div>
@@ -124,11 +152,16 @@ export function QuestionContentGForm({
           <div className="space-y-4">
             <div className="flex justify-center">
               <div className="flex flex-col items-center gap-4 max-w-2xl w-full">
-                <RadioGroup className="flex justify-between w-full">
+                <RadioGroup value={selectedValue?.toString()} disabled className="flex justify-between w-full">
                   {Array.from({ length: maxValue - minValue + 1 }, (_, i) => minValue + i).map((val) => (
                     <div key={`scale-${val}`} className="flex flex-col items-center space-y-2">
                       <Label htmlFor={`${questionId}-${val}`} className="text-sm">{val}</Label>
-                      <RadioGroupItem value={val.toString()} id={`${questionId}-${val}`} />
+                      <RadioGroupItem 
+                        value={val.toString()} 
+                        id={`${questionId}-${val}`}
+                        checked={selectedValue === val}
+                        disabled
+                      />
                     </div>
                   ))}
                 </RadioGroup>
@@ -143,7 +176,7 @@ export function QuestionContentGForm({
 
       case "dropdown":
         return (
-          <Select>
+          <Select value={selectedOption} disabled>
             <SelectTrigger className="max-w-md">
               <SelectValue placeholder="Choose" />
             </SelectTrigger>
@@ -157,25 +190,31 @@ export function QuestionContentGForm({
           </Select>
         )
 
-case "short_answer":
-  return (
-    <Input 
-      placeholder="Your answer" 
-      className="w-full border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-blue-600 px-0"
-      dir="ltr"
-    />
-  )
+      case "short_answer":
+        return (
+          <Input 
+            placeholder="Your answer" 
+            className="w-full border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-blue-600 px-0"
+            dir="ltr"
+            value={textAnswer || ""}
+            disabled
+            readOnly
+          />
+        )
 
-case "paragraph":
-  return (
-    <textarea 
-      className="w-full min-h-[100px] p-0 pb-2 border-0 border-b border-gray-300 rounded-none resize-y focus:outline-none focus:border-blue-600" 
-      placeholder="Your answer"
-      dir="ltr"
-    />
-  )
+      case "paragraph":
+        return (
+          <textarea 
+            className="w-full min-h-[100px] p-0 pb-2 border-0 border-b border-gray-300 rounded-none resize-y focus:outline-none focus:border-blue-600 bg-transparent" 
+            placeholder="Your answer"
+            dir="ltr"
+            value={textAnswer || ""}
+            disabled
+            readOnly
+          />
+        )
+    }
   }
-}
 
   // Edit Mode
   switch (type) {
