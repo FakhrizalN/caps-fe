@@ -126,10 +126,10 @@ export const QuestionHeaderGForm = forwardRef<QuestionHeaderGFormRef, QuestionHe
   if (!isEditMode) {
     return (
       <div className="space-y-2" dir="ltr">
-        <h3 className="text-base font-normal text-gray-900">
-          <span dangerouslySetInnerHTML={{ __html: title }} />
-          {required && <span className="text-red-500 ml-1">*</span>}
-        </h3>
+        <div className="flex items-start gap-1">
+          <h3 className="text-base font-normal text-gray-900 flex-1" dangerouslySetInnerHTML={{ __html: title }} />
+          {required && <span className="text-red-500 text-base">*</span>}
+        </div>
         {description && (
           <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: description }} />
         )}

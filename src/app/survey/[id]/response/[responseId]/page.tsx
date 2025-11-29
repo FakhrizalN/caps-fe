@@ -245,7 +245,7 @@ export default function ResponseDetailPage() {
           id: `q${idx}`,
           type: "short_answer",
           title: answer.question_text,
-          required: true,
+          required: question?.is_required || false,
           textAnswer: String(answer.answer_value),
         }
 
@@ -254,7 +254,7 @@ export default function ResponseDetailPage() {
           id: `q${idx}`,
           type: "linear_scale",
           title: answer.question_text,
-          required: true,
+          required: question?.is_required || false,
           minValue: 1,
           maxValue: 5,
           minLabel: "Sangat Tidak Setuju",
@@ -287,7 +287,7 @@ export default function ResponseDetailPage() {
           id: `q${idx}`,
           type: "multiple_choice",
           title: answer.question_text,
-          required: true,
+          required: question?.is_required || false,
           options: mcOptions,
           selectedOption: selectedOptionId,
         }
@@ -390,7 +390,7 @@ export default function ResponseDetailPage() {
           id: `q${idx}`,
           type: "checkbox",
           title: answer.question_text,
-          required: true,
+          required: question?.is_required || false,
           options: cbOptions,
           selectedOptions: selectedIds,
         }
@@ -400,7 +400,7 @@ export default function ResponseDetailPage() {
           id: `q${idx}`,
           type: "short_answer",
           title: answer.question_text,
-          required: true,
+          required: question?.is_required || false,
           textAnswer: String(answer.answer_value),
         }
     }
