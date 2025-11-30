@@ -473,7 +473,7 @@ export default function ProgramStudyQuestionsPage() {
         />
 
         <div className="bg-gray-50 min-h-screen p-6">
-          <div className="max-w-4xl mx-auto space-y-4">
+          <div className="w-full mx-auto space-y-4 pr-24">
             <div onClick={() => setActiveQuestionId(null)}>
               <SectionHeaderCard
                 sectionNumber={1}

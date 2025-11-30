@@ -5,9 +5,7 @@ import { Separator } from "@/components/ui/separator"
 import {
   Eye,
   File,
-  Redo2,
-  Share2,
-  Undo2
+  Share2
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -105,19 +103,6 @@ export function QuestionToolbar({
             )}
           </button>
           <button
-            onClick={() => handleTabChange("responses")}
-            className={`pb-3 text-sm font-medium transition-colors relative ${
-              currentTab === "responses" 
-                ? "text-primary" 
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Responses
-            {currentTab === "responses" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
-          </button>
-          <button
             onClick={() => handleTabChange("program-study")}
             className={`pb-3 text-sm font-medium transition-colors relative ${
               currentTab === "program-study" 
@@ -130,6 +115,20 @@ export function QuestionToolbar({
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>
+          <button
+            onClick={() => handleTabChange("responses")}
+            className={`pb-3 text-sm font-medium transition-colors relative ${
+              currentTab === "responses" 
+                ? "text-primary" 
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Responses
+            {currentTab === "responses" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+
         </div>
 
         {/* Right: Action Buttons */}
