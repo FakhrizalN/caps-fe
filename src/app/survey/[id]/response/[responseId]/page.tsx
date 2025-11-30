@@ -27,6 +27,7 @@ import { Answer, deleteAnswer, getAnswers, getQuestions, getSections, Question }
 import { ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
+import * as XLSX from 'xlsx'
 
 interface UniqueUser {
   id: string     
@@ -202,6 +203,130 @@ export default function ResponseDetailPage() {
       alert('Gagal menghapus jawaban. Silakan coba lagi.')
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleExport = async () => {
+    try {
+      // Fetch semua jawaban untuk survey ini
+      const allAnswers: Answer[] = await getAnswers(surveyId)
+      
+      if (allAnswers.length === 0) {
+        alert('Tidak ada data untuk diekspor')
+        return
+      }
+
+      // Group answers by user
+      const userAnswersMap = new Map<string, Answer[]>()
+      allAnswers.forEach(answer => {
+        if (!userAnswersMap.has(answer.user_id)) {
+          userAnswersMap.set(answer.user_id, [])
+        }
+        userAnswersMap.get(answer.user_id)?.push(answer)
+      })
+
+      // Sort questions by order and get question codes
+      const sortedQuestions = [...questions].sort((a, b) => a.order - b.order)
+      
+      // Create header row
+      const headers = ['Nama Prodi', 'Nama', 'Email']
+      sortedQuestions.forEach(q => {
+        const code = q.code || `Q${q.id}`
+        headers.push(code)
+      })
+
+      // Create data rows
+      const rows: any[][] = []
+      
+      userAnswersMap.forEach((answers, userId) => {
+        if (answers.length === 0) return
+        
+        const firstAnswer = answers[0]
+        const row: any[] = [
+          firstAnswer.user_program_study || '-',
+          firstAnswer.user_username || '-',
+          firstAnswer.user_email || '-'
+        ]
+
+        // Create a map of question_id -> answer for quick lookup
+        const answerMap = new Map<number, Answer>()
+        answers.forEach(ans => {
+          answerMap.set(ans.question, ans)
+        })
+
+        // Add answers in question order
+        sortedQuestions.forEach(q => {
+          const answer = answerMap.get(Number(q.id))
+          if (answer) {
+            // Format answer based on type
+            let formattedAnswer = ''
+            
+            if (Array.isArray(answer.answer_value)) {
+              // For checkbox - join array items
+              if (answer.answer_value.length > 0 && typeof answer.answer_value[0] === 'object' && 'label' in answer.answer_value[0]) {
+                // Format: [{"id": "1", "label": "Reading"}]
+                formattedAnswer = answer.answer_value.map((item: any) => item.label).join(', ')
+              } else {
+                // Format: ["Reading", "Music"] or ["1", "3"]
+                formattedAnswer = answer.answer_value.join(', ')
+              }
+            } else if (typeof answer.answer_value === 'string') {
+              // Try to parse if it's JSON
+              try {
+                const parsed = JSON.parse(answer.answer_value)
+                if (Array.isArray(parsed)) {
+                  if (parsed.length > 0 && typeof parsed[0] === 'object' && 'label' in parsed[0]) {
+                    formattedAnswer = parsed.map((item: any) => item.label).join(', ')
+                  } else {
+                    formattedAnswer = parsed.join(', ')
+                  }
+                } else {
+                  formattedAnswer = answer.answer_value
+                }
+              } catch {
+                formattedAnswer = answer.answer_value
+              }
+            } else {
+              formattedAnswer = String(answer.answer_value)
+            }
+            
+            row.push(formattedAnswer)
+          } else {
+            row.push('-')
+          }
+        })
+
+        rows.push(row)
+      })
+
+      // Create workbook
+      const wb = XLSX.utils.book_new()
+      const wsData = [headers, ...rows]
+      const ws = XLSX.utils.aoa_to_sheet(wsData)
+
+      // Set column widths
+      const colWidths = [
+        { wch: 25 }, // Nama Prodi
+        { wch: 25 }, // Nama
+        { wch: 30 }, // Email
+      ]
+      
+      // Add width for question columns
+      sortedQuestions.forEach(() => {
+        colWidths.push({ wch: 20 })
+      })
+      
+      ws['!cols'] = colWidths
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Survey Responses')
+
+      // Generate and download Excel file
+      XLSX.writeFile(wb, `survey_${surveyId}_responses.xlsx`)
+      
+    } catch (error) {
+      console.error('Error exporting data:', error)
+      alert('Gagal mengekspor data. Silakan coba lagi.')
     }
   }
 
@@ -518,7 +643,7 @@ export default function ResponseDetailPage() {
                   {isDeleting ? 'Deleting...' : 'Delete'}
                 </Button>
                 <Button
-                  onClick={() => console.log("Export")}
+                  onClick={handleExport}
                   className="gap-2"
                 >
                   <Download className="h-4 w-4" />

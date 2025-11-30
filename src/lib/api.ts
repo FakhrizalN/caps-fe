@@ -1106,6 +1106,7 @@ export interface Answer {
   user_id: string
   user_username: string
   user_email: string
+  user_program_study?: string
   survey: number
   question: number
   question_text: string
