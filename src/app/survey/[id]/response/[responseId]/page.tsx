@@ -215,8 +215,12 @@ export default function ResponseDetailPage() {
     console.log(`🔍 Converting answer for question ${answer.question}:`, {
       questionType: answer.question_type,
       answerValue: answer.answer_value,
+      answerValueType: typeof answer.answer_value,
+      answerValueIsArray: Array.isArray(answer.answer_value),
       foundQuestion: !!question,
-      questionOptions: question?.options
+      questionOptions: question?.options,
+      questionOptionsType: typeof question?.options,
+      questionOptionsIsArray: Array.isArray(question?.options)
     })
     
     // Parse options dari question.options (bisa berupa string JSON atau array)
@@ -224,13 +228,41 @@ export default function ResponseDetailPage() {
       if (!opts) return []
       
       // Jika sudah array, return langsung
-      if (Array.isArray(opts)) return opts
+      if (Array.isArray(opts)) {
+        // Jika array berisi string, convert ke format {id, label}
+        return opts.map((opt, idx) => {
+          if (typeof opt === 'string') {
+            return {
+              id: String(idx + 1),
+              label: opt
+            }
+          }
+          // Jika sudah object, pastikan ada id dan label
+          return {
+            id: String(opt.id || opt.value || (idx + 1)),
+            label: opt.label || opt.text || opt.value || `Option ${idx + 1}`
+          }
+        })
+      }
       
       // Jika string JSON, parse dulu
       if (typeof opts === 'string') {
         try {
           const parsed = JSON.parse(opts)
-          return Array.isArray(parsed) ? parsed : []
+          if (Array.isArray(parsed)) {
+            return parsed.map((opt, idx) => {
+              if (typeof opt === 'string') {
+                return {
+                  id: String(idx + 1),
+                  label: opt
+                }
+              }
+              return {
+                id: String(opt.id || opt.value || (idx + 1)),
+                label: opt.label || opt.text || opt.value || `Option ${idx + 1}`
+              }
+            })
+          }
         } catch {
           return []
         }
@@ -267,17 +299,27 @@ export default function ResponseDetailPage() {
         // Parse options dari question
         const mcOptionsRaw = parseOptions(question?.options)
         
-        // Map options dengan ID yang benar (dimulai dari 1)
-        const mcOptions = mcOptionsRaw.map((opt: any, optIdx: number) => ({
-          id: String(opt.id || opt.value || (optIdx + 1)),
-          label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
-        }))
+        // Options sudah dalam format {id, label} dari parseOptions
+        const mcOptions = mcOptionsRaw
         
-        // answer_value bisa berupa object {id, label} atau langsung ID
+        // answer_value bisa berupa object {id, label}, ID, atau label langsung
         let selectedOptionId: string
         if (typeof answer.answer_value === 'object' && answer.answer_value !== null && 'id' in answer.answer_value) {
+          // Format: {"id": "1", "label": "Male"}
           selectedOptionId = String((answer.answer_value as any).id)
+        } else if (typeof answer.answer_value === 'string') {
+          // Cek apakah string adalah ID (angka) atau label
+          const isNumericId = /^\d+$/.test(answer.answer_value)
+          if (isNumericId) {
+            // Format: "1"
+            selectedOptionId = answer.answer_value
+          } else {
+            // Format: "Male" - cari ID berdasarkan label
+            const foundOption = mcOptions.find(opt => opt.label === answer.answer_value)
+            selectedOptionId = foundOption ? foundOption.id : String(answer.answer_value)
+          }
         } else {
+          // Format: 1 (number)
           selectedOptionId = String(answer.answer_value)
         }
         
@@ -296,40 +338,35 @@ export default function ResponseDetailPage() {
         // Parse options dari question
         const cbOptionsRaw = parseOptions(question?.options)
         
-        // Parse answer_value untuk mendapatkan options yang sudah ada labelnya
-        let cbOptions: any[] = []
+        // Options sudah dalam format {id, label} dari parseOptions
+        const cbOptions = cbOptionsRaw
         let selectedIds: string[] = []
         
         if (Array.isArray(answer.answer_value)) {
           // Cek apakah array berisi objects dengan struktur {id, label}
-          if (answer.answer_value.length > 0 && typeof answer.answer_value[0] === 'object' && answer.answer_value[0].id) {
+          if (answer.answer_value.length > 0 && typeof answer.answer_value[0] === 'object' && answer.answer_value[0] !== null && 'id' in answer.answer_value[0]) {
             // Format: [{"id": "1", "label": "testesdasddads"}, {"id": "3", "label": "Option3"}]
-            // answer_value SUDAH mengandung label yang benar dari database!
-            const answerOptions = answer.answer_value.map((item: any) => ({
-              id: String(item.id),
-              label: item.label
-            }))
+            selectedIds = answer.answer_value.map((item: any) => String(item.id))
+          } else if (answer.answer_value.length > 0 && typeof answer.answer_value[0] === 'string') {
+            // Cek apakah string adalah angka (ID) atau label
+            const firstItem = answer.answer_value[0]
+            const isNumericId = /^\d+$/.test(firstItem)
             
-            // Ambil semua options dari question, tapi override dengan label dari answer_value
-            const questionOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
-              id: String(opt.id || opt.value || (optIdx + 1)),
-              label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
-            }))
-            
-            // Merge: gunakan label dari answer_value jika ada, fallback ke question options
-            const answerMap = new Map(answerOptions.map(o => [o.id, o.label]))
-            cbOptions = questionOptions.map(opt => ({
-              id: opt.id,
-              label: answerMap.get(opt.id) || opt.label
-            }))
-            
-            selectedIds = answerOptions.map((item: any) => String(item.id))
+            if (isNumericId) {
+              // Format: ["1", "3"] - array of IDs
+              selectedIds = answer.answer_value.map((id: any) => String(id))
+            } else {
+              // Format: ["Reading", "Music"] - array of labels
+              // Cari ID berdasarkan label yang cocok
+              selectedIds = answer.answer_value
+                .map((label: string) => {
+                  const foundOption = cbOptions.find(opt => opt.label === label)
+                  return foundOption ? foundOption.id : null
+                })
+                .filter((id): id is string => id !== null)
+            }
           } else {
-            // Format: ["1", "3"] atau [1, 3]
-            cbOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
-              id: String(opt.id || opt.value || (optIdx + 1)),
-              label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
-            }))
+            // Format: [1, 3] - array of numeric IDs
             selectedIds = answer.answer_value.map((id: any) => String(id))
           }
         } else if (typeof answer.answer_value === 'string') {
@@ -337,50 +374,34 @@ export default function ResponseDetailPage() {
             const parsed = JSON.parse(answer.answer_value)
             if (Array.isArray(parsed)) {
               // Cek apakah array berisi objects
-              if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0].id) {
-                const answerOptions = parsed.map((item: any) => ({
-                  id: String(item.id),
-                  label: item.label
-                }))
+              if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0] !== null && 'id' in parsed[0]) {
+                selectedIds = parsed.map((item: any) => String(item.id))
+              } else if (parsed.length > 0 && typeof parsed[0] === 'string') {
+                const firstItem = parsed[0]
+                const isNumericId = /^\d+$/.test(firstItem)
                 
-                const questionOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
-                  id: String(opt.id || opt.value || (optIdx + 1)),
-                  label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
-                }))
-                
-                const answerMap = new Map(answerOptions.map(o => [o.id, o.label]))
-                cbOptions = questionOptions.map(opt => ({
-                  id: opt.id,
-                  label: answerMap.get(opt.id) || opt.label
-                }))
-                
-                selectedIds = answerOptions.map((item: any) => String(item.id))
+                if (isNumericId) {
+                  selectedIds = parsed.map(String)
+                } else {
+                  // Array of labels
+                  selectedIds = parsed
+                    .map((label: string) => {
+                      const foundOption = cbOptions.find(opt => opt.label === label)
+                      return foundOption ? foundOption.id : null
+                    })
+                    .filter((id): id is string => id !== null)
+                }
               } else {
-                cbOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
-                  id: String(opt.id || opt.value || (optIdx + 1)),
-                  label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
-                }))
                 selectedIds = parsed.map(String)
               }
             } else {
-              cbOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
-                id: String(opt.id || opt.value || (optIdx + 1)),
-                label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
-              }))
-              selectedIds = [String(answer.answer_value)]
+              selectedIds = [String(parsed)]
             }
           } catch {
-            cbOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
-              id: String(opt.id || opt.value || (optIdx + 1)),
-              label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
-            }))
+            // Jika bukan JSON, anggap sebagai single value
             selectedIds = [String(answer.answer_value)]
           }
         } else {
-          cbOptions = cbOptionsRaw.map((opt: any, optIdx: number) => ({
-            id: String(opt.id || opt.value || (optIdx + 1)),
-            label: opt.label || opt.text || opt.value || `Option ${optIdx + 1}`
-          }))
           selectedIds = [String(answer.answer_value)]
         }
         
