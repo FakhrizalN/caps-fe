@@ -4,8 +4,10 @@ import { AppSidebar } from "@/components/app-sidebar"
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage
+  BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -106,8 +108,12 @@ export default function EmployeePage() {
               <Separator orientation="vertical" className="mr-2 !h-4" />
               <Breadcrumb>
                 <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    <BreadcrumbPage>Employee Directory</BreadcrumbPage>
+                    <BreadcrumbPage>User Management</BreadcrumbPage>
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>

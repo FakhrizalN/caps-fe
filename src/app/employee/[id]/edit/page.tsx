@@ -196,11 +196,11 @@ export default function EditEmployeePage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbLink href="/employee">Employee Directory</BreadcrumbLink>
+                <BreadcrumbLink href="/employee">User Management</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>Employee Edit</BreadcrumbPage>
+                <BreadcrumbPage>User Edit</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>

@@ -8,7 +8,14 @@ import { QuestionToolbar } from "@/components/question_toolbar"
 import { ReorderSectionsDialog } from "@/components/reorder-sections-dialog"
 import { SectionHeaderCard } from "@/components/section_header_card"
 import { TextCard } from "@/components/text_card"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
@@ -1219,6 +1226,14 @@ export default function SurveyQuestionsPage() {
           <Separator orientation="vertical" className="mr-2 !h-4" />
           <Breadcrumb>
             <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/survey">Survey Management</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage>{surveyTitle}</BreadcrumbPage>
               </BreadcrumbItem>

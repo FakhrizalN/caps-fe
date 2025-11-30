@@ -6,7 +6,14 @@ import { QuestionType } from "@/components/question_content_gform"
 import { QuestionFloatingToolbar } from "@/components/question_floating_toolbar"
 import { QuestionToolbar } from "@/components/question_toolbar"
 import { SectionHeaderCard } from "@/components/section_header_card"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
@@ -454,8 +461,16 @@ export default function ProgramStudyQuestionsPage() {
           <Separator orientation="vertical" className="mr-2 !h-4" />
           <Breadcrumb>
             <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/survey">Survey Management</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>Survey {surveyId}</BreadcrumbPage>
+                <BreadcrumbPage>{surveyTitle}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>

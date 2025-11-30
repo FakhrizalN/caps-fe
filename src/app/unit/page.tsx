@@ -4,8 +4,10 @@ import { AppSidebar } from "@/components/app-sidebar"
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -55,9 +57,13 @@ export default function UnitManagementPage() {
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 !h-4" />
               <Breadcrumb>
-                <BreadcrumbList>
+                  <BreadcrumbList>
                   <BreadcrumbItem>
-                    <BreadcrumbPage>Unit Management</BreadcrumbPage>
+                  <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>Academic Units</BreadcrumbPage>
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>

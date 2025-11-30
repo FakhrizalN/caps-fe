@@ -25,7 +25,7 @@ export function UnitManagementClient({
 
   return (
     <>
-      <div className="text-3xl font-bold tracking-tight">Unit Management</div>
+      <div className="text-3xl font-bold tracking-tight">Academic Units</div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
         <div className="flex items-center justify-between">

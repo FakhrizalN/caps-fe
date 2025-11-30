@@ -6,8 +6,10 @@ import { SurveyCard } from "@/components/survey_card"
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -490,6 +492,10 @@ export default function SurveyManagementPage() {
               <Separator orientation="vertical" className="mr-2 !h-4" />
               <Breadcrumb>
                 <BreadcrumbList>
+                <BreadcrumbItem>
+                <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
                   <BreadcrumbItem>
                     <BreadcrumbPage>Survey Management</BreadcrumbPage>
                   </BreadcrumbItem>
@@ -554,7 +560,6 @@ export default function SurveyManagementPage() {
 
               {/* Template Section - Now shows surveys without periode */}
               <div className="space-y-4">
-                <h2 className="text-lg font-semibold">Survey Tanpa Periode</h2>
                 <div className="grid grid-cols-5 gap-4">
                   {surveysWithoutPeriode.map((survey) => (
                     <SurveyCard

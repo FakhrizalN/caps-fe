@@ -3,10 +3,17 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { QuestionToolbar } from "@/components/question_toolbar"
 import { ResponseData, ResponseListTable } from "@/components/response_list_table"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { Answer, getAnswers, getCurrentUser } from "@/lib/api"
+import { Answer, getAnswers, getCurrentUser, getSurvey } from "@/lib/api"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -22,6 +29,7 @@ export default function ResponsesPage() {
   const surveyId = Number(params?.id)
   
   const [responses, setResponses] = useState<ResponseData[]>([])
+  const [surveyTitle, setSurveyTitle] = useState("Loading...")
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
   const [programStudyId, setProgramStudyId] = useState<string | undefined>(undefined)
@@ -32,11 +40,13 @@ export default function ResponsesPage() {
         setIsLoading(true)
         setError("")
 
-        console.log("surveyId dari params", surveyId)
-        
         if (!surveyId || isNaN(surveyId)) {
           throw new Error("Invalid survey ID")
         }
+
+        // Fetch survey title
+        const survey = await getSurvey(surveyId.toString())
+        setSurveyTitle(survey.title)
 
         const answers: Answer[] = await getAnswers(surveyId)
 
@@ -88,14 +98,22 @@ export default function ResponsesPage() {
           <Separator orientation="vertical" className="mr-2 !h-4" />
           <Breadcrumb>
             <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/survey">Survey Management</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>Survey {surveyId}</BreadcrumbPage>
+                <BreadcrumbPage>{surveyTitle}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
         </header>
         <QuestionToolbar 
-          title={`Survey ${surveyId}`}
+          title={`${surveyTitle}`}
           activeTab="responses"
           surveyId={surveyId.toString()}
           programStudyId={programStudyId}

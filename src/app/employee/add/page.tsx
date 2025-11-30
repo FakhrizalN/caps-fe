@@ -2,12 +2,12 @@
 
 import { AppSidebar } from "@/components/app-sidebar"
 import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,11 +17,10 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import {
-    SidebarInset,
-    SidebarProvider,
-    SidebarTrigger,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { createUser, getProgramStudies, getRoles, type CreateUserData, type ProgramStudy, type Role } from "@/lib/api"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -112,6 +111,10 @@ export default function AddEmployeePage() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
+                <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
                 <BreadcrumbLink href="/employee">Employee Directory</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -130,198 +133,166 @@ export default function AddEmployeePage() {
           )}
 
           <div className="flex items-center justify-between">
+            <div className="text-3xl font-bold tracking-tight">Add New Employee</div>
             <div className="flex items-center gap-4">
-              <div className="text-3xl font-bold tracking-tight">Add New Employee</div>
+              <Button 
+                type="submit" 
+                disabled={isLoading} 
+                className="flex items-center gap-2"
+                onClick={handleSubmit}
+              >
+                {isLoading ? "Submitting..." : "Submit"}
+              </Button>
+              <Link href="/employee">
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </Link>
             </div>
           </div>
 
-          <Tabs defaultValue="personal" className="w-full space-y-6">
-            <div className="flex items-center justify-between">
-              <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
-                <TabsTrigger value="personal">Personal</TabsTrigger>
-                <TabsTrigger value="permissions">Module Permissions</TabsTrigger>
-              </TabsList>
-              
-              <div className="flex items-center gap-4">
-                <Button 
-                  type="submit" 
-                  disabled={isLoading} 
-                  className="flex items-center gap-2"
-                  onClick={handleSubmit}
-                >
-                  {isLoading ? "Submitting..." : "Submit"}
-                </Button>
-                <Link href="/employee">
-                  <Button type="button" variant="outline">
-                    Cancel
-                  </Button>
-                </Link>
+          <Card>
+            <CardHeader>
+              <CardTitle>Personal Information</CardTitle>
+              <CardDescription>
+                Fill in the personal details for the new employee.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field>
+                  <Label htmlFor="id">User ID</Label>
+                  <Input
+                    id="id"
+                    name="id"
+                    type="text"
+                    placeholder="Enter user ID (e.g., employee number)"
+                    value={formData.id}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Field>
+
+                <Field>
+                  <Label htmlFor="username">Full Name</Label>
+                  <Input
+                    id="username"
+                    name="username"
+                    type="text"
+                    placeholder="Enter full name"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Field>
+
+                <Field>
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="Enter email address"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                  />
+                </Field>
+
+                <Field>
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="Enter password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Field>
+
+                <Field>
+                  <Label htmlFor="role">Role</Label>
+                  <Select 
+                    value={formData.role?.toString()} 
+                    onValueChange={(value) => handleSelectChange("role", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map((role) => (
+                        <SelectItem key={role.id} value={role.id.toString()}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field>
+                  <Label htmlFor="program_study">Program Study</Label>
+                  <Select 
+                    value={formData.program_study?.toString()} 
+                    onValueChange={(value) => handleSelectChange("program_study", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select program study" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {programStudies.map((prodi) => (
+                        <SelectItem key={prodi.id} value={prodi.id.toString()}>
+                          {prodi.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field>
+                  <Label htmlFor="phone_number">Phone Number</Label>
+                  <Input
+                    id="phone_number"
+                    name="phone_number"
+                    type="tel"
+                    placeholder="+62 812-3456-7890"
+                    value={formData.phone_number}
+                    onChange={handleInputChange}
+                  />
+                </Field>
+
+                <Field>
+                  <Label htmlFor="last_survey">Last Survey</Label>
+                  <Select 
+                    value={formData.last_survey} 
+                    onValueChange={(value) => handleSelectChange("last_survey", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select last survey" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="exit">Exit</SelectItem>
+                      <SelectItem value="lv1">Level 1</SelectItem>
+                      <SelectItem value="lv2">Level 2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field className="md:col-span-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    name="address"
+                    type="text"
+                    placeholder="Enter address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                  />
+                </Field>
               </div>
-            </div>
-            
-            <TabsContent value="personal">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Personal Information</CardTitle>
-                  <CardDescription>
-                    Fill in the personal details for the new employee.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Field>
-                      <Label htmlFor="id">User ID</Label>
-                      <Input
-                        id="id"
-                        name="id"
-                        type="text"
-                        placeholder="Enter user ID (e.g., employee number)"
-                        value={formData.id}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </Field>
-
-                    <Field>
-                      <Label htmlFor="username">Full Name</Label>
-                      <Input
-                        id="username"
-                        name="username"
-                        type="text"
-                        placeholder="Enter full name"
-                        value={formData.username}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </Field>
-
-                    <Field>
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="Enter email address"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                      />
-                    </Field>
-
-                    <Field>
-                      <Label htmlFor="password">Password</Label>
-                      <Input
-                        id="password"
-                        name="password"
-                        type="password"
-                        placeholder="Enter password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </Field>
-
-                    <Field>
-                      <Label htmlFor="role">Role</Label>
-                      <Select 
-                        value={formData.role?.toString()} 
-                        onValueChange={(value) => handleSelectChange("role", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {roles.map((role) => (
-                            <SelectItem key={role.id} value={role.id.toString()}>
-                              {role.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </Field>
-
-                    <Field>
-                      <Label htmlFor="program_study">Program Study</Label>
-                      <Select 
-                        value={formData.program_study?.toString()} 
-                        onValueChange={(value) => handleSelectChange("program_study", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select program study" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {programStudies.map((prodi) => (
-                            <SelectItem key={prodi.id} value={prodi.id.toString()}>
-                              {prodi.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </Field>
-
-                    <Field>
-                      <Label htmlFor="phone_number">Phone Number</Label>
-                      <Input
-                        id="phone_number"
-                        name="phone_number"
-                        type="tel"
-                        placeholder="+62 812-3456-7890"
-                        value={formData.phone_number}
-                        onChange={handleInputChange}
-                      />
-                    </Field>
-
-                    <Field>
-                      <Label htmlFor="last_survey">Last Survey</Label>
-                      <Select 
-                        value={formData.last_survey} 
-                        onValueChange={(value) => handleSelectChange("last_survey", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select last survey" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">None</SelectItem>
-                          <SelectItem value="exit">Exit</SelectItem>
-                          <SelectItem value="lv1">Level 1</SelectItem>
-                          <SelectItem value="lv2">Level 2</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </Field>
-
-                    <Field className="md:col-span-2">
-                      <Label htmlFor="address">Address</Label>
-                      <Input
-                        id="address"
-                        name="address"
-                        type="text"
-                        placeholder="Enter address"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                      />
-                    </Field>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="permissions">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Module Permissions</CardTitle>
-                  <CardDescription>
-                    Additional information and permissions (optional).
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Field>
-                      <Label>Note: Additional permissions can be configured later</Label>
-                    </Field>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            </CardContent>
+          </Card>
         </div>
       </SidebarInset>
     </SidebarProvider>

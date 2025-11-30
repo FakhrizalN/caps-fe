@@ -119,13 +119,13 @@ export default function LoginPage() {
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             <div className="space-y-4">
               <Field>
-                <Label htmlFor="id">ID / Username</Label>
+                <Label htmlFor="id">NIM / NIP</Label>
                 <Input
                   id="id"
                   name="id"
                   type="text"
                   autoComplete="username"
-                  placeholder="Masukkan ID atau username"
+                  placeholder="Masukkan NIM atau NIP"
                   value={formData.id}
                   onChange={handleInputChange}
                   aria-invalid={fieldErrors.id}

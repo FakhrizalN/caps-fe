@@ -1,7 +1,7 @@
 "use client"
 
 import { HomeIcon } from "@heroicons/react/24/outline"
-import { Building2, ChevronRight, ClipboardList, LogOut, Users } from "lucide-react"
+import { BarChart2, Building2, ChevronRight, ClipboardList, LogOut, Shield, Users } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import * as React from "react"
 
@@ -31,29 +31,39 @@ const data = {
   versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
   navMain: [
     {
-      title: "User Directory",
+      title: "System Administration",
       url: "#",
       items: [
         {
-          title: "Unit Directory",
-          url: "/unit",
-          icon: Building2,
-        },
-        {
-          title: "Employee Directory",
+          title: "User Management",
           url: "/employee",
           icon: Users,
+        },
+        {
+          title: "Role Management",
+          url: "/roles",
+          icon: Shield,
+        },
+        {
+          title: "Academic Units",
+          url: "/unit",
+          icon: Building2,
         },
       ],
     },
     {
-      title: "Survey Directory",
+      title: "Tracer Activities ",
       url: "#",
       items: [
         {
           title: "Survey Management",
           url: "/survey",
           icon: ClipboardList,
+        },
+        {
+          title: "Response Data",
+          url: "/response",
+          icon: BarChart2,
         },
       ],
     },
@@ -110,7 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {item.items.map((subItem) => {
-                      const isActive = pathname === subItem.url
+                      const isActive = pathname.startsWith(subItem.url)
                       const IconComponent = subItem.icon
 
                       return (

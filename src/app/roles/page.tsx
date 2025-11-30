@@ -2,10 +2,12 @@
 
 import { AppSidebar } from "@/components/app-sidebar"
 import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbList,
-    BreadcrumbPage,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import {
@@ -158,6 +160,10 @@ export default function RoleManagementPage() {
               <Separator orientation="vertical" className="mr-2 !h-4" />
               <Breadcrumb>
                 <BreadcrumbList>
+                <BreadcrumbItem>
+                <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
                   <BreadcrumbItem>
                     <BreadcrumbPage>Role Management</BreadcrumbPage>
                   </BreadcrumbItem>
@@ -165,7 +171,7 @@ export default function RoleManagementPage() {
               </Breadcrumb>
             </header>
 
-            <div className="flex flex-1 flex-col gap-6 p-6 overflow-auto">
+            <div className="flex flex-1 flex-col gap-8 p-8 overflow-auto">
               {/* Error Message */}
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
