@@ -134,7 +134,7 @@ export function QuestionToolbar({
 
         {/* Right: Action Buttons */}
         <div className="flex items-center gap-2 min-w-[280px] justify-end">
-          <Button 
+          {/* <Button 
             variant="ghost" 
             size="icon" 
             title="Undo"
@@ -142,8 +142,8 @@ export function QuestionToolbar({
             disabled={!canUndo}
           >
             <Undo2 className="h-4 w-4" />
-          </Button>
-          <Button 
+          </Button> */}
+          {/* <Button 
             variant="ghost" 
             size="icon" 
             title="Redo"
@@ -151,7 +151,7 @@ export function QuestionToolbar({
             disabled={!canRedo}
           >
             <Redo2 className="h-4 w-4" />
-          </Button>
+          </Button> */}
           
           {/* Preview Toggle */}
           <Button 

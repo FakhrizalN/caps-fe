@@ -102,8 +102,8 @@ export default function ResponsesPage() {
           onPublish={() => console.log("Publish")}
         />
         
-        <div className="p-6 bg-gray-50 min-h-screen pt-24">
-          <div className="max-w-6xl ml-0 w-full space-y-3 pr-20">
+        <div className="p-6 bg-gray-50 min-h-screen pt-12">
+          <div className="ml-0 w-full space-y-3 pr-20">
             {isLoading && (
               <div className="flex justify-center items-center py-12">
                 <p className="text-gray-500">Loading responses...</p>

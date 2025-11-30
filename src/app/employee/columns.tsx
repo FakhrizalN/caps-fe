@@ -21,8 +21,9 @@ export type Employee = {
   name: string
   email: string
   role: string
-  unit: string
-  unitId: string
+  programStudy: string
+  faculty: string
+  department: string
   phone: string
 }
 
@@ -82,12 +83,18 @@ export const columns: ColumnDef<Employee>[] = [
     header: "Role",
   },
   {
-    accessorKey: "unit",
-    header: "Unit",
+    accessorKey: "programStudy",
+    header: "Program Study",
   },
   {
-    accessorKey: "unitId",
-    header: "Unit ID",
+    accessorKey: "faculty",
+    header: "Faculty",
+    enableHiding: true,
+  },
+  {
+    accessorKey: "department",
+    header: "Department",
+    enableHiding: true,
   },
   {
     accessorKey: "phone",

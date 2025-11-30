@@ -14,7 +14,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { getUsers, type User } from "@/lib/api"
+import { getProgramStudiesDetailed, getRoles, getUsers, type ProgramStudyDetailed, type Role, type User } from "@/lib/api"
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -27,6 +27,8 @@ export default function EmployeePage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [roles, setRoles] = useState<Role[]>([])
+  const [programStudies, setProgramStudies] = useState<ProgramStudyDetailed[]>([])
 
   useEffect(() => {
     fetchEmployees()
@@ -36,18 +38,45 @@ export default function EmployeePage() {
     try {
       setIsLoading(true)
       setError(null)
-      const users = await getUsers()
+      
+      // Fetch roles and program studies first
+      const [users, rolesData, programStudiesData] = await Promise.all([
+        getUsers(),
+        getRoles(),
+        getProgramStudiesDetailed()
+      ])
+      
+      setRoles(rolesData)
+      setProgramStudies(programStudiesData)
+      
+      // Debug: Log data dari API
+      console.log('Users from API:', users)
+      console.log('Roles from API:', rolesData)
+      console.log('Program Studies from API:', programStudiesData)
+      if (users.length > 0) {
+        console.log('Sample user data:', users[0])
+      }
       
       // Convert User API format to Employee format
-      const formattedEmployees: Employee[] = users.map((user: User) => ({
-        id: user.id,
-        name: user.username || 'N/A', // username adalah fullname
-        email: user.email || 'N/A',
-        role: user.role_name || 'N/A',
-        unit: user.program_study_name || 'N/A',
-        unitId: user.program_study?.toString() || 'N/A',
-        phone: user.phone_number || 'N/A',
-      }))
+      const formattedEmployees: Employee[] = users.map((user: User) => {
+        // Find role name by ID
+        const role = rolesData.find((r: Role) => r.id === Number(user.role))
+        // Find program study name by ID
+        const programStudy = programStudiesData.find((ps: ProgramStudyDetailed) => ps.id === Number(user.program_study))
+        
+        return {
+          id: user.id,
+          name: user.username || 'N/A',
+          email: user.email || 'N/A',
+          role: role?.name || 'N/A',
+          programStudy: programStudy?.name || 'N/A',
+          faculty: programStudy?.faculty_name || 'N/A',
+          department: programStudy?.department_name || 'N/A',
+          phone: user.phone_number || 'N/A',
+        }
+      })
+      
+      console.log('Formatted employees:', formattedEmployees)
       
       setEmployees(formattedEmployees)
     } catch (err) {

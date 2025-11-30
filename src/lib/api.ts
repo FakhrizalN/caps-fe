@@ -372,6 +372,8 @@ export interface User {
   role_name?: string
   program_study?: number | string
   program_study_name?: string
+  faculty_name?: string
+  department_name?: string
   address?: string
   phone_number?: string
   last_survey?: 'none' | 'exit' | 'lv1' | 'lv2'
@@ -780,7 +782,8 @@ export async function deleteDepartment(id: number): Promise<void> {
 export interface ProgramStudyDetailed {
   id: number
   name: string
-  faculty?: number
+  department?: number
+  department_name?: string
   faculty_name?: string
   created_at?: string
   updated_at?: string
