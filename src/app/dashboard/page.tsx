@@ -19,7 +19,7 @@ import {
   computeTingkatKerja,
   computeTingkatPendidikan,
   computeWaktuTunggu,
-} from "../../utils/dashboard-utils";
+} from "../../../utils/dashboard-utils";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { ClusterInterpretation } from "@/components/clusterinterpretation";
@@ -69,9 +69,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { parseCSV } from "../../utils/csv";
-import { computeClustering } from "../../utils/dashboard-utils";
-import { arForecast } from "../../utils/forecasting";
+import { parseCSV } from "../../../utils/csv";
+import { computeClustering } from "../../../utils/dashboard-utils";
+import { arForecast } from "../../../utils/forecasting";
 
 const chartConfig = {
   alumni: { label: "Alumni" },

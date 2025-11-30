@@ -1,6 +1,5 @@
 "use client"
 
-import { HomeIcon } from "@heroicons/react/24/outline"
 import { BarChart2, Building2, ChevronRight, ClipboardList, LogOut, Shield, Users } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import * as React from "react"
@@ -86,13 +85,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <div className="p-2">
           <Button 
             asChild
-            variant={isDashboardActive ? "default" : "ghost"}
-            size="sm"
+            variant="ghost" // Nonaktifkan active state
+            size="lg"
             className="w-full justify-start"
           >
             <a href="/" className="flex items-center gap-2">
-              <HomeIcon className="h-4 w-4" />
-              Dashboard
+              <img src="/LogoITK.png" alt="Logo ITK" className="h-8 w-auto" />
+              Tracer Study
             </a>
           </Button>
         </div>
