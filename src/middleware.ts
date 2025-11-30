@@ -20,7 +20,7 @@ export function middleware(request: NextRequest) {
   if (isAuthPath) {
     // Redirect to dashboard if trying to access auth pages while authenticated
     if (accessToken) {
-      return NextResponse.redirect(new URL('/', request.url))
+      return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     // Allow access to auth pages without token
     return NextResponse.next()
@@ -29,8 +29,8 @@ export function middleware(request: NextRequest) {
   // Check if the current path is protected
   const isProtectedPath = protectedPaths.some(path => {
     // Exact match for root path
-    if (path === '/') {
-      return pathname === '/'
+    if (path === '/dashboard') {
+      return pathname === '/dashboard'
     }
     // StartsWith for other paths
     return pathname.startsWith(path)
