@@ -1,181 +1,79 @@
-"use client"
+"use client";
+import {
+  numberFormatter as _numberFormatter,
+  computeComputedStats,
+  computeStatusAlumni,
+  computePekerjaanCepat,
+  computeWaktuTunggu,
+  computePendapatanData,
+  computeJenisInstitusi,
+  computeTingkatKerja,
+  computeRelevansiBidang,
+  computeTingkatPendidikan,
+  computeKompetensiData,
+  computeMetodePembelajaran,
+  computeTimelinePencarian,
+  computeStatusPencarian,
+  computeStrategiPencarian,
+  computeAlasanPekerjaan,
+  computeSumberDana,
+  assignPalette as _assignPalette,
+  getClusterColors as _getClusterColors,
+} from "../../utils/dashboard-utils";
 
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/app-sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbList,
   BreadcrumbPage,
-} from "@/components/ui/breadcrumb"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Separator } from "@/components/ui/separator"
+} from "@/components/ui/breadcrumb";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { Bar, BarChart, CartesianGrid, LabelList, Pie, PieChart, PolarAngleAxis, PolarGrid, Radar, RadarChart, XAxis, YAxis } from "recharts"
-
-// KPI Cards Data
-const stats = [
-  { title: "Total Responden", value: "1,234", description: "Total alumni yang merespons" },
-  { title: "Alumni Bekerja", value: "72%", description: "Dari total responden" },
-  { title: "Rata-rata Waktu Tunggu", value: "4.2 bulan", description: "Mendapat pekerjaan pertama" },
-  { title: "Relevansi Pendidikan", value: "78%", description: "Pekerjaan sesuai bidang studi" },
-  { title: "Rata-rata Pendapatan", value: "Rp 6.8jt", description: "Take home pay per bulan" },
-  { title: "Response Rate", value: "61%", description: "Dari total alumni" },
-]
-
-// 1. Status dan Kondisi Kerja Alumni
-// Status Alumni - Pie Chart
-const statusAlumniData = [
-  { status: "Bekerja Full Time", alumni: 650, fill: "var(--color-bekerjaFullTime)" },
-  { status: "Bekerja Part Time", alumni: 142, fill: "var(--color-bekerjaPartTime)" },
-  { status: "Wiraswasta", alumni: 156, fill: "var(--color-wiraswasta)" },
-  { status: "Melanjutkan Pendidikan", alumni: 98, fill: "var(--color-melanjutkanPendidikan)" },
-  { status: "Mencari Kerja", alumni: 145, fill: "var(--color-mencariKerja)" },
-  { status: "Belum Memungkinkan Bekerja", alumni: 43, fill: "var(--color-belumMemungkinkan)" },
-]
-
-// Pekerjaan ≤6 Bulan - Donut Chart
-const pekerjaanCepatData = [
-  { status: "Ya", alumni: 756, fill: "var(--color-ya)" },
-  { status: "Tidak", alumni: 478, fill: "var(--color-tidak)" },
-]
-
-// Waktu Tunggu Kerja - Bar Chart
-const waktuTungguData = [
-  { bulan: "0-3", jumlah: 342, fill: "var(--color-jumlah)" },
-  { bulan: "4-6", jumlah: 298, fill: "var(--color-jumlah)" },
-  { bulan: "7-9", jumlah: 186, fill: "var(--color-jumlah)" },
-  { bulan: "10-12", jumlah: 124, fill: "var(--color-jumlah)" },
-  { bulan: "13-18", jumlah: 78, fill: "var(--color-jumlah)" },
-  { bulan: ">18", jumlah: 56, fill: "var(--color-jumlah)" },
-]
-
-// Distribusi Pendapatan - Histogram
-const pendapatanData = [
-  { range: "< 2jt", jumlah: 89, fill: "var(--color-pendapatan)" },
-  { range: "2-4jt", jumlah: 234, fill: "var(--color-pendapatan)" },
-  { range: "4-6jt", jumlah: 378, fill: "var(--color-pendapatan)" },
-  { range: "6-8jt", jumlah: 298, fill: "var(--color-pendapatan)" },
-  { range: "8-10jt", jumlah: 145, fill: "var(--color-pendapatan)" },
-  { range: "10-15jt", jumlah: 67, fill: "var(--color-pendapatan)" },
-  { range: "> 15jt", jumlah: 23, fill: "var(--color-pendapatan)" },
-]
-
-// 2. Profil Pekerjaan
-// Jenis Institusi - Donut Chart
-const jenisInstitusiData = [
-  { institusi: "Perusahaan Swasta", jumlah: 567, fill: "var(--color-perusahaanSwasta)" },
-  { institusi: "Wiraswasta", jumlah: 234, fill: "var(--color-wiraswasta2)" },
-  { institusi: "Instansi Pemerintah", jumlah: 198, fill: "var(--color-instansiPemerintah)" },
-  { institusi: "BUMN/BUMD", jumlah: 145, fill: "var(--color-bumn)" },
-  { institusi: "Organisasi Non-Profit", jumlah: 67, fill: "var(--color-nonprofit)" },
-  { institusi: "Institusi Multilateral", jumlah: 23, fill: "var(--color-multilateral)" },
-]
-
-// Tingkat Tempat Kerja - Stacked Bar Chart
-const tingkatKerjaData = [
-  { level: "Lokal/Wilayah", jumlah: 456, fill: "var(--color-tingkat)" },
-  { level: "Nasional", jumlah: 534, fill: "var(--color-tingkat)" },
-  { level: "Multinasional", jumlah: 244, fill: "var(--color-tingkat)" },
-]
-
-// 3. Relevansi Pendidikan
-// Relevansi Bidang Studi - Stacked Bar Chart
-const relevansiBidangData = [
-  { kategori: "Sangat Erat", persentase: 38, fill: "var(--color-relevansi)" },
-  { kategori: "Erat", persentase: 32, fill: "var(--color-relevansi)" },
-  { kategori: "Cukup Erat", persentase: 18, fill: "var(--color-relevansi)" },
-  { kategori: "Kurang Erat", persentase: 8, fill: "var(--color-relevansi)" },
-  { kategori: "Tidak Sama Sekali", persentase: 4, fill: "var(--color-relevansi)" },
-]
-
-// Kesesuaian Tingkat Pendidikan - Pie Chart
-const tingkatPendidikanData = [
-  { tingkat: "Setingkat", jumlah: 756, fill: "var(--color-setingkat)" },
-  { tingkat: "Lebih Tinggi", jumlah: 234, fill: "var(--color-lebihTinggi)" },
-  { tingkat: "Lebih Rendah", jumlah: 156, fill: "var(--color-lebihRendah)" },
-  { tingkat: "Tidak Perlu Pendidikan Tinggi", jumlah: 88, fill: "var(--color-tidakPerlu)" },
-]
-
-// 4. Kompetensi Alumni - Gap Analysis (Radar Chart)
-const kompetensiData = [
-  { kompetensi: "Etika", saatLulus: 82, kebutuhanKerja: 88 },
-  { kompetensi: "Keahlian Bidang Ilmu", saatLulus: 75, kebutuhanKerja: 92 },
-  { kompetensi: "Bahasa Inggris", saatLulus: 68, kebutuhanKerja: 85 },
-  { kompetensi: "Penggunaan TI", saatLulus: 78, kebutuhanKerja: 90 },
-  { kompetensi: "Komunikasi", saatLulus: 72, kebutuhanKerja: 87 },
-  { kompetensi: "Kerja Sama Tim", saatLulus: 80, kebutuhanKerja: 89 },
-  { kompetensi: "Pengembangan Diri", saatLulus: 70, kebutuhanKerja: 86 },
-]
-
-// 5. Metode Pembelajaran - Horizontal Bar Chart
-const metodePembelajaranData = [
-  { metode: "Perkuliahan", efektivitas: 85, fill: "var(--color-metode)" },
-  { metode: "Diskusi", efektivitas: 82, fill: "var(--color-metode)" },
-  { metode: "Praktikum", efektivitas: 88, fill: "var(--color-metode)" },
-  { metode: "Magang", efektivitas: 92, fill: "var(--color-metode)" },
-  { metode: "Kerja Lapangan", efektivitas: 86, fill: "var(--color-metode)" },
-  { metode: "Demonstrasi", efektivitas: 78, fill: "var(--color-metode)" },
-  { metode: "Partisipasi Proyek Riset", efektivitas: 80, fill: "var(--color-metode)" },
-]
-
-// 6. Proses Pencarian Kerja
-// Timeline Pencari Kerja - Bar Chart
-const timelinePencarianData = [
-  { kategori: "Sebelum Lulus", jumlah: 456, fill: "var(--color-timeline)" },
-  { kategori: "Sesudah Lulus", jumlah: 678, fill: "var(--color-timeline)" },
-  { kategori: "Tidak Mencari", jumlah: 100, fill: "var(--color-timeline)" },
-]
-
-// Strategi Pencarian Kerja - Horizontal Bar Chart
-const strategiPencarianData = [
-  { strategi: "Internet/Job Portal", jumlah: 678, fill: "var(--color-strategi)" },
-  { strategi: "Melamar Langsung", jumlah: 534, fill: "var(--color-strategi)" },
-  { strategi: "Networking/Relasi", jumlah: 456, fill: "var(--color-strategi)" },
-  { strategi: "Pusat Karir Kampus", jumlah: 345, fill: "var(--color-strategi)" },
-  { strategi: "Bursa Kerja", jumlah: 289, fill: "var(--color-strategi)" },
-  { strategi: "Dihubungi Perusahaan", jumlah: 234, fill: "var(--color-strategi)" },
-  { strategi: "Tempat Kerja Saat Kuliah", jumlah: 198, fill: "var(--color-strategi)" },
-  { strategi: "Magang", jumlah: 167, fill: "var(--color-strategi)" },
-  { strategi: "Iklan Koran", jumlah: 89, fill: "var(--color-strategi)" },
-  { strategi: "Bisnis Sendiri", jumlah: 78, fill: "var(--color-strategi)" },
-]
-
-// Status Aktif Pencarian - Pie Chart
-const statusPencarianData = [
-  { status: "Mulai Bekerja", jumlah: 792, fill: "var(--color-mulaiBekerja)" },
-  { status: "Sedang Tunggu Hasil", jumlah: 234, fill: "var(--color-tungguHasil)" },
-  { status: "Belum Pasti", jumlah: 123, fill: "var(--color-belumPasti)" },
-  { status: "Tidak Mencari", jumlah: 85, fill: "var(--color-tidakMencari)" },
-]
-
-// 7. Pembiayaan Pendidikan
-const sumberDanaData = [
-  { sumber: "Biaya Sendiri/Keluarga", jumlah: 678, fill: "var(--color-biayaSendiri)" },
-  { sumber: "Beasiswa BIDIKMISI", jumlah: 234, fill: "var(--color-bidikmisi)" },
-  { sumber: "Beasiswa ADIK", jumlah: 145, fill: "var(--color-adik)" },
-  { sumber: "Beasiswa PPA", jumlah: 89, fill: "var(--color-ppa)" },
-  { sumber: "Beasiswa Perusahaan", jumlah: 56, fill: "var(--color-perusahaan)" },
-  { sumber: "Lainnya", jumlah: 32, fill: "var(--color-lainnya)" },
-]
-
-// 8. Alasan Mengambil Pekerjaan Tidak Sesuai
-const alasanPekerjaanData = [
-  { alasan: "Prospek Karir Baik", jumlah: 345, fill: "var(--color-alasan)" },
-  { alasan: "Pendapatan Lebih Tinggi", jumlah: 298, fill: "var(--color-alasan)" },
-  { alasan: "Belum Dapat yang Sesuai", jumlah: 267, fill: "var(--color-alasan)" },
-  { alasan: "Lebih Menarik", jumlah: 234, fill: "var(--color-alasan)" },
-  { alasan: "Lebih Aman/Terjamin", jumlah: 198, fill: "var(--color-alasan)" },
-  { alasan: "Awal Karir Harus Terima", jumlah: 178, fill: "var(--color-alasan)" },
-  { alasan: "Jadwal Fleksibel", jumlah: 156, fill: "var(--color-alasan)" },
-  { alasan: "Lokasi Dekat Rumah", jumlah: 134, fill: "var(--color-alasan)" },
-  { alasan: "Lebih Suka Area Berbeda", jumlah: 112, fill: "var(--color-alasan)" },
-  { alasan: "Menjamin Keluarga", jumlah: 89, fill: "var(--color-alasan)" },
-]
+} from "@/components/ui/sidebar";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  Pie,
+  PieChart,
+  PolarAngleAxis,
+  PolarGrid,
+  Radar,
+  RadarChart,
+  XAxis,
+  YAxis,
+  LineChart,
+  Line,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ScatterChart,
+  Scatter,
+} from "recharts";
+import { computeClustering } from "../../utils/dashboard-utils";
+import { arForecast } from "../../utils/forecasting";
+import { parseCSV } from "../../utils/csv";
+import { ClusterInterpretation } from "@/components/clusterinterpretation";
+import React, { useEffect, useState, useMemo } from "react";
 
 const chartConfig = {
   alumni: { label: "Alumni" },
@@ -218,17 +116,196 @@ const chartConfig = {
   tungguHasil: { label: "Sedang Tunggu Hasil", color: "#FFBB28" },
   belumPasti: { label: "Belum Pasti", color: "#FF8042" },
   tidakMencari: { label: "Tidak Mencari", color: "#8884d8" },
-  // Sumber Dana
-  biayaSendiri: { label: "Biaya Sendiri/Keluarga", color: "#007FCB" },
-  bidikmisi: { label: "Beasiswa BIDIKMISI", color: "#00C49F" },
-  adik: { label: "Beasiswa ADIK", color: "#FFBB28" },
-  ppa: { label: "Beasiswa PPA", color: "#FF8042" },
-  perusahaan: { label: "Beasiswa Perusahaan", color: "#8884d8" },
-  lainnya: { label: "Lainnya", color: "#82ca9d" },
-  label: { color: "hsl(var(--background))" },
-}
+};
 
 export default function Dashboard() {
+  const [csvLoaded, setCsvLoaded] = useState(false);
+  const [columns, setColumns] = useState<string[]>([]);
+  const [rows, setRows] = useState<Array<Record<string, string>>>([]);
+  const [pcaVariance, setPcaVariance] = useState<number[]>([0, 0]);
+  const [config, setConfig] = useState<any>(null);
+
+  const [xFeature, setXFeature] = useState<string>("");
+  const [yFeature, setYFeature] = useState<string>("");
+  const [kClusters, setKClusters] = useState<number>(3);
+  const [clusterResult, setClusterResult] = useState<
+    Array<{ x: number; y: number; cluster: number }>
+  >([]);
+
+  const [tsSeries, setTsSeries] = useState<Array<{ t: string; value: number }>>(
+    []
+  );
+  const [arOrder, setArOrder] = useState<number>(2);
+  const [diff, setDiff] = useState<number>(0);
+  const [horizon, setHorizon] = useState<number>(3);
+  const [forecastResult, setForecastResult] = useState<number[]>([]);
+
+  useEffect(() => {
+    fetch("/preprocessing_config.json")
+      .then((res) => res.json())
+      .then((data) => {
+        setConfig(data);
+      })
+      .catch((err) => console.error("Failed to load config:", err));
+  }, []);
+
+  useEffect(() => {
+    fetch("/data.csv")
+      .then((r) => r.text())
+      .then((txt) => {
+        const parsed = parseCSV(txt);
+        if (parsed.length > 0) {
+          setColumns(Object.keys(parsed[0]));
+          setRows(parsed);
+          setCsvLoaded(true);
+
+          setXFeature("F502");
+          setYFeature("F505");
+          setKClusters(4);
+
+          if (Object.keys(parsed[0]).includes("Tahun Lulus")) {
+            const agg: Record<string, number> = {};
+            parsed.forEach((r) => {
+              const y = r["Tahun Lulus"]?.trim();
+              if (!y) return;
+              agg[y] = (agg[y] || 0) + 1;
+            });
+
+            const years = Object.keys(agg)
+              .map((k) => parseInt(k, 10))
+              .filter((v) => !isNaN(v))
+              .sort((a, b) => a - b);
+
+            const series = years.map((y) => ({
+              t: String(y),
+              value: agg[String(y)],
+            }));
+
+            // kalau ada 2025, isi dengan rata-rata 3 tahun lengkap sebelumnya
+            const idx2025 = years.indexOf(2025);
+            if (idx2025 !== -1) {
+              const last3 = series
+                .filter((d) => parseInt(d.t, 10) < 2025)
+                .slice(-3)
+                .map((d) => d.value);
+
+              if (last3.length > 0) {
+                const avg = last3.reduce((s, v) => s + v, 0) / last3.length;
+                series[idx2025].value = avg;
+              }
+            }
+
+            setTsSeries(series);
+          }
+        }
+      })
+      .catch((err) => console.error("csv load", err));
+  }, []);
+
+  useEffect(() => {
+    if (!csvLoaded || !xFeature || !yFeature || !config) return;
+
+    const { clusterPlot, explainedVariance } = computeClustering(rows, config, kClusters);
+    if (clusterPlot && clusterPlot.length > 0) {
+      setClusterResult(clusterPlot);
+    }
+    if (explainedVariance) setPcaVariance(explainedVariance);
+  }, [csvLoaded, xFeature, yFeature, kClusters, rows, config]);
+
+  const numberFormatter = _numberFormatter;
+
+  const computedStats = useMemo(() => computeComputedStats(rows), [rows]);
+  const statusAlumni = useMemo(() => computeStatusAlumni(rows), [rows]);
+  const pekerjaanCepat = useMemo(() => computePekerjaanCepat(rows), [rows]);
+  const waktuTunggu = useMemo(() => computeWaktuTunggu(rows), [rows]);
+  const pendapatanDataComputed = useMemo(() => computePendapatanData(rows), [rows]);
+  const jenisInstitusi = useMemo(() => computeJenisInstitusi(rows), [rows]);
+  const tingkatKerja = useMemo(() => computeTingkatKerja(rows), [rows]);
+  const relevansiBidang = useMemo(() => computeRelevansiBidang(rows), [rows]);
+  const tingkatPendidikan = useMemo(() => computeTingkatPendidikan(rows), [rows]);
+  const kompetensiDataComputed = useMemo(() => computeKompetensiData(rows), [rows]);
+  const metodePembelajaran = useMemo(() => computeMetodePembelajaran(rows), [rows]);
+  const timelinePencarian = useMemo(() => computeTimelinePencarian(rows), [rows]);
+  const statusPencarian = useMemo(() => computeStatusPencarian(rows), [rows]);
+  const strategiPencarian = useMemo(() => computeStrategiPencarian(rows), [rows]);
+  const alasanPekerjaan = useMemo(() => computeAlasanPekerjaan(rows), [rows]);
+  const sumberDana = useMemo(() => computeSumberDana(rows), [rows]);
+
+  useEffect(() => {
+    if (tsSeries.length === 0) return;
+    const values = tsSeries.map((s) => s.value);
+    const rawForecast = arForecast(values, arOrder, diff, horizon);
+
+    // jumlah lulusan tidak boleh minus
+    const safeForecast = rawForecast.map((v) => Math.max(0, v));
+
+    setForecastResult(safeForecast);
+  }, [tsSeries, arOrder, diff, horizon]);
+
+  const getClusterColors = _getClusterColors;
+  const assignPalette = _assignPalette;
+
+  const statusAlumniColored = useMemo(
+    () => assignPalette(statusAlumni, "status"),
+    [statusAlumni]
+  );
+  const pekerjaanCepatColored = useMemo(
+    () => assignPalette(pekerjaanCepat, "status"),
+    [pekerjaanCepat]
+  );
+  const waktuTungguColored = useMemo(
+    () => assignPalette(waktuTunggu, "bulan"),
+    [waktuTunggu]
+  );
+  const pendapatanDataColored = useMemo(
+    () => assignPalette(pendapatanDataComputed, "range"),
+    [pendapatanDataComputed]
+  );
+  const jenisInstitusiColored = useMemo(
+    () => assignPalette(jenisInstitusi, "institusi"),
+    [jenisInstitusi]
+  );
+  const tingkatKerjaColored = useMemo(
+    () => assignPalette(tingkatKerja, "level"),
+    [tingkatKerja]
+  );
+  const relevansiBidangColored = useMemo(
+    () => assignPalette(relevansiBidang, "kategori"),
+    [relevansiBidang]
+  );
+  const tingkatPendidikanColored = useMemo(
+    () => assignPalette(tingkatPendidikan, "tingkat"),
+    [tingkatPendidikan]
+  );
+  const kompetensiDataColored = useMemo(
+    () => assignPalette(kompetensiDataComputed, "kompetensi"),
+    [kompetensiDataComputed]
+  );
+  const metodePembelajaranColored = useMemo(
+    () => assignPalette(metodePembelajaran, "metode"),
+    [metodePembelajaran]
+  );
+  const timelinePencarianColored = useMemo(
+    () => assignPalette(timelinePencarian, "kategori"),
+    [timelinePencarian]
+  );
+  const statusPencarianColored = useMemo(
+    () => assignPalette(statusPencarian, "status"),
+    [statusPencarian]
+  );
+  const strategiPencarianColored = useMemo(
+    () => assignPalette(strategiPencarian, "strategi"),
+    [strategiPencarian]
+  );
+  const alasanPekerjaanColored = useMemo(
+    () => assignPalette(alasanPekerjaan, "alasan"),
+    [alasanPekerjaan]
+  );
+  const sumberDanaColored = useMemo(
+    () => assignPalette(sumberDana, "sumber"),
+    [sumberDana]
+  );
+
   return (
     <div className="flex flex-col h-screen">
       <div className="flex flex-1 overflow-hidden">
@@ -249,15 +326,16 @@ export default function Dashboard() {
 
             <div className="flex flex-1 flex-col gap-6 p-6 overflow-auto">
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Dashboard Tracer Study</h1>
+                <h1 className="text-3xl font-bold tracking-tight">
+                  Dashboard Tracer Study
+                </h1>
                 <p className="text-muted-foreground">
                   Analisis komprehensif data alumni dan insersi lulusan
                 </p>
               </div>
-
               {/* KPI Cards */}
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-                {stats.map((stat) => (
+                {computedStats.map((stat) => (
                   <Card key={stat.title}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -273,13 +351,14 @@ export default function Dashboard() {
                   </Card>
                 ))}
               </div>
-
               {/* Section 1: Status dan Kondisi Kerja Alumni */}
               <div className="space-y-4">
-                <h2 className="text-2xl font-bold">Status dan Kondisi Kerja Alumni</h2>
-                
+                <h2 className="text-2xl font-bold">
+                  Status dan Kondisi Kerja Alumni
+                </h2>
+
                 <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-                  {/* Status Alumni - Pie Chart */}
+                  {/* Status Alumni */}
                   <Card className="flex flex-col">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-base">Status Alumni</CardTitle>
@@ -288,44 +367,68 @@ export default function Dashboard() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 pb-0">
-                      <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[200px]">
+                      <ChartContainer
+                        config={chartConfig}
+                        className="mx-auto aspect-square max-h-[200px]"
+                      >
                         <PieChart>
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Pie data={statusAlumniData} dataKey="alumni" nameKey="status" />
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel />}
+                          />
+                          <Pie
+                            data={statusAlumniColored}
+                            dataKey="alumni"
+                            nameKey="status"
+                          />
                         </PieChart>
                       </ChartContainer>
                     </CardContent>
                   </Card>
 
-                  {/* Pekerjaan ≤6 Bulan - Donut Chart */}
+                  {/* Pekerjaan ≤6 Bulan */}
                   <Card className="flex flex-col">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Pekerjaan ≤6 Bulan</CardTitle>
+                      <CardTitle className="text-base">
+                        Pekerjaan ≤6 Bulan
+                      </CardTitle>
                       <CardDescription className="text-xs">
                         Alumni dapat pekerjaan dalam 6 bulan
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 pb-0">
-                      <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[200px]">
+                      <ChartContainer
+                        config={chartConfig}
+                        className="mx-auto aspect-square max-h-[200px]"
+                      >
                         <PieChart>
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Pie data={pekerjaanCepatData} dataKey="alumni" nameKey="status" innerRadius={60} />
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel />}
+                          />
+                          <Pie
+                            data={pekerjaanCepatColored}
+                            dataKey="alumni"
+                            nameKey="status"
+                          />
                         </PieChart>
                       </ChartContainer>
                     </CardContent>
                   </Card>
 
-                  {/* Waktu Tunggu Kerja - Bar Chart */}
+                  {/* Waktu Tunggu Kerja */}
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Waktu Tunggu Kerja</CardTitle>
+                      <CardTitle className="text-base">
+                        Waktu Tunggu Kerja
+                      </CardTitle>
                       <CardDescription className="text-xs">
                         Distribusi waktu tunggu (bulan)
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <ChartContainer config={chartConfig}>
-                        <BarChart accessibilityLayer data={waktuTungguData}>
+                        <BarChart accessibilityLayer data={waktuTungguColored}>
                           <CartesianGrid vertical={false} />
                           <XAxis
                             dataKey="bulan"
@@ -333,24 +436,36 @@ export default function Dashboard() {
                             tickMargin={10}
                             axisLine={false}
                           />
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Bar dataKey="jumlah" fill="var(--color-jumlah)" radius={8} />
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel />}
+                          />
+                          <Bar
+                            dataKey="jumlah"
+                            fill="var(--color-jumlah)"
+                            radius={8}
+                          />
                         </BarChart>
                       </ChartContainer>
                     </CardContent>
                   </Card>
 
-                  {/* Distribusi Pendapatan - Histogram */}
+                  {/* Distribusi Pendapatan */}
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Distribusi Pendapatan</CardTitle>
+                      <CardTitle className="text-base">
+                        Distribusi Pendapatan
+                      </CardTitle>
                       <CardDescription className="text-xs">
                         Rentang take home pay per bulan
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <ChartContainer config={chartConfig}>
-                        <BarChart accessibilityLayer data={pendapatanData}>
+                        <BarChart
+                          accessibilityLayer
+                          data={pendapatanDataColored}
+                        >
                           <CartesianGrid vertical={false} />
                           <XAxis
                             dataKey="range"
@@ -359,8 +474,15 @@ export default function Dashboard() {
                             axisLine={false}
                             tickFormatter={(value) => value.slice(0, 5)}
                           />
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Bar dataKey="jumlah" fill="var(--color-pendapatan)" radius={8} />
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel />}
+                          />
+                          <Bar
+                            dataKey="jumlah"
+                            fill="var(--color-pendapatan)"
+                            radius={8}
+                          />
                         </BarChart>
                       </ChartContainer>
                     </CardContent>
@@ -371,37 +493,60 @@ export default function Dashboard() {
               {/* Section 2: Profil Pekerjaan */}
               <div className="space-y-4">
                 <h2 className="text-2xl font-bold">Profil Pekerjaan</h2>
-                
+
                 <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-                  {/* Jenis Institusi - Donut Chart */}
+                  {/* Jenis Institusi */}
                   <Card className="lg:col-span-2 flex flex-col">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Jenis Institusi Tempat Kerja</CardTitle>
+                      <CardTitle className="text-base">
+                        Jenis Institusi Tempat Kerja
+                      </CardTitle>
                       <CardDescription className="text-xs">
                         Distribusi jenis tempat alumni bekerja
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="flex-1 pb-0">
-                      <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px]">
+                    <CardContent className="flex-1 pb-4">
+                      <ChartContainer
+                        config={chartConfig}
+                        className="mx-auto w-full h-[340px]"
+                      >
                         <PieChart>
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Pie data={jenisInstitusiData} dataKey="jumlah" nameKey="institusi" innerRadius={60} />
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent />}
+                          />
+                          <Pie
+                            data={jenisInstitusiColored}
+                            dataKey="jumlah"
+                            nameKey="institusi"
+                            innerRadius={80}
+                            outerRadius={130}
+                            paddingAngle={2}
+                          />
+                          <Legend
+                            layout="vertical"
+                            verticalAlign="middle"
+                            align="right"
+                            iconType="plainline"
+                          />
                         </PieChart>
                       </ChartContainer>
                     </CardContent>
                   </Card>
 
-                  {/* Tingkat Tempat Kerja - Bar Chart */}
+                  {/* Tingkat Tempat Kerja */}
                   <Card className="lg:col-span-2">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Tingkat Tempat Kerja</CardTitle>
+                      <CardTitle className="text-base">
+                        Tingkat Tempat Kerja
+                      </CardTitle>
                       <CardDescription className="text-xs">
                         Level organisasi tempat alumni bekerja
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <ChartContainer config={chartConfig}>
-                        <BarChart accessibilityLayer data={tingkatKerjaData}>
+                        <BarChart accessibilityLayer data={tingkatKerjaColored}>
                           <CartesianGrid vertical={false} />
                           <XAxis
                             dataKey="level"
@@ -409,8 +554,15 @@ export default function Dashboard() {
                             tickMargin={10}
                             axisLine={false}
                           />
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Bar dataKey="jumlah" fill="var(--color-tingkat)" radius={8} />
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel />}
+                          />
+                          <Bar
+                            dataKey="jumlah"
+                            fill="var(--color-tingkat)"
+                            radius={8}
+                          />
                         </BarChart>
                       </ChartContainer>
                     </CardContent>
@@ -421,48 +573,62 @@ export default function Dashboard() {
               {/* Section 3: Relevansi Pendidikan */}
               <div className="space-y-4">
                 <h2 className="text-2xl font-bold">Relevansi Pendidikan</h2>
-                
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-                  {/* Relevansi Bidang Studi - Horizontal Bar Chart */}
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-2">
+                  {/* Relevansi Bidang Studi */}
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Relevansi Bidang Studi</CardTitle>
+                      <CardTitle className="text-base">
+                        Relevansi Bidang Studi
+                      </CardTitle>
                       <CardDescription className="text-xs">
                         Keeratan hubungan bidang studi dengan pekerjaan
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <ChartContainer config={chartConfig}>
+                      <ChartContainer
+                        config={chartConfig}
+                        className="h-[200px] w-full overflow-hidden"
+                      >
                         <BarChart
+                          width={260}
+                          height={200}
                           accessibilityLayer
-                          data={relevansiBidangData}
+                          data={relevansiBidangColored}
                           layout="vertical"
-                          margin={{ right: 16 }}
+                          margin={{ top: 8, right: 15, left: 0, bottom: 8 }}
                         >
                           <CartesianGrid horizontal={false} />
                           <YAxis
                             dataKey="kategori"
                             type="category"
                             tickLine={false}
-                            tickMargin={10}
+                            tickMargin={4}
                             axisLine={false}
-                            hide
                           />
-                          <XAxis dataKey="persentase" type="number" hide />
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
-                          <Bar dataKey="persentase" fill="var(--color-relevansi)" radius={4}>
-                            <LabelList
-                              dataKey="kategori"
-                              position="insideLeft"
-                              offset={8}
-                              className="fill-[--color-label]"
-                              fontSize={12}
-                            />
+                          <XAxis
+                            dataKey="persentase"
+                            type="number"
+                            domain={[0, 100]}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(v) => `${v}%`}
+                          />
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent indicator="line" />}
+                          />
+                          <Bar
+                            dataKey="persentase"
+                            fill="var(--color-relevansi)"
+                            radius={4}
+                            barSize={16}
+                          >
                             <LabelList
                               dataKey="persentase"
                               position="right"
-                              offset={8}
+                              offset={4}
                               className="fill-foreground"
+                              formatter={(v: number) => `${v}%`}
                               fontSize={12}
                             />
                           </Bar>
@@ -471,82 +637,145 @@ export default function Dashboard() {
                     </CardContent>
                   </Card>
 
-                  {/* Kesesuaian Tingkat Pendidikan - Pie Chart */}
+                  {/* Kesesuaian Tingkat Pendidikan */}
                   <Card className="flex flex-col">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Kesesuaian Tingkat Pendidikan</CardTitle>
+                      <CardTitle className="text-base">
+                        Kesesuaian Tingkat Pendidikan
+                      </CardTitle>
                       <CardDescription className="text-xs">
                         Kesesuaian tingkat pendidikan dengan pekerjaan
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 pb-0">
-                      <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[200px]">
-                        <PieChart>
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Pie data={tingkatPendidikanData} dataKey="jumlah" nameKey="tingkat" />
+                      <ChartContainer
+                        config={chartConfig}
+                        className="mx-auto max-h-[200px] w-full"
+                      >
+                        <PieChart
+                          margin={{ top: 8, right: 80, left: 8, bottom: 8 }}
+                        >
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel />}
+                          />
+                          <Pie
+                            data={tingkatPendidikanColored}
+                            dataKey="jumlah"
+                            nameKey="tingkat"
+                            innerRadius={50}
+                            outerRadius={90}
+                            paddingAngle={2}
+                          />
+                          <Legend
+                            layout="vertical"
+                            verticalAlign="middle"
+                            align="right"
+                            iconType="plainline"
+                          />
                         </PieChart>
                       </ChartContainer>
                     </CardContent>
                   </Card>
 
-                  {/* Gap Analysis Kompetensi Alumni - Radar Chart */}
-                  <Card className="lg:col-span-2">
+                  {/* Gap Kompetensi Alumni */}
+                  <Card>
                     <CardHeader className="pb-2 items-center">
-                      <CardTitle className="text-base">Gap Kompetensi Alumni</CardTitle>
-                      <CardDescription className="text-xs text-center">
+                      <CardTitle className="text-base">
+                        Gap Kompetensi Alumni
+                      </CardTitle>
+                      <CardDescription className="text-xs text-left">
                         Perbandingan kompetensi saat lulus vs kebutuhan kerja
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px]">
-                        <RadarChart data={kompetensiData} margin={{ top: -40, bottom: -10 }}>
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
-                          <PolarAngleAxis dataKey="kompetensi" />
+                      <ChartContainer
+                        config={chartConfig}
+                        className="mx-auto h-[320px] w-full"
+                      >
+                        <RadarChart
+                          data={kompetensiDataColored}
+                          outerRadius={140}
+                          margin={{ top: 20, right: 40, bottom: -10, left: 40 }}
+                        >
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent indicator="line" />}
+                          />
+                          <PolarAngleAxis
+                            dataKey="kompetensi"
+                            tick={{ fontSize: 11 }}
+                          />
                           <PolarGrid />
                           <Radar
+                            name="Saat Lulus"
                             dataKey="saatLulus"
+                            stroke="var(--color-saatLulus)"
                             fill="var(--color-saatLulus)"
-                            fillOpacity={0.6}
+                            fillOpacity={0.25}
                           />
-                          <Radar dataKey="kebutuhanKerja" fill="var(--color-kebutuhanKerja)" />
-                          <ChartLegend className="mt-8" content={<ChartLegendContent />} />
+                          <Radar
+                            name="Kebutuhan Kerja"
+                            dataKey="kebutuhanKerja"
+                            stroke="var(--color-kebutuhanKerja)"
+                            fill="var(--color-kebutuhanKerja)"
+                            fillOpacity={0.25}
+                          />
+                          <Legend
+                            layout="horizontal"
+                            verticalAlign="bottom"
+                            align="center"
+                            iconType="plainline"
+                          />
                         </RadarChart>
                       </ChartContainer>
                     </CardContent>
                   </Card>
 
                   {/* Efektivitas Metode Pembelajaran */}
-                  <Card className="lg:col-span-2">
+                  <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Efektivitas Metode Pembelajaran</CardTitle>
+                      <CardTitle className="text-base">
+                        Efektivitas Metode Pembelajaran
+                      </CardTitle>
                       <CardDescription className="text-xs">
                         Kontribusi metode pembelajaran terhadap pekerjaan
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <ChartContainer config={chartConfig}>
+                      <ChartContainer
+                        config={chartConfig}
+                        className="h-[320px] w-full"
+                      >
                         <BarChart
                           accessibilityLayer
-                          data={metodePembelajaranData}
+                          data={metodePembelajaranColored}
                           layout="vertical"
-                          margin={{ right: 16 }}
+                          margin={{ top: 8, right: 24, left: 24, bottom: 16 }}
                         >
                           <CartesianGrid horizontal={false} />
                           <YAxis
                             dataKey="metode"
                             type="category"
                             tickLine={false}
-                            tickMargin={10}
+                            tickMargin={6}
                             axisLine={false}
-                            hide
                           />
                           <XAxis dataKey="efektivitas" type="number" hide />
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
-                          <Bar dataKey="efektivitas" fill="var(--color-metode)" radius={4}>
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent indicator="line" />}
+                          />
+                          <Bar
+                            dataKey="efektivitas"
+                            fill="var(--color-metode)"
+                            radius={4}
+                            barSize={24}
+                          >
                             <LabelList
                               dataKey="metode"
                               position="insideLeft"
-                              offset={8}
+                              offset={10}
                               className="fill-[--color-label]"
                               fontSize={12}
                             />
@@ -568,29 +797,46 @@ export default function Dashboard() {
               {/* Section 4: Proses Pencarian Kerja */}
               <div className="space-y-4">
                 <h2 className="text-2xl font-bold">Proses Pencarian Kerja</h2>
-                
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-1 lg:grid-cols-2">
                   {/* Timeline Pencarian Kerja */}
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Timeline Pencarian Kerja</CardTitle>
+                      <CardTitle className="text-base">
+                        Timeline Pencarian Kerja
+                      </CardTitle>
                       <CardDescription className="text-xs">
                         Kapan alumni mulai mencari pekerjaan
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <ChartContainer config={chartConfig}>
-                        <BarChart accessibilityLayer data={timelinePencarianData}>
+                      <ChartContainer
+                        config={chartConfig}
+                        className="h-[220px] w-full"
+                      >
+                        <BarChart
+                          accessibilityLayer
+                          data={timelinePencarianColored}
+                          margin={{ top: 8, right: 16, left: 8, bottom: 32 }}
+                        >
                           <CartesianGrid vertical={false} />
                           <XAxis
                             dataKey="kategori"
                             tickLine={false}
-                            tickMargin={10}
+                            tickMargin={8}
                             axisLine={false}
-                            tickFormatter={(value) => value.slice(0, 10)}
+                            tickFormatter={(value) => value}
                           />
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Bar dataKey="jumlah" fill="var(--color-timeline)" radius={8} />
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel />}
+                          />
+                          <Bar
+                            dataKey="jumlah"
+                            fill="var(--color-timeline)"
+                            radius={8}
+                            barSize={100}
+                          />
                         </BarChart>
                       </ChartContainer>
                     </CardContent>
@@ -599,25 +845,50 @@ export default function Dashboard() {
                   {/* Status Aktif Pencarian */}
                   <Card className="flex flex-col">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Status Pencarian Kerja</CardTitle>
+                      <CardTitle className="text-base">
+                        Status Pencarian Kerja
+                      </CardTitle>
                       <CardDescription className="text-xs">
                         Kondisi pencarian kerja alumni saat ini
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 pb-0">
-                      <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[200px]">
-                        <PieChart>
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Pie data={statusPencarianData} dataKey="jumlah" nameKey="status" />
+                      <ChartContainer
+                        config={chartConfig}
+                        className="mx-auto h-[240px] w-full"
+                      >
+                        <PieChart
+                          margin={{ top: 8, right: 110, left: 16, bottom: 8 }}
+                        >
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel />}
+                          />
+                          <Pie
+                            data={statusPencarianColored}
+                            dataKey="jumlah"
+                            nameKey="status"
+                            innerRadius={60}
+                            outerRadius={110}
+                            paddingAngle={2}
+                          />
+                          <Legend
+                            layout="vertical"
+                            verticalAlign="middle"
+                            align="right"
+                            iconType="plainline"
+                          />
                         </PieChart>
                       </ChartContainer>
                     </CardContent>
                   </Card>
 
                   {/* Strategi Pencarian Kerja */}
-                  <Card className="lg:col-span-2">
+                  <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Strategi Pencarian Kerja</CardTitle>
+                      <CardTitle className="text-base">
+                        Strategi Pencarian Kerja
+                      </CardTitle>
                       <CardDescription className="text-xs">
                         Top 10 metode yang digunakan alumni
                       </CardDescription>
@@ -626,7 +897,7 @@ export default function Dashboard() {
                       <ChartContainer config={chartConfig}>
                         <BarChart
                           accessibilityLayer
-                          data={strategiPencarianData.slice(0, 10)}
+                          data={strategiPencarianColored.slice(0, 10)}
                           layout="vertical"
                           margin={{ right: 16 }}
                         >
@@ -640,15 +911,65 @@ export default function Dashboard() {
                             hide
                           />
                           <XAxis dataKey="jumlah" type="number" hide />
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
-                          <Bar dataKey="jumlah" fill="var(--color-strategi)" radius={4}>
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent indicator="line" />}
+                          />
+                          <Bar
+                            dataKey="jumlah"
+                            fill="var(--color-strategi)"
+                            radius={4}
+                          >
                             <LabelList
-                              dataKey="strategi"
-                              position="insideLeft"
+                              dataKey="jumlah"
+                              position="right"
                               offset={8}
-                              className="fill-[--color-label]"
+                              className="fill-foreground"
                               fontSize={12}
                             />
+                          </Bar>
+                        </BarChart>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+
+                  {/* Alasan Mengambil Pekerjaan Tidak Sesuai Bidang */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">
+                        Alasan Mengambil Pekerjaan Tidak Sesuai Bidang
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        Top 10 faktor yang mempengaruhi keputusan alumni
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ChartContainer config={chartConfig}>
+                        <BarChart
+                          accessibilityLayer
+                          data={alasanPekerjaanColored.slice(0, 10)}
+                          layout="vertical"
+                          margin={{ right: 16 }}
+                        >
+                          <CartesianGrid horizontal={false} />
+                          <YAxis
+                            dataKey="alasan"
+                            type="category"
+                            tickLine={false}
+                            tickMargin={10}
+                            axisLine={false}
+                            hide
+                          />
+                          <XAxis dataKey="jumlah" type="number" hide />
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent indicator="line" />}
+                          />
+                          <Bar
+                            dataKey="jumlah"
+                            fill="var(--color-alasan)"
+                            radius={4}
+                          >
                             <LabelList
                               dataKey="jumlah"
                               position="right"
@@ -664,76 +985,193 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Section 5: Alasan Pekerjaan Tidak Sesuai */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle>Alasan Mengambil Pekerjaan Tidak Sesuai Bidang</CardTitle>
-                  <CardDescription>
-                    Top 10 faktor yang mempengaruhi keputusan alumni
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer config={chartConfig}>
-                    <BarChart
-                      accessibilityLayer
-                      data={alasanPekerjaanData.slice(0, 10)}
-                      layout="vertical"
-                      margin={{ right: 16 }}
-                    >
-                      <CartesianGrid horizontal={false} />
-                      <YAxis
-                        dataKey="alasan"
-                        type="category"
-                        tickLine={false}
-                        tickMargin={10}
-                        axisLine={false}
-                        hide
-                      />
-                      <XAxis dataKey="jumlah" type="number" hide />
-                      <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
-                      <Bar dataKey="jumlah" fill="var(--color-alasan)" radius={4}>
-                        <LabelList
-                          dataKey="alasan"
-                          position="insideLeft"
-                          offset={8}
-                          className="fill-[--color-label]"
-                          fontSize={12}
-                        />
-                        <LabelList
-                          dataKey="jumlah"
-                          position="right"
-                          offset={8}
-                          className="fill-foreground"
-                          fontSize={12}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
+              {/* Section 5: Clustering & Forecasting */}
+              <div className="space-y-4">
+                <h2 className="text-2xl font-bold">Clustering & Forecasting</h2>
 
-              {/* Section 6: Pembiayaan Pendidikan */}
-              <Card>
-                <CardHeader className="pb-2 items-center">
-                  <CardTitle>Sumber Pembiayaan Pendidikan</CardTitle>
-                  <CardDescription>
-                    Distribusi sumber dana kuliah alumni
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[300px]">
-                    <PieChart>
-                      <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                      <Pie data={sumberDanaData} dataKey="jumlah" nameKey="sumber" />
-                      <ChartLegend content={<ChartLegendContent />} />
-                    </PieChart>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>
+                      Pola Kelompok Profil Karir Alumni
+                    </CardTitle>
+                    <CardDescription>
+                      Setiap titik adalah alumni, dikelompokkan berdasarkan kemiripan profil karirnya
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-2 mb-3 items-center">
+                      <label className="text-sm font-medium">
+                        Jumlah kelompok:
+                      </label>
+                      <input
+                        type="number"
+                        min={2}
+                        max={10}
+                        value={kClusters}
+                        onChange={(e) => setKClusters(Number(e.target.value))}
+                        className="input w-20"
+                      />
+                    </div>
+
+                    <ResponsiveContainer width="100%" height={450}>
+                      <ScatterChart
+                        margin={{ top: 10, right: 30, bottom: 30, left: 30 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          type="number"
+                          dataKey="x"
+                          name="PC1"
+                          label={{
+                            value: `PC1 (${pcaVariance[0]?.toFixed(
+                              1
+                            )}% variance)`,
+                            position: "insideBottom",
+                            offset: -10,
+                          }}
+                        />
+                        <YAxis
+                          type="number"
+                          dataKey="y"
+                          name="PC2"
+                          label={{
+                            value: `PC2 (${pcaVariance[1]?.toFixed(
+                              1
+                            )}% variance)`,
+                            angle: -90,
+                            position: "insideLeft",
+                          }}
+                        />
+                        <Tooltip cursor={{ strokeDasharray: "3 3" }} />
+
+                        <Legend
+                          layout="horizontal"
+                          verticalAlign="bottom"
+                          align="center"
+                          iconType="plainline"
+                          wrapperStyle={{
+                            paddingTop: 30, 
+                          }}
+                        />
+
+                        {Array.from({ length: kClusters }).map(
+                          (_, clusterIdx) => {
+                            const clusterData = clusterResult.filter(
+                              (d) => d.cluster === clusterIdx
+                            );
+                            const colors = getClusterColors(kClusters);
+
+                            return (
+                              <Scatter
+                                key={`cluster-${clusterIdx}`}
+                                name={`Cluster ${clusterIdx + 1}`}
+                                data={clusterData}
+                                fill={colors[clusterIdx]}
+                              />
+                            );
+                          }
+                        )}
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Interpretasi Profil Cluster</CardTitle>
+                    <CardDescription>
+                      Gambaran singkat tiap kelompok alumni berdasarkan rata-rata indikator karir.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <ClusterInterpretation
+                        clusterResult={clusterResult}
+                        rows={rows}
+                        kClusters={kClusters}
+                        getClusterColors={getClusterColors}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>
+                      Forecasting (AR approx.)
+                    </CardTitle>
+                    <CardDescription>
+                      Perkiraan jumlah lulusan per tahun berdasarkan tren data beberapa tahun terakhir.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-2 mb-3 items-center">
+                      <label className="text-sm">Riwayat (p):</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={arOrder}
+                        onChange={(e) =>
+                          setArOrder(Number(e.target.value) || 0)
+                        }
+                        className="input w-20"
+                      />
+                      <label className="text-sm">Mode tren (d):</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={diff}
+                        onChange={(e) => setDiff(Number(e.target.value) || 0)}
+                        className="input w-20"
+                      />
+                      <label className="text-sm">Tahun yang diprediksi:</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={horizon}
+                        onChange={(e) =>
+                          setHorizon(Number(e.target.value) || 1)
+                        }
+                        className="input w-20"
+                      />
+                      <div className="ml-auto text-sm text-muted-foreground">
+                        Series points: {tsSeries.length}
+                      </div>
+                    </div>
+
+                    <div style={{ width: "100%", height: 360 }}>
+                      <ResponsiveContainer>
+                        <LineChart
+                          data={tsSeries
+                            .map((s) => ({ t: s.t, value: s.value }))
+                            .concat(
+                              forecastResult.map((v, i) => ({
+                                t: `F+${i + 1}`,
+                                value: v,
+                              }))
+                            )}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="t" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend verticalAlign="bottom" iconType="plainline" />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#007FCB"
+                            dot={true}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </SidebarInset>
         </SidebarProvider>
       </div>
     </div>
-  )
+  );
 }
