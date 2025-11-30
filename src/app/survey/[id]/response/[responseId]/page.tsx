@@ -378,6 +378,221 @@ export default function ResponseDetailPage() {
     }
   }
 
+  const convertProgramStudyAnswerToResponseAnswer = (
+    answer: Answer,
+    idx: number,
+  ): QuestionData => {
+    // Cari program study question yang sesuai
+    const question = programStudyQuestions.find(q => Number(q.id) === answer.program_specific_question)
+    
+    console.log(`🔍 Converting program study answer for question ${answer.program_specific_question}:`, {
+      answerQuestionType: answer.question_type,
+      questionQuestionType: question?.question_type,
+      answerValue: answer.answer_value,
+      answerValueType: typeof answer.answer_value,
+      answerValueIsArray: Array.isArray(answer.answer_value),
+      foundQuestion: !!question,
+      questionOptions: question?.options,
+      questionOptionsType: typeof question?.options,
+      questionOptionsIsArray: Array.isArray(question?.options)
+    })
+    
+    // PENTING: Gunakan question_type dari program study question, bukan dari answer
+    const questionType = question?.question_type || answer.question_type
+    
+    console.log(`🎯 Question type decision - Using: "${questionType}", from question: "${question?.question_type}", from answer: "${answer.question_type}"`)
+    
+    // Parse options dari question.options (bisa berupa string JSON atau array)
+    const parseOptions = (opts: any): any[] => {
+      if (!opts) return []
+      
+      // Jika sudah array, return langsung
+      if (Array.isArray(opts)) {
+        // Jika array berisi string, convert ke format {id, label}
+        return opts.map((opt, idx) => {
+          if (typeof opt === 'string') {
+            return {
+              id: String(idx + 1),
+              label: opt
+            }
+          }
+          // Jika sudah object, pastikan ada id dan label
+          return {
+            id: String(opt.id || opt.value || (idx + 1)),
+            label: opt.label || opt.text || opt.value || `Option ${idx + 1}`
+          }
+        })
+      }
+      
+      // Jika string JSON, parse dulu
+      if (typeof opts === 'string') {
+        try {
+          const parsed = JSON.parse(opts)
+          if (Array.isArray(parsed)) {
+            return parsed.map((opt, idx) => {
+              if (typeof opt === 'string') {
+                return {
+                  id: String(idx + 1),
+                  label: opt
+                }
+              }
+              return {
+                id: String(opt.id || opt.value || (idx + 1)),
+                label: opt.label || opt.text || opt.value || `Option ${idx + 1}`
+              }
+            })
+          }
+        } catch {
+          return []
+        }
+      }
+      
+      return []
+    }
+    
+    switch (questionType) {
+      case "text":
+        return {
+          id: `pq${idx}`,
+          type: "short_answer",
+          title: answer.question_text,
+          required: question?.is_required || false,
+          textAnswer: String(answer.answer_value),
+        }
+
+      case "scale":
+        return {
+          id: `pq${idx}`,
+          type: "linear_scale",
+          title: answer.question_text,
+          required: question?.is_required || false,
+          minValue: 1,
+          maxValue: 5,
+          minLabel: "Sangat Tidak Setuju",
+          maxLabel: "Sangat Setuju",
+          selectedValue: Number(answer.answer_value),
+        }
+
+      case "radio":
+      case "multiple_choice":
+        // Parse options dari question
+        const mcOptionsRaw = parseOptions(question?.options)
+        const mcOptions = mcOptionsRaw
+        
+        console.log(`📻 Program study MC - questionType: ${questionType}, options:`, mcOptions, `answerValue:`, answer.answer_value)
+        
+        // answer_value bisa berupa object {id, label}, ID, atau label langsung
+        let selectedOptionId: string
+        if (typeof answer.answer_value === 'object' && answer.answer_value !== null && 'id' in answer.answer_value) {
+          selectedOptionId = String((answer.answer_value as any).id)
+        } else if (typeof answer.answer_value === 'string') {
+          const isNumericId = /^\d+$/.test(answer.answer_value)
+          if (isNumericId) {
+            selectedOptionId = answer.answer_value
+          } else {
+            const foundOption = mcOptions.find(opt => opt.label === answer.answer_value)
+            selectedOptionId = foundOption ? foundOption.id : String(answer.answer_value)
+          }
+        } else {
+          selectedOptionId = String(answer.answer_value)
+        }
+        
+        console.log(`📻 Program study multiple choice - Selected:`, selectedOptionId)
+        
+        const result = {
+          id: `pq${idx}`,
+          type: "multiple_choice" as const,
+          title: answer.question_text,
+          required: question?.is_required || false,
+          options: mcOptions,
+          selectedOption: selectedOptionId,
+        }
+        
+        console.log(`✅ Program study MC result:`, result)
+        
+        return result
+
+      case "checkbox":
+        // Parse options dari question
+        const cbOptionsRaw = parseOptions(question?.options)
+        const cbOptions = cbOptionsRaw
+        let selectedIds: string[] = []
+        
+        if (Array.isArray(answer.answer_value)) {
+          if (answer.answer_value.length > 0 && typeof answer.answer_value[0] === 'object' && answer.answer_value[0] !== null && 'id' in answer.answer_value[0]) {
+            selectedIds = answer.answer_value.map((item: any) => String(item.id))
+          } else if (answer.answer_value.length > 0 && typeof answer.answer_value[0] === 'string') {
+            const firstItem = answer.answer_value[0]
+            const isNumericId = /^\d+$/.test(firstItem)
+            
+            if (isNumericId) {
+              selectedIds = answer.answer_value.map((id: any) => String(id))
+            } else {
+              selectedIds = answer.answer_value
+                .map((label: string) => {
+                  const foundOption = cbOptions.find(opt => opt.label === label)
+                  return foundOption ? foundOption.id : null
+                })
+                .filter((id): id is string => id !== null)
+            }
+          } else {
+            selectedIds = answer.answer_value.map((id: any) => String(id))
+          }
+        } else if (typeof answer.answer_value === 'string') {
+          try {
+            const parsed = JSON.parse(answer.answer_value)
+            if (Array.isArray(parsed)) {
+              if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0] !== null && 'id' in parsed[0]) {
+                selectedIds = parsed.map((item: any) => String(item.id))
+              } else if (parsed.length > 0 && typeof parsed[0] === 'string') {
+                const firstItem = parsed[0]
+                const isNumericId = /^\d+$/.test(firstItem)
+                
+                if (isNumericId) {
+                  selectedIds = parsed.map(String)
+                } else {
+                  selectedIds = parsed
+                    .map((label: string) => {
+                      const foundOption = cbOptions.find(opt => opt.label === label)
+                      return foundOption ? foundOption.id : null
+                    })
+                    .filter((id): id is string => id !== null)
+                }
+              } else {
+                selectedIds = parsed.map(String)
+              }
+            } else {
+              selectedIds = [String(parsed)]
+            }
+          } catch {
+            selectedIds = [String(answer.answer_value)]
+          }
+        } else {
+          selectedIds = [String(answer.answer_value)]
+        }
+        
+        console.log(`☑️ Program study checkbox options:`, cbOptions, `Selected:`, selectedIds)
+        
+        return {
+          id: `pq${idx}`,
+          type: "checkbox",
+          title: answer.question_text,
+          required: question?.is_required || false,
+          options: cbOptions,
+          selectedOptions: selectedIds,
+        }
+
+      default:
+        return {
+          id: `pq${idx}`,
+          type: "short_answer",
+          title: answer.question_text,
+          required: question?.is_required || false,
+          textAnswer: String(answer.answer_value),
+        }
+    }
+  }
+
   const convertAnswerToResponseAnswer = (
     answer: Answer,
     idx: number,
@@ -758,18 +973,15 @@ export default function ResponseDetailPage() {
                     
                     return (
                       <div className="space-y-3 mt-6">
-                        <SectionHeaderCard
-                          sectionNumber={sectionsWithQuestions.length + 1}
-                          totalSections={sectionsWithQuestions.length + 1}
-                          title="Program Study Question"
-                          description="Pertanyaan khusus untuk program studi"
-                          sectionOrder={sectionsWithQuestions.length + 1}
-                        />
+                        <div className="bg-white rounded-lg shadow-sm border-t-[8px] border-primary p-6">
+                          <h2 className="text-xl text-gray-900">Program Study Question</h2>
+                          <p className="text-sm text-gray-500 mt-1">Pertanyaan khusus untuk program studi</p>
+                        </div>
                         
                         {programAnswers.map((answer, idx) => (
                           <QuestionCardGForm
                             key={answer.id}
-                            question={convertAnswerToResponseAnswer(answer, idx + 1)}
+                            question={convertProgramStudyAnswerToResponseAnswer(answer, idx + 1)}
                             isEditMode={false}
                           />
                         ))}

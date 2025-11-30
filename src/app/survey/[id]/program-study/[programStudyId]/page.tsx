@@ -12,10 +12,11 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import {
   createProgramStudyQuestion,
   deleteProgramStudyQuestion,
+  getProgramStudy,
   getProgramStudyQuestions,
   getSurvey,
   ProgramStudyQuestion,
-  updateProgramStudyQuestion,
+  updateProgramStudyQuestion
 } from "@/lib/api"
 import {
   closestCenter,
@@ -50,6 +51,7 @@ export default function ProgramStudyQuestionsPage() {
   const [pendingQuestions, setPendingQuestions] = useState<Set<string>>(new Set())
   const [activeQuestionId, setActiveQuestionId] = useState<number | string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [programStudyName, setProgramStudyName] = useState<string>("")
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -156,9 +158,22 @@ export default function ProgramStudyQuestionsPage() {
   }
 
   useEffect(() => {
-    if (surveyId && programStudyId) {
-      fetchQuestions()
+    const fetchData = async () => {
+      if (surveyId && programStudyId) {
+        await fetchQuestions()
+        
+        // Get program study name from API
+        try {
+          const programStudy = await getProgramStudy(programStudyId)
+          setProgramStudyName(programStudy.name)
+        } catch (error) {
+          console.error("Error fetching program study:", error)
+          setProgramStudyName("Program Study")
+        }
+      }
     }
+    
+    fetchData()
   }, [surveyId, programStudyId])
 
   const handleAddQuestion = async () => {
@@ -464,8 +479,9 @@ export default function ProgramStudyQuestionsPage() {
                 sectionNumber={1}
                 totalSections={1}
                 title="Program Study Question"
-                description="Pertanyaan khusus untuk program studi ini"
+                description={`Specific Question for ${programStudyName}`}
                 sectionOrder={1}
+                isActive={false}
               />
             </div>
 

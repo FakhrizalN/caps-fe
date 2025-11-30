@@ -1216,9 +1216,22 @@ export async function getProgramStudyQuestion(surveyId: number, programStudyId: 
  * Create a new program study question
  */
 export async function createProgramStudyQuestion(surveyId: number, programStudyId: number, data: CreateProgramStudyQuestionData): Promise<ProgramStudyQuestion> {
-  const payload = {
-    ...data,
-    options: data.options ? JSON.stringify(data.options) : null
+  const payload: any = { ...data }
+  
+  // Convert options from object format [{id, label}] to string array ["label1", "label2"]
+  if (payload.options && Array.isArray(payload.options)) {
+    payload.options = payload.options.map((opt: any) => {
+      if (typeof opt === 'string') return opt
+      if (opt && typeof opt === 'object' && opt.label) return opt.label
+      if (opt && typeof opt === 'object' && opt.text) return opt.text
+      if (opt && typeof opt === 'object' && opt.value) return opt.value
+      return String(opt)
+    })
+  }
+  
+  // Send as JSON string to backend
+  if (payload.options) {
+    payload.options = JSON.stringify(payload.options)
   }
   
   return fetchWithAuth(`/api/surveys/${surveyId}/programs/${programStudyId}/questions/`, {
@@ -1233,21 +1246,20 @@ export async function createProgramStudyQuestion(surveyId: number, programStudyI
 export async function updateProgramStudyQuestion(surveyId: number, programStudyId: number, questionId: number, data: UpdateProgramStudyQuestionData): Promise<ProgramStudyQuestion> {
   const payload: any = { ...data }
   
-  let parsedOptions = data.options
-  if (data.options !== undefined) {
-    if (typeof data.options === 'string') {
-      try {
-        parsedOptions = JSON.parse(data.options)
-      } catch (e) {
-        parsedOptions = data.options
-      }
-    }
+  // Convert options from object format [{id, label}] to string array ["label1", "label2"]
+  if (payload.options && Array.isArray(payload.options)) {
+    payload.options = payload.options.map((opt: any) => {
+      if (typeof opt === 'string') return opt
+      if (opt && typeof opt === 'object' && opt.label) return opt.label
+      if (opt && typeof opt === 'object' && opt.text) return opt.text
+      if (opt && typeof opt === 'object' && opt.value) return opt.value
+      return String(opt)
+    })
   }
   
-  if (typeof parsedOptions === 'string') {
-    payload.options = parsedOptions
-  } else {
-    payload.options = JSON.stringify(parsedOptions)
+  // Send as JSON string to backend
+  if (payload.options) {
+    payload.options = JSON.stringify(payload.options)
   }
   
   return fetchWithAuth(`/api/surveys/${surveyId}/programs/${programStudyId}/questions/${questionId}/`, {

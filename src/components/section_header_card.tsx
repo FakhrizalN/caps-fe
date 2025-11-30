@@ -51,6 +51,9 @@ export function SectionHeaderCard({
   // Check if this is the first section (survey header)
   const isFirstSection = sectionNumber === 1
   
+  // Check if editable based on presence of callback functions
+  const isEditable = !!(onTitleChange || onDescriptionChange)
+  
   // Initialize contentEditable with HTML content
   useEffect(() => {
     if (titleRef.current) {
@@ -131,29 +134,29 @@ export function SectionHeaderCard({
             {/* Section Title */}
             <div
               ref={titleRef}
-              contentEditable
+              contentEditable={isEditable}
               suppressContentEditableWarning
               onInput={handleTitleInput}
               onFocus={() => setFocusedElement('title')}
               onBlur={handleTitleBlur}
-              className={`${isFirstSection ? 'text-3xl font-normal' : 'text-lg font-medium text-gray-800'} border-b border-transparent px-0 py-1 outline-none focus:border-gray-300 min-h-[28px] empty:before:content-['Section_title'] empty:before:text-gray-400`}
+              className={`${isFirstSection ? 'text-3xl font-normal' : 'text-lg font-medium text-gray-800'} border-b border-transparent px-0 py-1 ${isEditable ? 'outline-none focus:border-gray-300' : 'cursor-default'} min-h-[28px] empty:before:content-['Section_title'] empty:before:text-gray-400`}
               dir="ltr"
             />
 
             {/* Section Description */}
             <div
               ref={descriptionRef}
-              contentEditable
+              contentEditable={isEditable}
               suppressContentEditableWarning
               onInput={handleDescriptionInput}
               onFocus={() => setFocusedElement('description')}
               onBlur={handleDescriptionBlur}
-              className={`${isFirstSection ? 'text-sm text-gray-600' : 'text-sm font-medium text-gray-900'} border-b border-transparent px-0 py-1 outline-none focus:border-gray-300 min-h-[24px] empty:before:content-['${isFirstSection ? 'Form_description' : 'Description'}'] empty:before:text-gray-400`}
+              className={`${isFirstSection ? 'text-sm text-gray-600' : 'text-sm font-medium text-gray-900'} border-b border-transparent px-0 py-1 ${isEditable ? 'outline-none focus:border-gray-300' : 'cursor-default'} min-h-[24px] empty:before:content-['${isFirstSection ? 'Form_description' : 'Description'}'] empty:before:text-gray-400`}
               dir="ltr"
             />
 
             {/* Formatting Toolbar - Only show when focused */}
-            {focusedElement && (
+            {focusedElement && isEditable && (
             <div className="flex items-center gap-0 -mt-1">
               <Button 
                 variant="ghost" 
@@ -226,6 +229,7 @@ export function SectionHeaderCard({
           </div>
 
           {/* Action Buttons - positioned at top right */}
+          {isEditable && (
           <div className="flex items-center gap-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -263,6 +267,7 @@ export function SectionHeaderCard({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          )}
         </div>
       </div>
     </div>
