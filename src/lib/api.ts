@@ -1153,5 +1153,116 @@ export async function deleteAnswer(surveyId: number, answerId: number): Promise<
   })
 }
 
+// ============================================
+// Program Study Questions API
+// ============================================
+
+export interface ProgramStudyQuestion {
+  id: number | string
+  text: string
+  question_type: string
+  options?: any
+  code?: string
+  source?: string
+  description?: string
+  order: number
+  is_required: boolean
+  created_at?: string
+  program_study: number
+  survey?: number
+}
+
+export interface CreateProgramStudyQuestionData {
+  text: string
+  question_type: string
+  options?: string[] | string
+  code?: string
+  source?: string
+  description?: string
+  order: number
+  is_required?: boolean
+}
+
+export interface UpdateProgramStudyQuestionData {
+  text?: string
+  question_type?: string
+  options?: string[] | string | any
+  code?: string
+  source?: string
+  description?: string
+  order?: number
+  is_required?: boolean
+}
+
+/**
+ * Get all program study questions
+ */
+export async function getProgramStudyQuestions(surveyId: number, programStudyId: number): Promise<ProgramStudyQuestion[]> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/programs/${programStudyId}/questions/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Get a single program study question
+ */
+export async function getProgramStudyQuestion(surveyId: number, programStudyId: number, questionId: number): Promise<ProgramStudyQuestion> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/programs/${programStudyId}/questions/${questionId}/`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Create a new program study question
+ */
+export async function createProgramStudyQuestion(surveyId: number, programStudyId: number, data: CreateProgramStudyQuestionData): Promise<ProgramStudyQuestion> {
+  const payload = {
+    ...data,
+    options: data.options ? JSON.stringify(data.options) : null
+  }
+  
+  return fetchWithAuth(`/api/surveys/${surveyId}/programs/${programStudyId}/questions/`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+/**
+ * Update a program study question
+ */
+export async function updateProgramStudyQuestion(surveyId: number, programStudyId: number, questionId: number, data: UpdateProgramStudyQuestionData): Promise<ProgramStudyQuestion> {
+  const payload: any = { ...data }
+  
+  let parsedOptions = data.options
+  if (data.options !== undefined) {
+    if (typeof data.options === 'string') {
+      try {
+        parsedOptions = JSON.parse(data.options)
+      } catch (e) {
+        parsedOptions = data.options
+      }
+    }
+  }
+  
+  if (typeof parsedOptions === 'string') {
+    payload.options = parsedOptions
+  } else {
+    payload.options = JSON.stringify(parsedOptions)
+  }
+  
+  return fetchWithAuth(`/api/surveys/${surveyId}/programs/${programStudyId}/questions/${questionId}/`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+/**
+ * Delete a program study question
+ */
+export async function deleteProgramStudyQuestion(surveyId: number, programStudyId: number, questionId: number): Promise<void> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/programs/${programStudyId}/questions/${questionId}/`, {
+    method: 'DELETE',
+  })
+}
 
 

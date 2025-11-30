@@ -6,7 +6,7 @@ import { ResponseData, ResponseListTable } from "@/components/response_list_tabl
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { Answer, getAnswers } from "@/lib/api"
+import { Answer, getAnswers, getCurrentUser } from "@/lib/api"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -24,6 +24,7 @@ export default function ResponsesPage() {
   const [responses, setResponses] = useState<ResponseData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
+  const [programStudyId, setProgramStudyId] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,6 +66,17 @@ export default function ResponsesPage() {
     }
 
     if (surveyId) fetchData()
+    
+    // Get program study ID from user
+    const user = getCurrentUser()
+    console.log("Response page - Current user:", user)
+    if (user?.program_study) {
+      console.log("Response page - Setting programStudyId to:", user.program_study)
+      setProgramStudyId(user.program_study.toString())
+    } else {
+      console.warn("Response page - No program_study found, using default: 1")
+      setProgramStudyId("1")
+    }
   }, [surveyId])
 
   return (
@@ -86,6 +98,7 @@ export default function ResponsesPage() {
           title={`Survey ${surveyId}`}
           activeTab="responses"
           surveyId={surveyId.toString()}
+          programStudyId={programStudyId}
           onPublish={() => console.log("Publish")}
         />
         

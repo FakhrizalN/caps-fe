@@ -6,6 +6,8 @@ import { ResponseData, ResponseListTable } from "@/components/response_list_tabl
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { getCurrentUser } from "@/lib/api"
+import { useEffect, useState } from "react"
 
 
 const mockResponses: ResponseData[] = [
@@ -17,6 +19,20 @@ const mockResponses: ResponseData[] = [
 ]
 
 export default function ResponsesPage() {
+  const [programStudyId, setProgramStudyId] = useState<string | undefined>(undefined)
+
+  useEffect(() => {
+    const user = getCurrentUser()
+    console.log("Mock response page - Current user:", user)
+    if (user?.program_study) {
+      console.log("Mock response page - Setting programStudyId to:", user.program_study)
+      setProgramStudyId(user.program_study.toString())
+    } else {
+      console.warn("Mock response page - No program_study found, using default: 1")
+      setProgramStudyId("1")
+    }
+  }, [])
+
   return (
     <SidebarProvider>
       <AppSidebar />

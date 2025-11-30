@@ -10,14 +10,15 @@ import {
   Undo2
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 interface QuestionToolbarProps {
   title?: string
-  activeTab?: "questions" | "responses" | "settings"
+  activeTab?: "questions" | "responses" | "program-study"
   isPreviewMode?: boolean
   surveyId?: string
-  onTabChange?: (tab: "questions" | "responses" | "settings") => void
+  programStudyId?: string
+  onTabChange?: (tab: "questions" | "responses" | "program-study") => void
   onPreviewToggle?: () => void
   onPublish?: () => void
   onUndo?: () => void
@@ -31,6 +32,7 @@ export function QuestionToolbar({
   activeTab = "questions",
   isPreviewMode = false,
   surveyId,
+  programStudyId,
   onTabChange,
   onPreviewToggle,
   onPublish,
@@ -42,7 +44,18 @@ export function QuestionToolbar({
   const router = useRouter()
   const [currentTab, setCurrentTab] = useState(activeTab)
 
-  const handleTabChange = (tab: "questions" | "responses" | "settings") => {
+  // Sync currentTab with activeTab prop when it changes
+  useEffect(() => {
+    setCurrentTab(activeTab)
+  }, [activeTab])
+
+  // Log when programStudyId changes
+  useEffect(() => {
+    console.log("QuestionToolbar - programStudyId updated:", programStudyId)
+  }, [programStudyId])
+
+  const handleTabChange = (tab: "questions" | "responses" | "program-study") => {
+    console.log("Tab change:", tab, "surveyId:", surveyId, "programStudyId:", programStudyId)
     setCurrentTab(tab)
     onTabChange?.(tab)
     
@@ -59,8 +72,14 @@ export function QuestionToolbar({
       } else {
         router.push("/response")
       }
+    } else if (tab === "program-study") {
+      if (surveyId && programStudyId) {
+        console.log("Navigating to:", `/survey/${surveyId}/program-study/${programStudyId}`)
+        router.push(`/survey/${surveyId}/program-study/${programStudyId}`)
+      } else {
+        console.warn("Cannot navigate to program-study: missing surveyId or programStudyId", { surveyId, programStudyId })
+      }
     }
-    // Settings tab doesn't navigate
   }
 
   return (
@@ -99,15 +118,15 @@ export function QuestionToolbar({
             )}
           </button>
           <button
-            onClick={() => handleTabChange("settings")}
+            onClick={() => handleTabChange("program-study")}
             className={`pb-3 text-sm font-medium transition-colors relative ${
-              currentTab === "settings" 
+              currentTab === "program-study" 
                 ? "text-primary" 
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
-            Settings
-            {currentTab === "settings" && (
+            Program Study Question
+            {currentTab === "program-study" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>

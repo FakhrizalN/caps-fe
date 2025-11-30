@@ -12,36 +12,37 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/co
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
-    createQuestion,
-    createSection,
-    deleteQuestion,
-    deleteSection,
-    getQuestions,
-    getSections,
-    getSurvey,
-    Question,
-    Section,
-    updateQuestion,
-    updateSection,
-    updateSurvey,
+  createQuestion,
+  createSection,
+  deleteQuestion,
+  deleteSection,
+  getCurrentUser,
+  getQuestions,
+  getSections,
+  getSurvey,
+  Question,
+  Section,
+  updateQuestion,
+  updateSection,
+  updateSurvey,
 } from "@/lib/api"
 import {
-    closestCenter,
-    DndContext,
-    DragEndEvent,
-    DragOverlay,
-    DragStartEvent,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core"
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import {
-    arrayMove,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    verticalListSortingStrategy,
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -74,6 +75,7 @@ export default function SurveyQuestionsPage() {
   const [activeElementType, setActiveElementType] = useState<'question' | 'header' | 'section' | 'text'>('question')
   const [activeId, setActiveId] = useState<string | null>(null)
   const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false)
+  const [programStudyId, setProgramStudyId] = useState<string | undefined>(undefined)
 
   // Drag and drop sensors - only vertical dragging
   const sensors = useSensors(
@@ -273,6 +275,17 @@ export default function SurveyQuestionsPage() {
 
   useEffect(() => {
     fetchSurveyData()
+    
+    // Get program study ID from user
+    const user = getCurrentUser()
+    console.log("Current user:", user)
+    if (user?.program_study) {
+      console.log("Setting programStudyId to:", user.program_study)
+      setProgramStudyId(user.program_study.toString())
+    } else {
+      console.warn("No program_study found in user data, using default: 1")
+      setProgramStudyId("1") // Default fallback
+    }
   }, [surveyId])
 
   const handleAddQuestion = () => {
@@ -1218,6 +1231,7 @@ export default function SurveyQuestionsPage() {
           title={surveyTitle}
           activeTab="questions"
           surveyId={surveyId.toString()}
+          programStudyId={programStudyId}
           isPreviewMode={isPreviewMode}
           onPreviewToggle={() => setIsPreviewMode(!isPreviewMode)}
           onPublish={handlePublish}

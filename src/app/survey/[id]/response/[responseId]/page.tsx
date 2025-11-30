@@ -3,6 +3,7 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { QuestionCardGForm, QuestionData } from "@/components/question_card_gform"
 import { QuestionToolbar } from "@/components/question_toolbar"
+import { SectionHeaderCard } from "@/components/section_header_card"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -23,7 +24,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Answer, deleteAnswer, getAnswers, getQuestions, getSections, Question } from "@/lib/api"
+import { Answer, deleteAnswer, getAnswers, getCurrentUser, getProgramStudyQuestions, getQuestions, getSections, ProgramStudyQuestion, Question, Section } from "@/lib/api"
 import { ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -35,6 +36,17 @@ interface UniqueUser {
   nim: string
 }
 
+interface SectionWithQuestions {
+  section: Section
+  questions: Question[]
+  answers: Answer[]
+}
+
+interface ProgramStudyQuestionsGroup {
+  questions: ProgramStudyQuestion[]
+  answers: Answer[]
+}
+
 export default function ResponseDetailPage() {
   const params = useParams()
   const surveyId = Number(params?.id)
@@ -43,11 +55,14 @@ export default function ResponseDetailPage() {
   const [currentUserNim, setCurrentUserNim] = useState<string>("")
   const [userAnswers, setUserAnswers] = useState<Answer[]>([])
   const [questions, setQuestions] = useState<Question[]>([])
+  const [sectionsWithQuestions, setSectionsWithQuestions] = useState<SectionWithQuestions[]>([])
+  const [programStudyQuestions, setProgramStudyQuestions] = useState<ProgramStudyQuestion[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState("")
   const [userName, setUserName] = useState("")
   const [userEmail, setUserEmail] = useState("")
+  const [programStudyId, setProgramStudyId] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     const fetchAllUsers = async () => {
@@ -63,12 +78,45 @@ export default function ResponseDetailPage() {
         
         // Fetch questions dari setiap section
         const allQuestions: Question[] = []
+        const sectionsData: SectionWithQuestions[] = []
+        
         for (const section of sections) {
           const sectionQuestions = await getQuestions(surveyId, section.id)
           allQuestions.push(...sectionQuestions)
+          
+          sectionsData.push({
+            section,
+            questions: sectionQuestions,
+            answers: []
+          })
         }
         
         setQuestions(allQuestions)
+        setSectionsWithQuestions(sectionsData)
+        
+        // Get program study ID from user
+        const user = getCurrentUser()
+        console.log("Response detail - Current user:", user)
+        let userProgramStudyId = 1 // default
+        if (user?.program_study) {
+          console.log("Response detail - Setting programStudyId to:", user.program_study)
+          userProgramStudyId = user.program_study
+          setProgramStudyId(user.program_study.toString())
+        } else {
+          console.warn("Response detail - No program_study found, using default: 1")
+          setProgramStudyId("1")
+        }
+        
+        // Fetch program study questions
+        try {
+          const programQuestions = await getProgramStudyQuestions(surveyId, userProgramStudyId)
+          setProgramStudyQuestions(programQuestions)
+          console.log("📚 Program Study Questions:", programQuestions)
+        } catch (error) {
+          console.log("No program study questions found or error:", error)
+          setProgramStudyQuestions([])
+        }
+        
         console.log("📚 Questions with options:", allQuestions)
         
         // Log detail untuk setiap question yang punya options
@@ -585,6 +633,7 @@ export default function ResponseDetailPage() {
           title={`Survey ${surveyId}`}
           activeTab="responses"
           surveyId={surveyId.toString()}
+          programStudyId={programStudyId}
           onPublish={() => console.log("Publish")}
         />
 
@@ -667,13 +716,67 @@ export default function ResponseDetailPage() {
                   Tidak ada jawaban
                 </p>
               ) : (
-                userAnswers.map((answer, idx) => (
-                  <QuestionCardGForm
-                    key={answer.id}
-                    question={convertAnswerToResponseAnswer(answer, idx + 1)}
-                    isEditMode={false}
-                  />
-                ))
+                <>
+                  {/* Render sections with their questions */}
+                  {sectionsWithQuestions.map((sectionData, sectionIdx) => {
+                    // Filter answers for this section
+                    const sectionAnswers = userAnswers.filter(answer => 
+                      sectionData.questions.some(q => Number(q.id) === answer.question)
+                    )
+                    
+                    if (sectionAnswers.length === 0) return null
+                    
+                    return (
+                      <div key={sectionData.section.id} className="space-y-3">
+                        <SectionHeaderCard
+                          sectionNumber={sectionIdx + 1}
+                          totalSections={sectionsWithQuestions.length}
+                          title={sectionData.section.title}
+                          description={sectionData.section.description || ""}
+                          sectionId={sectionData.section.id}
+                          sectionOrder={sectionData.section.order}
+                        />
+                        
+                        {sectionAnswers.map((answer, idx) => (
+                          <QuestionCardGForm
+                            key={answer.id}
+                            question={convertAnswerToResponseAnswer(answer, idx + 1)}
+                            isEditMode={false}
+                          />
+                        ))}
+                      </div>
+                    )
+                  })}
+                  
+                  {/* Render program study questions */}
+                  {programStudyQuestions.length > 0 && (() => {
+                    const programAnswers = userAnswers.filter(answer => 
+                      answer.program_specific_question !== null
+                    )
+                    
+                    if (programAnswers.length === 0) return null
+                    
+                    return (
+                      <div className="space-y-3 mt-6">
+                        <SectionHeaderCard
+                          sectionNumber={sectionsWithQuestions.length + 1}
+                          totalSections={sectionsWithQuestions.length + 1}
+                          title="Program Study Question"
+                          description="Pertanyaan khusus untuk program studi"
+                          sectionOrder={sectionsWithQuestions.length + 1}
+                        />
+                        
+                        {programAnswers.map((answer, idx) => (
+                          <QuestionCardGForm
+                            key={answer.id}
+                            question={convertAnswerToResponseAnswer(answer, idx + 1)}
+                            isEditMode={false}
+                          />
+                        ))}
+                      </div>
+                    )
+                  })()}
+                </>
               )}
             </div>
           </div>
