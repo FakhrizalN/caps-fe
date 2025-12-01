@@ -11,39 +11,41 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import {
-    SidebarInset,
-    SidebarProvider,
-    SidebarTrigger,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table"
-import { Textarea } from "@/components/ui/textarea"
 import {
-    createRole,
-    deleteRole,
-    getRoles,
-    updateRole,
-    type CreateRoleData,
-    type Role,
-    type UpdateRoleData,
+  createRole,
+  deleteRole,
+  getProgramStudies,
+  getRoles,
+  updateRole,
+  type CreateRoleData,
+  type ProgramStudy,
+  type Role,
+  type UpdateRoleData,
 } from "@/lib/api"
 import { Edit, Plus, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -57,23 +59,25 @@ export default function RoleManagementPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingRole, setEditingRole] = useState<Role | null>(null)
+  const [programStudies, setProgramStudies] = useState<ProgramStudy[]>([])
 
   // Form state for add
   const [newRole, setNewRole] = useState<CreateRoleData>({
     name: "",
-    description: "",
+    program_study: undefined,
     permissions: [],
   })
 
   // Form state for edit
   const [editFormData, setEditFormData] = useState<UpdateRoleData>({
     name: "",
-    description: "",
+    program_study: undefined,
     permissions: [],
   })
 
   useEffect(() => {
     fetchRoles()
+    fetchProgramStudies()
   }, [])
 
   const fetchRoles = async () => {
@@ -94,14 +98,34 @@ export default function RoleManagementPage() {
     }
   }
 
+  const fetchProgramStudies = async () => {
+    try {
+      const data = await getProgramStudies()
+      setProgramStudies(data)
+    } catch (err) {
+      console.error("Error fetching program studies:", err)
+    }
+  }
+
   const handleCreateRole = async () => {
     try {
       setError(null)
+      
+      // Validate required fields
+      if (!newRole.program_study) {
+        setError("Program Study is required")
+        return
+      }
+      if (!newRole.name || newRole.name.trim() === "") {
+        setError("Role Name is required")
+        return
+      }
+      
       await createRole(newRole)
       setIsAddDialogOpen(false)
       setNewRole({
         name: "",
-        description: "",
+        program_study: undefined,
         permissions: [],
       })
       await fetchRoles()
@@ -116,6 +140,17 @@ export default function RoleManagementPage() {
 
     try {
       setError(null)
+      
+      // Validate required fields
+      if (!editFormData.program_study) {
+        setError("Program Study is required")
+        return
+      }
+      if (!editFormData.name || editFormData.name.trim() === "") {
+        setError("Role Name is required")
+        return
+      }
+      
       await updateRole(editingRole.id, editFormData)
       setIsEditDialogOpen(false)
       setEditingRole(null)
@@ -143,7 +178,7 @@ export default function RoleManagementPage() {
     setEditingRole(role)
     setEditFormData({
       name: role.name,
-      description: role.description,
+      program_study: role.program_study,
       permissions: role.permissions,
     })
     setIsEditDialogOpen(true)
@@ -202,29 +237,38 @@ export default function RoleManagementPage() {
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
-                        <Label htmlFor="name">Role Name</Label>
+                        <Label htmlFor="program_study">Program Study <span className="text-red-500">*</span></Label>
+                        <Select
+                          value={newRole.program_study?.toString()}
+                          onValueChange={(value) => {
+                            const selectedProdi = programStudies.find(p => p.id === parseInt(value));
+                            setNewRole({ 
+                              ...newRole, 
+                              program_study: parseInt(value),
+                              name: selectedProdi ? `Prodi ${selectedProdi.name}` : newRole.name
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select program study" />
+                          </SelectTrigger>
+                          <SelectContent position="popper" align="start" sideOffset={5}>
+                            {programStudies.map((prodi) => (
+                              <SelectItem key={prodi.id} value={prodi.id.toString()}>
+                                {prodi.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="name">Role Name <span className="text-red-500">*</span></Label>
                         <Input
                           id="name"
                           value={newRole.name}
                           onChange={(e) =>
                             setNewRole({ ...newRole, name: e.target.value })
                           }
-                          placeholder="e.g., Administrator, Staff, Manager"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                          id="description"
-                          value={newRole.description}
-                          onChange={(e) =>
-                            setNewRole({
-                              ...newRole,
-                              description: e.target.value,
-                            })
-                          }
-                          placeholder="Describe the role and its responsibilities"
-                          rows={3}
                         />
                       </div>
                     </div>
@@ -254,8 +298,7 @@ export default function RoleManagementPage() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Role Name</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Created At</TableHead>
+                          <TableHead>Program Study</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -263,32 +306,30 @@ export default function RoleManagementPage() {
                         {roles.length === 0 ? (
                           <TableRow>
                             <TableCell
-                              colSpan={4}
+                              colSpan={3}
                               className="text-center text-gray-500"
                             >
                               No roles found. Add a new role to get started.
                             </TableCell>
                           </TableRow>
                         ) : (
-                          roles.map((role) => (
+                          roles.map((role) => {
+                            const isProtectedRole = ['admin', 'tracer', 'alumni', 'pimpinan unit'].includes(role.name.toLowerCase())
+                            return (
                             <TableRow key={role.id}>
                               <TableCell className="font-medium">
                                 {role.name}
                               </TableCell>
-                              <TableCell>{role.description || "-"}</TableCell>
-                              <TableCell>
-                                {role.created_at
-                                  ? new Date(role.created_at).toLocaleDateString()
-                                  : "-"}
-                              </TableCell>
+                              <TableCell>{role.program_study_name || "-"}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
                                   <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => openEditDialog(role)}
+                                    disabled={isProtectedRole}
                                   >
-                                    <Edit className="h-4 w-4" />
+                                    <Edit className={`h-4 w-4 ${isProtectedRole ? 'text-gray-400' : ''}`} />
                                   </Button>
                                   <Button
                                     variant="ghost"
@@ -296,13 +337,14 @@ export default function RoleManagementPage() {
                                     onClick={() =>
                                       handleDeleteRole(role.id, role.name)
                                     }
+                                    disabled={isProtectedRole}
                                   >
-                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                    <Trash2 className={`h-4 w-4 ${isProtectedRole ? 'text-gray-400' : 'text-red-600'}`} />
                                   </Button>
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ))
+                          )})
                         )}
                       </TableBody>
                     </Table>
@@ -323,27 +365,38 @@ export default function RoleManagementPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="edit_name">Role Name</Label>
+              <Label htmlFor="edit_program_study">Program Study <span className="text-red-500">*</span></Label>
+              <Select
+                value={editFormData.program_study?.toString()}
+                onValueChange={(value) => {
+                  const selectedProdi = programStudies.find(p => p.id === parseInt(value));
+                  setEditFormData({ 
+                    ...editFormData, 
+                    program_study: parseInt(value),
+                    name: selectedProdi ? `Prodi ${selectedProdi.name}` : editFormData.name
+                  });
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select program study" />
+                </SelectTrigger>
+                <SelectContent position="popper" align="start" sideOffset={5}>
+                  {programStudies.map((prodi) => (
+                    <SelectItem key={prodi.id} value={prodi.id.toString()}>
+                      {prodi.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit_name">Role Name <span className="text-red-500">*</span></Label>
               <Input
                 id="edit_name"
                 value={editFormData.name}
                 onChange={(e) =>
                   setEditFormData({ ...editFormData, name: e.target.value })
                 }
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit_description">Description</Label>
-              <Textarea
-                id="edit_description"
-                value={editFormData.description}
-                onChange={(e) =>
-                  setEditFormData({
-                    ...editFormData,
-                    description: e.target.value,
-                  })
-                }
-                rows={3}
               />
             </div>
           </div>

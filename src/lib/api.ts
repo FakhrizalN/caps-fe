@@ -469,21 +469,20 @@ export async function deleteUser(id: string): Promise<void> {
 export interface Role {
   id: number
   name: string
-  description?: string
+  program_study?: number
+  program_study_name?: string
   permissions?: string[]
-  created_at?: string
-  updated_at?: string
 }
 
 export interface CreateRoleData {
   name: string
-  description?: string
+  program_study?: number
   permissions?: string[]
 }
 
 export interface UpdateRoleData {
   name?: string
-  description?: string
+  program_study?: number
   permissions?: string[]
 }
 

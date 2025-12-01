@@ -87,10 +87,20 @@ export default function AddEmployeePage() {
   }
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === "role" ? parseInt(value) : value
-    }))
+    if (name === "role") {
+      const selectedRole = roles.find(r => r.id === parseInt(value))
+      setFormData(prev => ({
+        ...prev,
+        role: parseInt(value),
+        // Auto-fill program_study if role has program_study
+        program_study: selectedRole?.program_study || prev.program_study
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -284,21 +294,18 @@ export default function AddEmployeePage() {
                       return null;
                     })()}
                   </Label>
-                  <Select 
-                    value={formData.program_study?.toString()} 
-                    onValueChange={(value) => handleSelectChange("program_study", value)}
-                  >
-                    <SelectTrigger className={fieldErrors.program_study ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Select program study" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {programStudies.map((prodi) => (
-                        <SelectItem key={prodi.id} value={prodi.id.toString()}>
-                          {prodi.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="program_study"
+                    name="program_study"
+                    type="text"
+                    value={(() => {
+                      const selectedProdi = programStudies.find(p => p.id === formData.program_study);
+                      return selectedProdi?.name || "";
+                    })()}
+                    placeholder="-"
+                    disabled={true}
+                    className={fieldErrors.program_study ? "border-red-500" : ""}
+                  />
                   {fieldErrors.program_study && (
                     <p className="text-sm text-red-500 mt-1">Program Study is required for Alumni with Prodi program</p>
                   )}

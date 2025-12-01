@@ -124,10 +124,25 @@ export default function EditEmployeePage() {
   }
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === "role" || name === "program_study" ? parseInt(value) : value
-    }))
+    if (name === "role") {
+      const selectedRole = roles.find(r => r.id === parseInt(value))
+      setFormData(prev => ({
+        ...prev,
+        role: parseInt(value),
+        // Auto-fill program_study if role has program_study
+        program_study: selectedRole?.program_study || prev.program_study
+      }))
+    } else if (name === "program_study") {
+      setFormData(prev => ({
+        ...prev,
+        program_study: parseInt(value)
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -307,21 +322,17 @@ export default function EditEmployeePage() {
 
                       <Field>
                         <Label htmlFor="program_study">Program Study</Label>
-                        <Select 
-                          value={formData.program_study?.toString()} 
-                          onValueChange={(value) => handleSelectChange("program_study", value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select program study" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {programStudies.map((prodi) => (
-                              <SelectItem key={prodi.id} value={prodi.id.toString()}>
-                                {prodi.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          id="program_study"
+                          name="program_study"
+                          type="text"
+                          value={(() => {
+                            const selectedProdi = programStudies.find(p => p.id === formData.program_study);
+                            return selectedProdi?.name || "";
+                          })()}
+                          placeholder="-"
+                          disabled={true}
+                        />
                       </Field>
 
                       <Field>
