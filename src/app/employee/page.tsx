@@ -68,13 +68,13 @@ export default function EmployeePage() {
         
         return {
           id: user.id,
-          name: user.username || 'N/A',
-          email: user.email || 'N/A',
-          role: role?.name || 'N/A',
-          programStudy: programStudy?.name || 'N/A',
-          faculty: programStudy?.faculty_name || 'N/A',
-          department: programStudy?.department_name || 'N/A',
-          phone: user.phone_number || 'N/A',
+          name: user.username || '-',
+          email: user.email || '-',
+          role: role?.name || '-',
+          programStudy: programStudy?.name || '-',
+          faculty: programStudy?.faculty_name || '-',
+          department: programStudy?.department_name || '-',
+          phone: user.phone_number || '-',
         }
       })
       
@@ -138,7 +138,7 @@ export default function EmployeePage() {
                     <Link href="/employee/add">
                       <Button className="flex items-center gap-2">
                         <Plus className="h-4 w-4" />
-                        Add Employee
+                        Add User
                       </Button>
                     </Link>
                   </div>

@@ -275,11 +275,11 @@ export default function RoleManagementPage() {
                               <TableCell className="font-medium">
                                 {role.name}
                               </TableCell>
-                              <TableCell>{role.description || "N/A"}</TableCell>
+                              <TableCell>{role.description || "-"}</TableCell>
                               <TableCell>
                                 {role.created_at
                                   ? new Date(role.created_at).toLocaleDateString()
-                                  : "N/A"}
+                                  : "-"}
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">

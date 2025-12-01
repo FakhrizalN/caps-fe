@@ -1,11 +1,11 @@
 "use client"
 
-import { BarChart2, Building2, ChevronRight, ClipboardList, LogOut, Shield, Users } from "lucide-react"
+import { BarChart2, Building2, ChevronRight, ClipboardList, Shield, Users } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import * as React from "react"
 import { useEffect, useState } from "react"
 
-import { Button } from "@/components/ui/button"
+import { NavUser } from "@/components/nav-user"
 import {
   Collapsible,
   CollapsibleContent,
@@ -24,7 +24,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { getCurrentUser, logout } from "@/lib/api"
+import { getCurrentUser, getUser } from "@/lib/api"
 
 // This is sample data.
 const data = {
@@ -75,33 +75,59 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter()
   const isDashboardActive = pathname === "/"
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [userData, setUserData] = useState({
+    name: "User",
+    email: "user@example.com",
+    avatar: "/avatars/default.jpg",
+  })
 
   useEffect(() => {
-    const user = getCurrentUser()
-    setUserRole(user?.role_name || null)
-  }, [])
+    const fetchUserData = async () => {
+      const currentUser = getCurrentUser()
+      if (!currentUser?.id) return
 
-  const handleLogout = () => {
-    logout()
-    router.push('/login')
-  }
+      setUserRole(currentUser.role_name || null)
+      
+      try {
+        // Fetch full user data from API
+        const userData = await getUser(currentUser.id)
+        setUserData({
+          name: userData.username || currentUser.id || "User",
+          email: userData.email || "user@example.com",
+          avatar: "/avatars/default.jpg",
+        })
+      } catch (err) {
+        console.error('Error fetching user data:', err)
+        // Fallback to localStorage data
+        setUserData({
+          name: currentUser.username || currentUser.id || "User",
+          email: currentUser.email || "user@example.com",
+          avatar: "/avatars/default.jpg",
+        })
+      }
+    }
+
+    fetchUserData()
+  }, [])
 
   return (
     <Sidebar {...props}>
       <SidebarHeader>
-        <div className="p-2">
-          <Button 
-            asChild
-            variant="ghost" // Nonaktifkan active state
-            size="lg"
-            className="w-full justify-start"
-          >
-            <a href="/" className="flex items-center gap-2">
-              <img src="/LogoITK.png" alt="Logo ITK" className="h-8 w-auto" />
-              Tracer Study
-            </a>
-          </Button>
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <a href="/dashboard">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <img src="/LogoITK.png" alt="Logo ITK" className="h-8 w-8 object-contain" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">Tracer Study</span>
+                  <span className="truncate text-xs">Institut Teknologi Kalimantan</span>
+                </div>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="gap-0">
         {/* We create a collapsible SidebarGroup for each parent. */}
@@ -156,14 +182,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-              <LogOut className="h-4 w-4" />
-              <span>Logout</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

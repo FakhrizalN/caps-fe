@@ -32,6 +32,14 @@ export default function AddEmployeePage() {
   const [roles, setRoles] = useState<Role[]>([])
   const [programStudies, setProgramStudies] = useState<ProgramStudy[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState({
+    id: false,
+    username: false,
+    email: false,
+    role: false,
+    phone_number: false,
+    program_study: false,
+  })
   
   const [formData, setFormData] = useState<CreateUserData>({
     id: "",
@@ -90,6 +98,35 @@ export default function AddEmployeePage() {
     setIsLoading(true)
     setError(null)
 
+    // Validate required fields
+    let isAlumni = false;
+    let isProdiProgram = false;
+    const selectedRole = roles.find(r => r.id === formData.role);
+    if (selectedRole && selectedRole.name.toLowerCase() === "alumni") {
+      isAlumni = true;
+    }
+    const selectedProdi = programStudies.find(p => p.id === formData.program_study);
+    if (selectedProdi && selectedProdi.name.toLowerCase().startsWith("prodi")) {
+      isProdiProgram = true;
+    }
+    const errors = {
+      id: !formData.id || formData.id.trim() === "",
+      username: !formData.username || formData.username.trim() === "",
+      email: !formData.email || formData.email.trim() === "",
+      role: !formData.role,
+      phone_number: !formData.phone_number || formData.phone_number.trim() === "",
+      program_study: isAlumni && isProdiProgram && !formData.program_study,
+    };
+
+    setFieldErrors(errors);
+
+    // Check if there are any errors
+    if (Object.values(errors).some(error => error)) {
+      setError("Please fill in all required fields");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       await createUser(formData)
       router.push('/employee')
@@ -115,11 +152,11 @@ export default function AddEmployeePage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbLink href="/employee">Employee Directory</BreadcrumbLink>
+                <BreadcrumbLink href="/employee">User Management</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>Add Employee</BreadcrumbPage>
+                <BreadcrumbPage>Add User</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -161,20 +198,24 @@ export default function AddEmployeePage() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Field>
-                  <Label htmlFor="id">User ID</Label>
+                  <Label htmlFor="id">NIM / NIP <span className="text-red-500">*</span></Label>
                   <Input
                     id="id"
                     name="id"
                     type="text"
-                    placeholder="Enter user ID (e.g., employee number)"
+                    placeholder="Enter NIM / NIP"
                     value={formData.id}
                     onChange={handleInputChange}
                     required
+                    className={fieldErrors.id ? "border-red-500" : ""}
                   />
+                  {fieldErrors.id && (
+                    <p className="text-sm text-red-500 mt-1">NIM / NIP is required</p>
+                  )}
                 </Field>
 
                 <Field>
-                  <Label htmlFor="username">Full Name</Label>
+                  <Label htmlFor="username">Full Name <span className="text-red-500">*</span></Label>
                   <Input
                     id="username"
                     name="username"
@@ -183,11 +224,15 @@ export default function AddEmployeePage() {
                     value={formData.username}
                     onChange={handleInputChange}
                     required
+                    className={fieldErrors.username ? "border-red-500" : ""}
                   />
+                  {fieldErrors.username && (
+                    <p className="text-sm text-red-500 mt-1">Full Name is required</p>
+                  )}
                 </Field>
 
                 <Field>
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
                   <Input
                     id="email"
                     name="email"
@@ -195,29 +240,20 @@ export default function AddEmployeePage() {
                     placeholder="Enter email address"
                     value={formData.email}
                     onChange={handleInputChange}
+                    className={fieldErrors.email ? "border-red-500" : ""}
                   />
+                  {fieldErrors.email && (
+                    <p className="text-sm text-red-500 mt-1">Email Address is required</p>
+                  )}
                 </Field>
 
                 <Field>
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="Enter password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Field>
-
-                <Field>
-                  <Label htmlFor="role">Role</Label>
+                  <Label htmlFor="role">Role <span className="text-red-500">*</span></Label>
                   <Select 
                     value={formData.role?.toString()} 
                     onValueChange={(value) => handleSelectChange("role", value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={fieldErrors.role ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -228,15 +264,31 @@ export default function AddEmployeePage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {fieldErrors.role && (
+                    <p className="text-sm text-red-500 mt-1">Role is required</p>
+                  )}
                 </Field>
 
                 <Field>
-                  <Label htmlFor="program_study">Program Study</Label>
+                  <Label htmlFor="program_study">
+                    Program Study
+                    {(() => {
+                      const selectedRole = roles.find(r => r.id === formData.role);
+                      const isAlumni = selectedRole && selectedRole.name.toLowerCase() === "alumni";
+                      const isProdiRole = selectedRole && selectedRole.name.toLowerCase().startsWith("prodi");
+                      const selectedProdi = programStudies.find(p => p.id === formData.program_study);
+                      const isProdiProgram = selectedProdi && selectedProdi.name.toLowerCase().startsWith("prodi");
+                      if (isAlumni || isProdiRole || isProdiProgram) {
+                        return <span className="text-red-500"> *</span>;
+                      }
+                      return null;
+                    })()}
+                  </Label>
                   <Select 
                     value={formData.program_study?.toString()} 
                     onValueChange={(value) => handleSelectChange("program_study", value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={fieldErrors.program_study ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select program study" />
                     </SelectTrigger>
                     <SelectContent>
@@ -247,18 +299,25 @@ export default function AddEmployeePage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {fieldErrors.program_study && (
+                    <p className="text-sm text-red-500 mt-1">Program Study is required for Alumni with Prodi program</p>
+                  )}
                 </Field>
 
                 <Field>
-                  <Label htmlFor="phone_number">Phone Number</Label>
+                  <Label htmlFor="phone_number">Phone Number <span className="text-red-500">*</span></Label>
                   <Input
                     id="phone_number"
                     name="phone_number"
                     type="tel"
-                    placeholder="+62 812-3456-7890"
+                    placeholder="081234567890"
                     value={formData.phone_number}
                     onChange={handleInputChange}
+                    className={fieldErrors.phone_number ? "border-red-500" : ""}
                   />
+                  {fieldErrors.phone_number && (
+                    <p className="text-sm text-red-500 mt-1">Phone Number is required</p>
+                  )}
                 </Field>
 
                 <Field>

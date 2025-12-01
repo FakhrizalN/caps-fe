@@ -385,8 +385,8 @@ export default function EditEmployeePage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label className="text-sm font-medium text-muted-foreground">User ID</Label>
-                    <p className="text-sm mt-1">{userData?.id || 'N/A'}</p>
+                    <Label className="text-sm font-medium text-muted-foreground">NIM / NIP</Label>
+                    <p className="text-sm mt-1">{userData?.id || '-'}</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground">Status</Label>
@@ -409,7 +409,7 @@ export default function EditEmployeePage() {
                             month: 'long',
                             day: 'numeric'
                           })
-                        : 'N/A'}
+                        : '-'}
                     </p>
                   </div>
                   <div>
