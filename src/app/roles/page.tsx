@@ -28,6 +28,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { Spinner } from "@/components/ui/spinner"
 import {
   Table,
   TableBody,
@@ -50,12 +51,12 @@ import {
 import { Edit, Plus, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 export default function RoleManagementPage() {
   const router = useRouter()
   const [roles, setRoles] = useState<Role[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingRole, setEditingRole] = useState<Role | null>(null)
@@ -83,12 +84,11 @@ export default function RoleManagementPage() {
   const fetchRoles = async () => {
     try {
       setIsLoading(true)
-      setError(null)
       const data = await getRoles()
       setRoles(data)
     } catch (err) {
       console.error("Error fetching roles:", err)
-      setError(err instanceof Error ? err.message : "Failed to fetch roles")
+      toast.error(err instanceof Error ? err.message : "Failed to fetch roles")
 
       if (err instanceof Error && err.message.includes("Session expired")) {
         router.push("/login")
@@ -104,73 +104,78 @@ export default function RoleManagementPage() {
       setProgramStudies(data)
     } catch (err) {
       console.error("Error fetching program studies:", err)
+      toast.error("Failed to fetch program studies")
     }
   }
 
   const handleCreateRole = async () => {
-    try {
-      setError(null)
-      
-      // Validate required fields
-      if (!newRole.program_study) {
-        setError("Program Study is required")
-        return
-      }
-      if (!newRole.name || newRole.name.trim() === "") {
-        setError("Role Name is required")
-        return
-      }
-      
-      await createRole(newRole)
-      setIsAddDialogOpen(false)
-      setNewRole({
-        name: "",
-        program_study: undefined,
-        permissions: [],
-      })
-      await fetchRoles()
-    } catch (err) {
-      console.error("Error creating role:", err)
-      setError(err instanceof Error ? err.message : "Failed to create role")
+    // Validate required fields
+    if (!newRole.program_study) {
+      toast.warning("Program Study is required")
+      return
     }
+    if (!newRole.name || newRole.name.trim() === "") {
+      toast.warning("Role Name is required")
+      return
+    }
+    
+    toast.promise(
+      createRole(newRole).then(async () => {
+        setIsAddDialogOpen(false)
+        setNewRole({
+          name: "",
+          program_study: undefined,
+          permissions: [],
+        })
+        await fetchRoles()
+      }),
+      {
+        loading: "Creating role...",
+        success: "Role created successfully",
+        error: (err) => err instanceof Error ? err.message : "Failed to create role",
+      }
+    )
   }
 
   const handleEditRole = async () => {
     if (!editingRole) return
 
-    try {
-      setError(null)
-      
-      // Validate required fields
-      if (!editFormData.program_study) {
-        setError("Program Study is required")
-        return
-      }
-      if (!editFormData.name || editFormData.name.trim() === "") {
-        setError("Role Name is required")
-        return
-      }
-      
-      await updateRole(editingRole.id, editFormData)
-      setIsEditDialogOpen(false)
-      setEditingRole(null)
-      await fetchRoles()
-    } catch (err) {
-      console.error("Error updating role:", err)
-      setError(err instanceof Error ? err.message : "Failed to update role")
+    // Validate required fields
+    if (!editFormData.program_study) {
+      toast.warning("Program Study is required")
+      return
     }
+    if (!editFormData.name || editFormData.name.trim() === "") {
+      toast.warning("Role Name is required")
+      return
+    }
+    
+    toast.promise(
+      updateRole(editingRole.id, editFormData).then(async () => {
+        setIsEditDialogOpen(false)
+        setEditingRole(null)
+        await fetchRoles()
+      }),
+      {
+        loading: "Updating role...",
+        success: "Role updated successfully",
+        error: (err) => err instanceof Error ? err.message : "Failed to update role",
+      }
+    )
   }
 
   const handleDeleteRole = async (id: number, name: string) => {
     if (window.confirm(`Are you sure you want to delete role "${name}"?`)) {
-      try {
-        setError(null)
-        await deleteRole(id)
-        await fetchRoles()
-      } catch (err) {
-        console.error("Error deleting role:", err)
-        setError(err instanceof Error ? err.message : "Failed to delete role")
-      }
+      toast.promise(
+        deleteRole(id).then(async () => {
+          await fetchRoles()
+        }),
+        {
+          loading: "Deleting role...",
+          success: "Role deleted successfully",
+          error: (err) => err instanceof Error ? err.message : "Failed to delete role",
+        }
+      )
     }
   }
 
@@ -207,13 +212,6 @@ export default function RoleManagementPage() {
             </header>
 
             <div className="flex flex-1 flex-col gap-8 p-8 overflow-auto">
-              {/* Error Message */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                  {error}
-                </div>
-              )}
-
               {/* Header Section */}
               <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold tracking-tight">
@@ -288,7 +286,7 @@ export default function RoleManagementPage() {
               {/* Loading State */}
               {isLoading ? (
                 <div className="flex items-center justify-center h-64">
-                  <div className="text-gray-500">Loading roles...</div>
+                  <Spinner className="size-8" />
                 </div>
               ) : (
                 <>

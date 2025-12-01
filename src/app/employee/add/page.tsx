@@ -21,17 +21,18 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { Spinner } from "@/components/ui/spinner"
 import { createUser, getProgramStudies, getRoles, type CreateUserData, type ProgramStudy, type Role } from "@/lib/api"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 export default function AddEmployeePage() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [roles, setRoles] = useState<Role[]>([])
   const [programStudies, setProgramStudies] = useState<ProgramStudy[]>([])
-  const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState({
     id: false,
     username: false,
@@ -64,7 +65,7 @@ export default function AddEmployeePage() {
       setRoles(data)
     } catch (err) {
       console.error("Error fetching roles:", err)
-      setError(err instanceof Error ? err.message : "Failed to fetch roles")
+      toast.error(err instanceof Error ? err.message : "Failed to fetch roles")
     }
   }
 
@@ -105,8 +106,6 @@ export default function AddEmployeePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    setError(null)
 
     // Validate required fields
     let isAlumni = false;
@@ -132,20 +131,24 @@ export default function AddEmployeePage() {
 
     // Check if there are any errors
     if (Object.values(errors).some(error => error)) {
-      setError("Please fill in all required fields");
-      setIsLoading(false);
+      toast.warning("Please fill in all required fields");
       return;
     }
 
-    try {
-      await createUser(formData)
-      router.push('/employee')
-    } catch (err) {
-      console.error('Error adding employee:', err)
-      setError(err instanceof Error ? err.message : "Failed to create user")
-    } finally {
-      setIsLoading(false)
-    }
+    setIsSubmitting(true)
+    toast.promise(
+      createUser(formData).then(() => {
+        router.push('/employee')
+      }),
+      {
+        loading: "Creating user...",
+        success: "User created successfully",
+        error: (err) => {
+          setIsSubmitting(false)
+          return err instanceof Error ? err.message : "Failed to create user"
+        },
+      }
+    )
   }
 
   return (
@@ -172,23 +175,23 @@ export default function AddEmployeePage() {
           </Breadcrumb>
         </header>
         <div className="flex flex-1 flex-col gap-8 p-8">
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
           <div className="flex items-center justify-between">
             <div className="text-3xl font-bold tracking-tight">Add New Employee</div>
             <div className="flex items-center gap-4">
               <Button 
                 type="submit" 
-                disabled={isLoading} 
+                disabled={isSubmitting} 
                 className="flex items-center gap-2"
                 onClick={handleSubmit}
               >
-                {isLoading ? "Submitting..." : "Submit"}
+                {isSubmitting ? (
+                  <>
+                    <Spinner className="size-4" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit"
+                )}
               </Button>
               <Link href="/employee">
                 <Button type="button" variant="outline">

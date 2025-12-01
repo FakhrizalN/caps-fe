@@ -21,6 +21,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import {
   deleteUser,
@@ -36,13 +37,13 @@ import {
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 export default function EditEmployeePage() {
   const router = useRouter()
   const params = useParams()
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingData, setIsLoadingData] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [roles, setRoles] = useState<Role[]>([])
   const [programStudies, setProgramStudies] = useState<ProgramStudy[]>([])
   const [userData, setUserData] = useState<User | null>(null)
@@ -70,7 +71,6 @@ export default function EditEmployeePage() {
   const fetchUserData = async () => {
     try {
       setIsLoadingData(true)
-      setError(null)
       const user = await getUser(params.id as string)
       setUserData(user)
       
@@ -87,7 +87,7 @@ export default function EditEmployeePage() {
       })
     } catch (err) {
       console.error('Error fetching user:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch user data')
+      toast.error(err instanceof Error ? err.message : 'Failed to fetch user data')
       
       if (err instanceof Error && err.message.includes('Session expired')) {
         router.push('/login')
@@ -148,39 +148,45 @@ export default function EditEmployeePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError(null)
 
-    try {
-      // Only send password if it's been changed
-      const updateData: UpdateUserData = { ...formData }
-      if (!updateData.password || updateData.password.trim() === "") {
-        delete updateData.password
-      }
-
-      await updateUser(params.id as string, updateData)
-      router.push('/employee')
-    } catch (err) {
-      console.error('Error updating employee:', err)
-      setError(err instanceof Error ? err.message : 'Failed to update user')
-    } finally {
-      setIsLoading(false)
+    // Only send password if it's been changed
+    const updateData: UpdateUserData = { ...formData }
+    if (!updateData.password || updateData.password.trim() === "") {
+      delete updateData.password
     }
+
+    toast.promise(
+      updateUser(params.id as string, updateData).then(() => {
+        router.push('/employee')
+      }),
+      {
+        loading: "Updating user...",
+        success: "User updated successfully",
+        error: (err) => {
+          setIsLoading(false)
+          return err instanceof Error ? err.message : 'Failed to update user'
+        },
+      }
+    )
   }
 
   const handleDelete = async () => {
     if (window.confirm(`Are you sure you want to delete user "${formData.username}"?`)) {
       setIsLoading(true)
-      setError(null)
       
-      try {
-        await deleteUser(params.id as string)
-        router.push('/employee')
-      } catch (err) {
-        console.error('Error deleting employee:', err)
-        setError(err instanceof Error ? err.message : 'Failed to delete user')
-      } finally {
-        setIsLoading(false)
-      }
+      toast.promise(
+        deleteUser(params.id as string).then(() => {
+          router.push('/employee')
+        }),
+        {
+          loading: "Deleting user...",
+          success: "User deleted successfully",
+          error: (err) => {
+            setIsLoading(false)
+            return err instanceof Error ? err.message : 'Failed to delete user'
+          },
+        }
+      )
     }
   }
 
@@ -190,7 +196,7 @@ export default function EditEmployeePage() {
         <AppSidebar />
         <SidebarInset>
           <div className="flex items-center justify-center h-screen">
-            <div className="text-lg">Loading...</div>
+            <Spinner className="size-8" />
           </div>
         </SidebarInset>
       </SidebarProvider>
@@ -221,13 +227,6 @@ export default function EditEmployeePage() {
           </Breadcrumb>
         </header>
         <div className="flex flex-1 flex-col gap-8 p-8">
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
           <div className="flex items-center justify-between">
             <div className="text-3xl font-bold tracking-tight">{formData.username || 'Edit Employee'}</div>
             <Button 

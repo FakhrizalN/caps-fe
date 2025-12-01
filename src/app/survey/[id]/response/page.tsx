@@ -4,18 +4,20 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { QuestionToolbar } from "@/components/question_toolbar"
 import { ResponseData, ResponseListTable } from "@/components/response_list_table"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { Spinner } from "@/components/ui/spinner"
 import { Answer, getAnswers, getCurrentUser, getSurvey } from "@/lib/api"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 interface UniqueUser {
   id: string
@@ -31,14 +33,12 @@ export default function ResponsesPage() {
   const [responses, setResponses] = useState<ResponseData[]>([])
   const [surveyTitle, setSurveyTitle] = useState("Loading...")
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState("")
   const [programStudyId, setProgramStudyId] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true)
-        setError("")
 
         if (!surveyId || isNaN(surveyId)) {
           throw new Error("Invalid survey ID")
@@ -67,7 +67,7 @@ export default function ResponsesPage() {
         setResponses(userList)
       } catch (err) {
         console.error(err)
-        setError(
+        toast.error(
           err instanceof Error ? err.message : "Gagal mengambil data responses",
         )
       } finally {
@@ -124,23 +124,17 @@ export default function ResponsesPage() {
           <div className="ml-0 w-full space-y-3 pr-20">
             {isLoading && (
               <div className="flex justify-center items-center py-12">
-                <p className="text-gray-500">Loading responses...</p>
+                <Spinner className="size-8" />
               </div>
             )}
             
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-600 text-sm">{error}</p>
-              </div>
-            )}
-            
-            {!isLoading && !error && responses.length === 0 && (
+            {!isLoading && responses.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-gray-500">Belum ada responses</p>
               </div>
             )}
             
-            {!isLoading && !error && responses.length > 0 && (
+            {!isLoading && responses.length > 0 && (
               <ResponseListTable data={responses} surveyId={surveyId} />
             )}
           </div>

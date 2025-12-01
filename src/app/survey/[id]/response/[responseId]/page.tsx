@@ -5,31 +5,32 @@ import { QuestionCardGForm, QuestionData } from "@/components/question_card_gfor
 import { QuestionToolbar } from "@/components/question_toolbar"
 import { SectionHeaderCard } from "@/components/section_header_card"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
+    SidebarInset,
+    SidebarProvider,
+    SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Answer, deleteAnswer, getAnswers, getCurrentUser, getProgramStudyQuestions, getQuestions, getSections, getSurvey, ProgramStudyQuestion, Question, Section } from "@/lib/api"
 import { ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import * as XLSX from 'xlsx'
 
 interface UniqueUser {
@@ -62,7 +63,6 @@ export default function ResponseDetailPage() {
   const [programStudyQuestions, setProgramStudyQuestions] = useState<ProgramStudyQuestion[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [error, setError] = useState("")
   const [userName, setUserName] = useState("")
   const [userEmail, setUserEmail] = useState("")
   const [programStudyId, setProgramStudyId] = useState<string | undefined>(undefined)
@@ -159,7 +159,7 @@ export default function ResponseDetailPage() {
         }
       } catch (err) {
         console.error("❌ Error fetching users:", err)
-        setError(
+        toast.error(
           err instanceof Error ? err.message : "Error loading users",
         )
       } finally {
@@ -196,7 +196,7 @@ export default function ResponseDetailPage() {
         }
       } catch (err) {
         console.error("❌ Error fetching answers:", err)
-        setError(
+        toast.error(
           err instanceof Error ? err.message : "Error loading answers",
         )
       }
@@ -933,12 +933,6 @@ export default function ResponseDetailPage() {
           {/* Question Cards */}
           <div className="p-6">
             <div className="max-w-6xl mx-auto space-y-3">
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-600 text-sm">{error}</p>
-                </div>
-              )}
-
               {userAnswers.length === 0 ? (
                 <p className="text-gray-500 text-center py-12">
                   Tidak ada jawaban

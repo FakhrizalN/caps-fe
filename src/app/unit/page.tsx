@@ -15,8 +15,10 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { Spinner } from "@/components/ui/spinner"
 import { getDepartments, getFaculties, getProgramStudiesDetailed } from "@/lib/api"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { UnitManagementClient } from "../../components/unit-management-client"
 
 export default function UnitManagementPage() {
@@ -38,6 +40,7 @@ export default function UnitManagementPage() {
         setProdiData(programStudies)
       } catch (error) {
         console.error('Error fetching data:', error)
+        toast.error('Failed to fetch unit data')
       } finally {
         setLoading(false)
       }
@@ -72,7 +75,7 @@ export default function UnitManagementPage() {
             <div className="flex flex-1 flex-col gap-8 p-8">
               {loading ? (
                 <div className="flex items-center justify-center h-full">
-                  <p>Loading...</p>
+                  <Spinner className="size-8" />
                 </div>
               ) : (
                 <UnitManagementClient 

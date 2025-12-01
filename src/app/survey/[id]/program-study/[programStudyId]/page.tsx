@@ -7,44 +7,45 @@ import { QuestionFloatingToolbar } from "@/components/question_floating_toolbar"
 import { QuestionToolbar } from "@/components/question_toolbar"
 import { SectionHeaderCard } from "@/components/section_header_card"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
-  createProgramStudyQuestion,
-  deleteProgramStudyQuestion,
-  getProgramStudy,
-  getProgramStudyQuestions,
-  getSurvey,
-  ProgramStudyQuestion,
-  updateProgramStudyQuestion
+    createProgramStudyQuestion,
+    deleteProgramStudyQuestion,
+    getProgramStudy,
+    getProgramStudyQuestions,
+    getSurvey,
+    ProgramStudyQuestion,
+    updateProgramStudyQuestion
 } from "@/lib/api"
 import {
-  closestCenter,
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    DragOverlay,
+    DragStartEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
 } from "@dnd-kit/core"
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 export default function ProgramStudyQuestionsPage() {
   const params = useParams()
@@ -118,7 +119,7 @@ export default function ProgramStudyQuestionsPage() {
       console.log("Question order updated successfully")
     } catch (error) {
       console.error("Error updating question order:", error)
-      alert("Failed to update question order")
+      toast.error("Failed to update question order")
       fetchQuestions()
     }
   }
@@ -158,7 +159,7 @@ export default function ProgramStudyQuestionsPage() {
       setQuestions(processedQuestions)
     } catch (error) {
       console.error("Error fetching questions:", error)
-      alert("Failed to load questions")
+      toast.error("Failed to load questions")
     } finally {
       setLoading(false)
     }
@@ -175,6 +176,7 @@ export default function ProgramStudyQuestionsPage() {
           setProgramStudyName(programStudy.name)
         } catch (error) {
           console.error("Error fetching program study:", error)
+          toast.error("Failed to load program study name")
           setProgramStudyName("Program Study")
         }
       }

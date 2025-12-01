@@ -6,11 +6,13 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Spinner } from '@/components/ui/spinner'
 import { login, setTokens, setUser } from '@/lib/api'
 import { Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -18,7 +20,6 @@ export default function LoginPage() {
     password: ''
   })
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({
     id: false,
     password: false
@@ -50,6 +51,9 @@ export default function LoginPage() {
     }
     
     setFieldErrors(errors)
+    if (errors.id || errors.password) {
+      toast.warning('ID dan password harus diisi')
+    }
     return !errors.id && !errors.password
   }
 
@@ -58,63 +62,65 @@ export default function LoginPage() {
     
     // Custom validation
     if (!validateForm()) {
-      setError('ID dan password harus diisi')
       return
     }
     
     setIsLoading(true)
-    setError('')
 
-    try {
-      console.log('Attempting login to:', process.env.NEXT_PUBLIC_API_URL)
-      console.log('Login credentials:', { id: formData.id, password: '***' })
-      
-      // Call Django login API
-      const response = await login({
-        id: formData.id,
-        password: formData.password
-      })
-      
-      console.log('Login successful:', { 
-        hasAccess: !!response.access, 
-        hasRefresh: !!response.refresh,
-        hasUser: !!response.user 
-      })
-      
-      // Store tokens
-      setTokens(response.access, response.refresh)
-      
-      // Decode JWT token to get user info
-      try {
-        const payload = JSON.parse(atob(response.access.split('.')[1]))
-        console.log('JWT Payload:', payload)
+    toast.promise(
+      (async () => {
+        console.log('Attempting login to:', process.env.NEXT_PUBLIC_API_URL)
+        console.log('Login credentials:', { id: formData.id, password: '***' })
         
-        // Store user role from JWT token
-        if (payload.role) {
-          document.cookie = `user_role=${payload.role}; path=/; max-age=${60 * 60 * 24 * 7}` // 7 days
+        // Call Django login API
+        const response = await login({
+          id: formData.id,
+          password: formData.password
+        })
+        
+        console.log('Login successful:', { 
+          hasAccess: !!response.access, 
+          hasRefresh: !!response.refresh,
+          hasUser: !!response.user 
+        })
+        
+        // Store tokens
+        setTokens(response.access, response.refresh)
+        
+        // Decode JWT token to get user info
+        try {
+          const payload = JSON.parse(atob(response.access.split('.')[1]))
+          console.log('JWT Payload:', payload)
           
-          // Also store in localStorage for sidebar
-          const userData = {
-            id: payload.user_id,
-            role_name: payload.role
+          // Store user role from JWT token
+          if (payload.role) {
+            document.cookie = `user_role=${payload.role}; path=/; max-age=${60 * 60 * 24 * 7}` // 7 days
+            
+            // Also store in localStorage for sidebar
+            const userData = {
+              id: payload.user_id,
+              role_name: payload.role
+            }
+            setUser(userData)
           }
-          setUser(userData)
+        } catch (err) {
+          console.error('Error decoding JWT:', err)
         }
-      } catch (err) {
-        console.error('Error decoding JWT:', err)
+        
+        // Redirect to dashboard after successful login
+        console.log('Redirecting to dashboard...')
+        router.push('/dashboard')
+      })(),
+      {
+        loading: 'Memproses...',
+        success: 'Login berhasil!',
+        error: (err) => {
+          setIsLoading(false)
+          console.error('Login error:', err)
+          return err instanceof Error ? err.message : 'Login gagal. Periksa ID dan password Anda.'
+        },
       }
-      
-      // Redirect to dashboard after successful login
-      console.log('Redirecting to dashboard...')
-      router.push('/dashboard')
-      
-    } catch (err) {
-      console.error('Login error:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Login gagal. Periksa ID dan password Anda.'
-      setError(errorMessage)
-    } finally {
-      setIsLoading(false)
-    }
+    )
   }
 
   return (
@@ -202,19 +208,20 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            {error && (
-              <div className="text-destructive text-sm text-center p-3 bg-destructive/10 rounded-md">
-                {error}
-              </div>
-            )}
-
             <Button
               type="submit"
               disabled={isLoading}
               className="w-full"
               size="lg"
             >
-              {isLoading ? 'Memproses...' : 'Masuk'}
+              {isLoading ? (
+                <>
+                  <Spinner className="size-4 mr-2" />
+                  Memproses...
+                </>
+              ) : (
+                'Masuk'
+              )}
             </Button>
           </form>
         </CardContent>

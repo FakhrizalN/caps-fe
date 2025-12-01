@@ -19,17 +19,18 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { Spinner } from "@/components/ui/spinner"
 import { createPeriod, createSurvey, deletePeriod, deleteSurvey, getPeriods, getSurvey, getSurveys, updatePeriod, type Period, type Survey, type SurveyType } from "@/lib/api"
 import { Check, ChevronDown, ChevronUp, Edit, Plus, Search, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 export default function SurveyManagementPage() {
   const router = useRouter()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   
   // State for surveys without periode
   const [surveysWithoutPeriode, setSurveysWithoutPeriode] = useState<Array<{
@@ -87,7 +88,6 @@ export default function SurveyManagementPage() {
   const fetchSurveys = async () => {
     try {
       setIsLoading(true)
-      setError(null)
       
       // Fetch both surveys and periods
       const [surveysData, periodsData] = await Promise.all([
@@ -161,7 +161,7 @@ export default function SurveyManagementPage() {
       
     } catch (err) {
       console.error('Error fetching surveys:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch surveys')
+      toast.error(err instanceof Error ? err.message : 'Failed to fetch surveys')
       
       // If unauthorized, redirect to login
       if (err instanceof Error && err.message.includes('Session expired')) {
@@ -178,30 +178,34 @@ export default function SurveyManagementPage() {
   }
 
   const handleDuplicate = async (surveyId: string) => {
-    try {
-      // Fetch the complete survey data from API
-      const surveyData = await getSurvey(surveyId)
-      
-      // Create a duplicate survey with modified title
-      const duplicateData = {
-        title: `${surveyData.title} (Copy)`,
-        description: surveyData.description,
-        is_active: surveyData.is_active,
-        survey_type: surveyData.survey_type || 'exit',
-        periode_id: surveyData.periode || null,
-        start_at: surveyData.start_at,
-        end_at: surveyData.end_at,
+    toast.promise(
+      (async () => {
+        // Fetch the complete survey data from API
+        const surveyData = await getSurvey(surveyId)
+        
+        // Create a duplicate survey with modified title
+        const duplicateData = {
+          title: `${surveyData.title} (Copy)`,
+          description: surveyData.description,
+          is_active: surveyData.is_active,
+          survey_type: surveyData.survey_type || 'exit',
+          periode_id: surveyData.periode || null,
+          start_at: surveyData.start_at,
+          end_at: surveyData.end_at,
+        }
+        
+        // Create the duplicate survey via API
+        await createSurvey(duplicateData)
+        
+        // Refresh the survey list
+        await fetchSurveys()
+      })(),
+      {
+        loading: 'Duplicating survey...',
+        success: 'Survey duplicated successfully',
+        error: (err) => err instanceof Error ? err.message : 'Failed to duplicate survey',
       }
-      
-      // Create the duplicate survey via API
-      await createSurvey(duplicateData)
-      
-      // Refresh the survey list
-      await fetchSurveys()
-    } catch (err) {
-      console.error('Error duplicating survey:', err)
-      setError(err instanceof Error ? err.message : 'Failed to duplicate survey')
-    }
+    )
   }
 
   const handleDeleteSurvey = async (surveyId: string) => {
@@ -210,44 +214,51 @@ export default function SurveyManagementPage() {
     
     if (isSurveyWithoutPeriode) {
       // Delete survey without periode from API
-      try {
-        await deleteSurvey(surveyId)
-        
-        // Remove from local state
-        setSurveysWithoutPeriode(prev => prev.filter(survey => survey.id !== surveyId))
-        
-        // Refresh surveys
-        await fetchSurveys()
-      } catch (err) {
-        console.error('Error deleting survey:', err)
-        setError(err instanceof Error ? err.message : 'Failed to delete survey')
-      }
+      toast.promise(
+        (async () => {
+          await deleteSurvey(surveyId)
+          
+          // Remove from local state
+          setSurveysWithoutPeriode(prev => prev.filter(survey => survey.id !== surveyId))
+          
+          // Refresh surveys
+          await fetchSurveys()
+        })(),
+        {
+          loading: 'Deleting survey...',
+          success: 'Survey deleted successfully',
+          error: (err) => err instanceof Error ? err.message : 'Failed to delete survey',
+        }
+      )
       return
     }
     
     // Delete survey from API
-    try {
-      await deleteSurvey(surveyId)
-      
-      // Remove from local state
-      setSections(prev => 
-        prev.map(section => ({
-          ...section,
-          surveys: section.surveys.filter(survey => survey.id !== surveyId)
-        }))
-      )
-      
-      // Refresh surveys
-      await fetchSurveys()
-    } catch (err) {
-      console.error('Error deleting survey:', err)
-      setError(err instanceof Error ? err.message : 'Failed to delete survey')
-    }
+    toast.promise(
+      (async () => {
+        await deleteSurvey(surveyId)
+        
+        // Remove from local state
+        setSections(prev => 
+          prev.map(section => ({
+            ...section,
+            surveys: section.surveys.filter(survey => survey.id !== surveyId)
+          }))
+        )
+        
+        // Refresh surveys
+        await fetchSurveys()
+      })(),
+      {
+        loading: 'Deleting survey...',
+        success: 'Survey deleted successfully',
+        error: (err) => err instanceof Error ? err.message : 'Failed to delete survey',
+      }
+    )
   }
 
   const handleSave = async (data: SurveyFormData) => {
     try {
-      setError(null)
       
       console.log('Received form data:', data)
       
@@ -306,7 +317,7 @@ export default function SurveyManagementPage() {
       await fetchSurveys()
     } catch (err) {
       console.error('Error creating survey:', err)
-      setError(err instanceof Error ? err.message : 'Failed to create survey')
+      toast.error(err instanceof Error ? err.message : 'Failed to create survey')
     }
   }
 
@@ -314,7 +325,6 @@ export default function SurveyManagementPage() {
     if (isEditMode) {
       // Switching from Edit mode to Done mode - save all changes
       try {
-        setError(null)
         setIsLoading(true)
         
         // 1. Delete marked sections first
@@ -368,7 +378,7 @@ export default function SurveyManagementPage() {
         
       } catch (err) {
         console.error('Error saving changes:', err)
-        setError(err instanceof Error ? err.message : 'Failed to save changes')
+        toast.error(err instanceof Error ? err.message : 'Failed to save changes')
       } finally {
         setIsLoading(false)
       }
@@ -503,18 +513,11 @@ export default function SurveyManagementPage() {
               </Breadcrumb>
             </header>
             
-            <div className="flex flex-1 flex-col gap-6 p-6 overflow-auto">
-              {/* Error Message */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                  {error}
-                </div>
-              )}
-
+            <div className="flex flex-1 flex-col gap-8 p-8">
               {/* Loading State */}
               {isLoading ? (
                 <div className="flex items-center justify-center h-64">
-                  <div className="text-gray-500">Loading surveys...</div>
+                  <Spinner className="size-8" />
                 </div>
               ) : (
                 <>

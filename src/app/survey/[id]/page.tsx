@@ -9,47 +9,47 @@ import { ReorderSectionsDialog } from "@/components/reorder-sections-dialog"
 import { SectionHeaderCard } from "@/components/section_header_card"
 import { TextCard } from "@/components/text_card"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
-  createQuestion,
-  createSection,
-  deleteQuestion,
-  deleteSection,
-  getCurrentUser,
-  getQuestions,
-  getSections,
-  getSurvey,
-  Question,
-  Section,
-  updateQuestion,
-  updateSection,
-  updateSurvey,
+    createQuestion,
+    createSection,
+    deleteQuestion,
+    deleteSection,
+    getCurrentUser,
+    getQuestions,
+    getSections,
+    getSurvey,
+    Question,
+    Section,
+    updateQuestion,
+    updateSection,
+    updateSurvey,
 } from "@/lib/api"
 import {
-  closestCenter,
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    DragOverlay,
+    DragStartEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
 } from "@dnd-kit/core"
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
