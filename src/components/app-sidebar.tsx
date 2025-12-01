@@ -3,6 +3,7 @@
 import { BarChart2, Building2, ChevronRight, ClipboardList, LogOut, Shield, Users } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import * as React from "react"
+import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -23,7 +24,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { logout } from "@/lib/api"
+import { getCurrentUser, logout } from "@/lib/api"
 
 // This is sample data.
 const data = {
@@ -73,6 +74,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const router = useRouter()
   const isDashboardActive = pathname === "/"
+  const [userRole, setUserRole] = useState<string | null>(null)
+
+  useEffect(() => {
+    const user = getCurrentUser()
+    setUserRole(user?.role_name || null)
+  }, [])
 
   const handleLogout = () => {
     logout()
@@ -118,21 +125,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <CollapsibleContent>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {item.items.map((subItem) => {
-                      const isActive = pathname.startsWith(subItem.url)
-                      const IconComponent = subItem.icon
+                    {item.items
+                      .filter((subItem) => {
+                        // Hide User Management and Role Management for non-admin users
+                        if (subItem.url === "/employee" || subItem.url === "/roles") {
+                          return userRole?.toLowerCase() === "admin"
+                        }
+                        return true
+                      })
+                      .map((subItem) => {
+                        const isActive = pathname.startsWith(subItem.url)
+                        const IconComponent = subItem.icon
 
-                      return (
-                        <SidebarMenuItem key={subItem.title}>
-                          <SidebarMenuButton asChild isActive={isActive}>
-                            <a href={subItem.url} className="flex items-center gap-2">
-                              <IconComponent className="h-4 w-4" />
-                              {subItem.title}
-                            </a>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      )
-                    })}
+                        return (
+                          <SidebarMenuItem key={subItem.title}>
+                            <SidebarMenuButton asChild isActive={isActive}>
+                              <a href={subItem.url} className="flex items-center gap-2">
+                                <IconComponent className="h-4 w-4" />
+                                {subItem.title}
+                              </a>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        )
+                      })}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </CollapsibleContent>

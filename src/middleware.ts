@@ -2,7 +2,10 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 // Paths that require authentication
-const protectedPaths = ['/dashboard', '/employee', '/survey', '/question']
+const protectedPaths = ['/dashboard', '/employee', '/survey', '/question', '/roles', '/unit', '/response']
+
+// Paths that only admin can access
+const adminOnlyPaths = ['/employee', '/roles']
 
 // Paths that should redirect to dashboard if already authenticated
 const authPaths = ['/login']
@@ -41,6 +44,20 @@ export function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
+  }
+
+  // Check if the current path is admin-only
+  const isAdminOnlyPath = adminOnlyPaths.some(path => pathname.startsWith(path))
+  
+  // Check user role for admin-only routes
+  if (isAdminOnlyPath && accessToken) {
+    // Get role from cookie (you may need to store this during login)
+    const userRole = request.cookies.get('user_role')?.value
+    
+    // Redirect non-admin users to dashboard
+    if (userRole?.toLowerCase() !== 'admin') {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
   }
   
   return NextResponse.next()

@@ -79,11 +79,27 @@ export default function LoginPage() {
         hasUser: !!response.user 
       })
       
-      // Store tokens and user data
+      // Store tokens
       setTokens(response.access, response.refresh)
       
-      if (response.user) {
-        setUser(response.user)
+      // Decode JWT token to get user info
+      try {
+        const payload = JSON.parse(atob(response.access.split('.')[1]))
+        console.log('JWT Payload:', payload)
+        
+        // Store user role from JWT token
+        if (payload.role) {
+          document.cookie = `user_role=${payload.role}; path=/; max-age=${60 * 60 * 24 * 7}` // 7 days
+          
+          // Also store in localStorage for sidebar
+          const userData = {
+            id: payload.user_id,
+            role_name: payload.role
+          }
+          setUser(userData)
+        }
+      } catch (err) {
+        console.error('Error decoding JWT:', err)
       }
       
       // Redirect to dashboard after successful login

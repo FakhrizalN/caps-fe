@@ -15,6 +15,10 @@ interface LoginResponse {
     username?: string
     first_name?: string
     last_name?: string
+    role?: number | string
+    role_name?: string
+    program_study?: number | string
+    program_study_name?: string
   }
 }
 
@@ -100,6 +104,7 @@ export function logout() {
     // Clear cookies
     document.cookie = 'access_token=; path=/; max-age=0'
     document.cookie = 'refresh_token=; path=/; max-age=0'
+    document.cookie = 'user_role=; path=/; max-age=0'
   }
 }
 
