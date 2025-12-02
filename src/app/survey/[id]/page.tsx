@@ -9,47 +9,47 @@ import { ReorderSectionsDialog } from "@/components/reorder-sections-dialog"
 import { SectionHeaderCard } from "@/components/section_header_card"
 import { TextCard } from "@/components/text_card"
 import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
-    createQuestion,
-    createSection,
-    deleteQuestion,
-    deleteSection,
-    getCurrentUser,
-    getQuestions,
-    getSections,
-    getSurvey,
-    Question,
-    Section,
-    updateQuestion,
-    updateSection,
-    updateSurvey,
+  createQuestion,
+  createSection,
+  deleteQuestion,
+  deleteSection,
+  getCurrentUser,
+  getQuestions,
+  getSections,
+  getSurvey,
+  Question,
+  Section,
+  updateQuestion,
+  updateSection,
+  updateSurvey,
 } from "@/lib/api"
 import {
-    closestCenter,
-    DndContext,
-    DragEndEvent,
-    DragOverlay,
-    DragStartEvent,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core"
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import {
-    arrayMove,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    verticalListSortingStrategy,
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -823,8 +823,39 @@ export default function SurveyQuestionsPage() {
 
   const handleUpdateSection = async (sectionId: number, data: { title?: string; description?: string }) => {
     try {
-      const updatedSection = await updateSection(surveyId, sectionId, data)
-      setSections(sections.map(s => s.id === sectionId ? { ...s, ...updatedSection } : s))
+      // Check if this is the first section
+      const isFirstSection = sections.findIndex(s => s.id === sectionId) === 0
+      
+      // If updating first section, also update survey to keep them in sync
+      if (isFirstSection) {
+        const updatePromises: Promise<any>[] = []
+        
+        // Update section
+        updatePromises.push(updateSection(surveyId, sectionId, data))
+        
+        // Update survey with same changes
+        const surveyUpdate: { title?: string; description?: string } = {}
+        if (data.title !== undefined) {
+          surveyUpdate.title = data.title
+          setSurveyTitle(data.title)
+        }
+        if (data.description !== undefined) {
+          surveyUpdate.description = data.description
+          setSurveyDescription(data.description)
+        }
+        
+        if (Object.keys(surveyUpdate).length > 0) {
+          updatePromises.push(updateSurvey(surveyId.toString(), surveyUpdate))
+        }
+        
+        await Promise.all(updatePromises)
+      } else {
+        // For non-first sections, just update the section
+        await updateSection(surveyId, sectionId, data)
+      }
+      
+      // Update local state
+      setSections(sections.map(s => s.id === sectionId ? { ...s, ...data } : s))
     } catch (error) {
       console.error("Error updating section:", error)
       alert("Failed to update section")
@@ -1032,19 +1063,25 @@ export default function SurveyQuestionsPage() {
         
         if (!newFirstSectionOriginal) return
 
-        // Update survey title to match new first section's title
+        // Update survey title and description to match new first section
         const newSurveyTitle = newFirstSectionOriginal.title
+        const newSurveyDescription = newFirstSectionOriginal.description || ""
 
-        console.log("First section changed, updating survey title", {
+        console.log("First section changed, updating survey title and description", {
           oldFirstSectionId: oldFirstSection.id,
           newFirstSectionId: newFirstSection.id,
-          newSurveyTitle
+          newSurveyTitle,
+          newSurveyDescription
         })
 
-        // Update survey title in state and backend
+        // Update survey title and description in state and backend
         setSurveyTitle(newSurveyTitle)
+        setSurveyDescription(newSurveyDescription)
         updatePromises.push(
-          updateSurvey(surveyId.toString(), { title: newSurveyTitle })
+          updateSurvey(surveyId.toString(), { 
+            title: newSurveyTitle,
+            description: newSurveyDescription
+          })
         )
       }
 
