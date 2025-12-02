@@ -175,6 +175,49 @@ export async function getCurrentUserFromAPI(): Promise<any> {
 }
 
 /**
+ * Update current user profile using /accounts/me/ endpoint
+ */
+export async function updateCurrentUserProfile(data: {
+  username?: string;
+  email?: string;
+  phone_number?: string;
+  address?: string;
+}): Promise<any> {
+  return fetchWithAuth('/accounts/me/', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Partially update current user profile using /accounts/me/ endpoint
+ */
+export async function patchCurrentUserProfile(data: {
+  username?: string;
+  email?: string;
+  phone_number?: string;
+  address?: string;
+}): Promise<any> {
+  return fetchWithAuth('/accounts/me/', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Change password for current user
+ */
+export async function changePassword(data: {
+  old_password: string;
+  new_password: string;
+}): Promise<any> {
+  return fetchWithAuth('/accounts/password/change/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
  * Check if user is authenticated
  */
 export function isAuthenticated(): boolean {

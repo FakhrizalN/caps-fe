@@ -18,7 +18,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { getCurrentUser, getUser, updateUser } from "@/lib/api"
+import { changePassword, getCurrentUserFromAPI, patchCurrentUserProfile } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -28,6 +28,7 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
 
   const [formData, setFormData] = useState({
     id: '',
@@ -37,17 +38,17 @@ export default function ProfilePage() {
     address: '',
   })
 
+  const [passwordData, setPasswordData] = useState({
+    old_password: '',
+    new_password: '',
+    confirm_password: '',
+  })
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const currentUser = getCurrentUser()
-        if (!currentUser?.id) {
-          router.push('/login')
-          return
-        }
-
-        // Fetch full user data from API
-        const userData = await getUser(currentUser.id)
+        // Fetch user data from API
+        const userData = await getCurrentUserFromAPI()
         setFormData({
           id: userData.id || '',
           username: userData.username || '',
@@ -58,6 +59,10 @@ export default function ProfilePage() {
       } catch (err) {
         console.error('Error fetching user data:', err)
         setError('Failed to load user data')
+        // If unauthorized, redirect to login
+        if (err instanceof Error && err.message.includes('401')) {
+          router.push('/login')
+        }
       } finally {
         setIsLoading(false)
       }
@@ -74,6 +79,14 @@ export default function ProfilePage() {
     }))
   }
 
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setPasswordData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSaving(true)
@@ -81,25 +94,12 @@ export default function ProfilePage() {
     setSuccessMessage(null)
 
     try {
-      await updateUser(formData.id, {
+      await patchCurrentUserProfile({
         username: formData.username,
         email: formData.email,
         phone_number: formData.phone_number,
         address: formData.address,
       })
-
-      // Update localStorage with new data
-      const currentUser = getCurrentUser()
-      if (currentUser) {
-        const updatedUser = {
-          ...currentUser,
-          username: formData.username,
-          email: formData.email,
-          phone_number: formData.phone_number,
-          address: formData.address,
-        }
-        localStorage.setItem('user', JSON.stringify(updatedUser))
-      }
 
       setSuccessMessage('Profile updated successfully!')
       
@@ -110,6 +110,46 @@ export default function ProfilePage() {
     } catch (err) {
       console.error('Error updating profile:', err)
       setError(err instanceof Error ? err.message : 'Failed to update profile')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setSuccessMessage(null)
+
+    // Validate passwords match
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      setError('New passwords do not match')
+      return
+    }
+
+    // Validate password length
+    if (passwordData.new_password.length < 8) {
+      setError('Password must be at least 8 characters long')
+      return
+    }
+
+    setIsSaving(true)
+
+    try {
+      await changePassword({
+        old_password: passwordData.old_password,
+        new_password: passwordData.new_password,
+      })
+
+      setSuccessMessage('Password changed successfully!')
+      setPasswordData({
+        old_password: '',
+        new_password: '',
+        confirm_password: '',
+      })
+      setShowPasswordForm(false)
+    } catch (err) {
+      console.error('Error changing password:', err)
+      setError(err instanceof Error ? err.message : 'Failed to change password')
     } finally {
       setIsSaving(false)
     }
@@ -234,6 +274,91 @@ export default function ProfilePage() {
                           </Field>
                         </div>
                       </form>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Security</CardTitle>
+                      <CardDescription>
+                        Manage your password and security settings.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {!showPasswordForm ? (
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setShowPasswordForm(true)}
+                        >
+                          Change Password
+                        </Button>
+                      ) : (
+                        <form onSubmit={handlePasswordSubmit}>
+                          <div className="grid grid-cols-1 gap-6">
+                            <Field>
+                              <Label htmlFor="old_password">Current Password</Label>
+                              <Input
+                                id="old_password"
+                                name="old_password"
+                                type="password"
+                                placeholder="Enter current password"
+                                value={passwordData.old_password}
+                                onChange={handlePasswordChange}
+                                required
+                              />
+                            </Field>
+
+                            <Field>
+                              <Label htmlFor="new_password">New Password</Label>
+                              <Input
+                                id="new_password"
+                                name="new_password"
+                                type="password"
+                                placeholder="Enter new password (min. 8 characters)"
+                                value={passwordData.new_password}
+                                onChange={handlePasswordChange}
+                                required
+                              />
+                            </Field>
+
+                            <Field>
+                              <Label htmlFor="confirm_password">Confirm New Password</Label>
+                              <Input
+                                id="confirm_password"
+                                name="confirm_password"
+                                type="password"
+                                placeholder="Confirm new password"
+                                value={passwordData.confirm_password}
+                                onChange={handlePasswordChange}
+                                required
+                              />
+                            </Field>
+
+                            <div className="flex gap-2">
+                              <Button 
+                                type="submit" 
+                                disabled={isSaving}
+                              >
+                                {isSaving ? "Changing..." : "Change Password"}
+                              </Button>
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                onClick={() => {
+                                  setShowPasswordForm(false)
+                                  setPasswordData({
+                                    old_password: '',
+                                    new_password: '',
+                                    confirm_password: '',
+                                  })
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        </form>
+                      )}
                     </CardContent>
                   </Card>
                 </>

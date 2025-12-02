@@ -7,24 +7,24 @@ import { useEffect, useState } from "react"
 
 import { NavUser } from "@/components/nav-user"
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarRail,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarRail,
 } from "@/components/ui/sidebar"
-import { getCurrentUser, getUser } from "@/lib/api"
+import { getCurrentUserFromAPI } from "@/lib/api"
 
 // This is sample data.
 const data = {
@@ -78,32 +78,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [userData, setUserData] = useState({
     name: "User",
     email: "user@example.com",
-    avatar: "/avatars/default.jpg",
+    avatar: "",
   })
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const currentUser = getCurrentUser()
-      if (!currentUser?.id) return
-
-      setUserRole(currentUser.role_name || null)
-      
       try {
-        // Fetch full user data from API
-        const userData = await getUser(currentUser.id)
-        setUserData({
-          name: userData.username || currentUser.id || "User",
-          email: userData.email || "user@example.com",
-          avatar: "/avatars/default.jpg",
-        })
-      } catch (err) {
-        console.error('Error fetching user data:', err)
-        // Fallback to localStorage data
+        // Fetch user data from API
+        const currentUser = await getCurrentUserFromAPI()
+        
+        setUserRole(currentUser.role_name || null)
         setUserData({
           name: currentUser.username || currentUser.id || "User",
           email: currentUser.email || "user@example.com",
-          avatar: "/avatars/default.jpg",
+          avatar: "",
         })
+      } catch (err) {
+        console.error('Error fetching user data:', err)
+        // If error, keep default values
       }
     }
 
