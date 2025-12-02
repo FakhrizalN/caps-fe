@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface ClusterData {
   x: number;
@@ -13,21 +19,26 @@ interface Props {
   getClusterColors: (n: number) => string[];
 }
 
-export function ClusterInterpretation({ clusterResult, rows, kClusters, getClusterColors }: Props) {
+export function ClusterInterpretation({
+  clusterResult,
+  rows,
+  kClusters,
+  getClusterColors,
+}: Props) {
   const getKesesuaianLabel = (val: number) => {
-    if (val <= 1.5) return '⭐⭐⭐ Sangat Erat';
-    if (val <= 2.5) return '⭐⭐ Erat';
-    if (val <= 3.5) return '⭐ Cukup Erat';
-    return '❌ Kurang Erat';
+    if (val <= 1.5) return "⭐⭐⭐ Sangat Erat";
+    if (val <= 2.5) return "⭐⭐ Erat";
+    if (val <= 3.5) return "⭐ Cukup Erat";
+    return "❌ Kurang Erat";
   };
 
   const getInstitusiLabel = (val: number) => {
-    if (val <= 1.5) return '🏛️ Pemerintah';
-    if (val <= 2.5) return '🤝 Non-Profit';
-    if (val <= 3.5) return '🏢 Swasta';
-    if (val <= 4.5) return '💼 Wiraswasta';
-    if (val <= 6) return '🏭 BUMN';
-    return '🌐 Multilateral';
+    if (val <= 1.5) return "🏛️ Pemerintah";
+    if (val <= 2.5) return "🤝 Non-Profit";
+    if (val <= 3.5) return "🏢 Swasta";
+    if (val <= 4.5) return "💼 Wiraswasta";
+    if (val <= 6) return "🏭 BUMN";
+    return "🌐 Multilateral";
   };
 
   const generateInterpretation = (
@@ -39,25 +50,25 @@ export function ClusterInterpretation({ clusterResult, rows, kClusters, getClust
   ) => {
     const traits = [];
 
-    if (waktu < 3) traits.push('✅ Cepat dapat kerja');
-    else if (waktu > 6) traits.push('⚠️ Waktu tunggu lama');
+    if (waktu < 3) traits.push("✅ Cepat dapat kerja");
+    else if (waktu > 6) traits.push("⚠️ Waktu tunggu lama");
 
-    if (gaji > 6000000) traits.push('💰 Gaji tinggi');
-    else if (gaji >= 4500000) traits.push('💵 Gaji menengah-atas');
-    else if (gaji >= 3500000) traits.push('💵 Gaji menengah');
-    else if (gaji >= 2500000) traits.push('💸 Gaji standar');
-    else traits.push('💵 Gaji entry-level');
+    if (gaji > 6000000) traits.push("💰 Gaji tinggi");
+    else if (gaji >= 4500000) traits.push("💵 Gaji menengah-atas");
+    else if (gaji >= 3500000) traits.push("💵 Gaji menengah");
+    else if (gaji >= 2500000) traits.push("💸 Gaji standar");
+    else traits.push("💵 Gaji entry-level");
 
-    if (kesesuaian <= 2) traits.push('🎯 Kerja sesuai bidang');
-    else if (kesesuaian >= 4) traits.push('🔄 Kerja kurang sesuai');
+    if (kesesuaian <= 2) traits.push("🎯 Kerja sesuai bidang");
+    else if (kesesuaian >= 4) traits.push("🔄 Kerja kurang sesuai");
 
-    if (lamaStudi > 4.5) traits.push('📚 Lulus lama');
+    if (lamaStudi > 4.5) traits.push("📚 Lulus lama");
 
-    if (institusi <= 2) traits.push('🏛️ Dominan pemerintah/non-profit');
-    else if (institusi <= 3.5) traits.push('🏢 Dominan swasta');
-    else traits.push('💼 Banyak wirausaha');
+    if (institusi <= 2) traits.push("🏛️ Dominan pemerintah/non-profit");
+    else if (institusi <= 3.5) traits.push("🏢 Dominan swasta");
+    else traits.push("💼 Banyak wirausaha");
 
-    return traits.length > 0 ? traits.join(' • ') : 'Profil standar';
+    return traits.length > 0 ? traits.join(" • ") : "Profil standar";
   };
 
   const colors = getClusterColors(kClusters);
@@ -65,10 +76,16 @@ export function ClusterInterpretation({ clusterResult, rows, kClusters, getClust
   return (
     <>
       {Array.from({ length: kClusters }).map((_, clusterIdx) => {
-        const clusterData = clusterResult.filter((d) => d.cluster === clusterIdx);
+        const clusterData = clusterResult.filter(
+          (d) => d.cluster === clusterIdx
+        );
         if (clusterData.length === 0) return null;
 
-        let sumF502 = 0, sumF505 = 0, sumF14 = 0, sumF5d = 0, sumF1101 = 0;
+        let sumF502 = 0,
+          sumF505 = 0,
+          sumF14 = 0,
+          sumF5d = 0,
+          sumF1101 = 0;
 
         clusterData.forEach((point) => {
           const rowIdx = clusterResult.indexOf(point);
@@ -87,11 +104,17 @@ export function ClusterInterpretation({ clusterResult, rows, kClusters, getClust
         const avgF1101 = (sumF1101 / count).toFixed(1);
 
         return (
-          <Card key={clusterIdx} style={{ borderLeft: `4px solid ${colors[clusterIdx]}` }}>
+          <Card
+            key={clusterIdx}
+            style={{ borderLeft: `4px solid ${colors[clusterIdx]}` }}
+          >
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: colors[clusterIdx] }} />
-                Cluster {clusterIdx}
+                <div
+                  className="w-4 h-4 rounded-full"
+                  style={{ backgroundColor: colors[clusterIdx] }}
+                />
+                Cluster {clusterIdx + 1}
               </CardTitle>
               <CardDescription className="text-xs">
                 {count} alumni ({((count / rows.length) * 100).toFixed(1)}%)
@@ -104,11 +127,15 @@ export function ClusterInterpretation({ clusterResult, rows, kClusters, getClust
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Gaji Rata-rata:</span>
-                <span className="font-medium">Rp {Number(avgF505).toLocaleString('id-ID')}</span>
+                <span className="font-medium">
+                  Rp {Number(avgF505).toLocaleString("id-ID")}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Kesesuaian:</span>
-                <span className="font-medium text-xs">{getKesesuaianLabel(parseFloat(avgF14))}</span>
+                <span className="font-medium text-xs">
+                  {getKesesuaianLabel(parseFloat(avgF14))}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Lama Studi:</span>
@@ -116,7 +143,9 @@ export function ClusterInterpretation({ clusterResult, rows, kClusters, getClust
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Institusi:</span>
-                <span className="font-medium text-xs">{getInstitusiLabel(parseFloat(avgF1101))}</span>
+                <span className="font-medium text-xs">
+                  {getInstitusiLabel(parseFloat(avgF1101))}
+                </span>
               </div>
               <div className="pt-2 mt-2 border-t text-xs text-muted-foreground">
                 {generateInterpretation(

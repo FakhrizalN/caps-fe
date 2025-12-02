@@ -39,7 +39,7 @@ import {
 import {
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent
+  ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -203,7 +203,11 @@ export default function Dashboard() {
   useEffect(() => {
     if (!csvLoaded || !xFeature || !yFeature || !config) return;
 
-    const { clusterPlot, explainedVariance } = computeClustering(rows, config, kClusters);
+    const { clusterPlot, explainedVariance } = computeClustering(
+      rows,
+      config,
+      kClusters
+    );
     if (clusterPlot && clusterPlot.length > 0) {
       setClusterResult(clusterPlot);
     }
@@ -216,16 +220,34 @@ export default function Dashboard() {
   const statusAlumni = useMemo(() => computeStatusAlumni(rows), [rows]);
   const pekerjaanCepat = useMemo(() => computePekerjaanCepat(rows), [rows]);
   const waktuTunggu = useMemo(() => computeWaktuTunggu(rows), [rows]);
-  const pendapatanDataComputed = useMemo(() => computePendapatanData(rows), [rows]);
+  const pendapatanDataComputed = useMemo(
+    () => computePendapatanData(rows),
+    [rows]
+  );
   const jenisInstitusi = useMemo(() => computeJenisInstitusi(rows), [rows]);
   const tingkatKerja = useMemo(() => computeTingkatKerja(rows), [rows]);
   const relevansiBidang = useMemo(() => computeRelevansiBidang(rows), [rows]);
-  const tingkatPendidikan = useMemo(() => computeTingkatPendidikan(rows), [rows]);
-  const kompetensiDataComputed = useMemo(() => computeKompetensiData(rows), [rows]);
-  const metodePembelajaran = useMemo(() => computeMetodePembelajaran(rows), [rows]);
-  const timelinePencarian = useMemo(() => computeTimelinePencarian(rows), [rows]);
+  const tingkatPendidikan = useMemo(
+    () => computeTingkatPendidikan(rows),
+    [rows]
+  );
+  const kompetensiDataComputed = useMemo(
+    () => computeKompetensiData(rows),
+    [rows]
+  );
+  const metodePembelajaran = useMemo(
+    () => computeMetodePembelajaran(rows),
+    [rows]
+  );
+  const timelinePencarian = useMemo(
+    () => computeTimelinePencarian(rows),
+    [rows]
+  );
   const statusPencarian = useMemo(() => computeStatusPencarian(rows), [rows]);
-  const strategiPencarian = useMemo(() => computeStrategiPencarian(rows), [rows]);
+  const strategiPencarian = useMemo(
+    () => computeStrategiPencarian(rows),
+    [rows]
+  );
   const alasanPekerjaan = useMemo(() => computeAlasanPekerjaan(rows), [rows]);
   const sumberDana = useMemo(() => computeSumberDana(rows), [rows]);
 
@@ -989,11 +1011,10 @@ export default function Dashboard() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>
-                      Pola Kelompok Profil Karir Alumni
-                    </CardTitle>
+                    <CardTitle>Pola Kelompok Profil Karir Alumni</CardTitle>
                     <CardDescription>
-                      Setiap titik adalah alumni, dikelompokkan berdasarkan kemiripan profil karirnya
+                      Setiap titik adalah alumni, dikelompokkan berdasarkan
+                      kemiripan profil karirnya
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -1048,7 +1069,7 @@ export default function Dashboard() {
                           align="center"
                           iconType="plainline"
                           wrapperStyle={{
-                            paddingTop: 30, 
+                            paddingTop: 30,
                           }}
                         />
 
@@ -1078,7 +1099,8 @@ export default function Dashboard() {
                   <CardHeader>
                     <CardTitle>Interpretasi Profil Cluster</CardTitle>
                     <CardDescription>
-                      Gambaran singkat tiap kelompok alumni berdasarkan rata-rata indikator karir.
+                      Gambaran singkat tiap kelompok alumni berdasarkan
+                      rata-rata indikator karir.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -1095,11 +1117,10 @@ export default function Dashboard() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>
-                      Forecasting (AR approx.)
-                    </CardTitle>
+                    <CardTitle>Forecasting (AR approx.)</CardTitle>
                     <CardDescription>
-                      Perkiraan jumlah lulusan per tahun berdasarkan tren data beberapa tahun terakhir.
+                      Perkiraan jumlah lulusan per tahun berdasarkan tren data
+                      beberapa tahun terakhir.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -1143,10 +1164,23 @@ export default function Dashboard() {
                           data={tsSeries
                             .map((s) => ({ t: s.t, value: s.value }))
                             .concat(
-                              forecastResult.map((v, i) => ({
-                                t: `F+${i + 1}`,
-                                value: v,
-                              }))
+                              (() => {
+                                const lastYear =
+                                  tsSeries.length > 0
+                                    ? parseInt(
+                                        tsSeries[tsSeries.length - 1].t,
+                                        10
+                                      )
+                                    : NaN;
+                                return forecastResult.map((v, i) => ({
+                                  t:
+                                    Number.isFinite(lastYear) &&
+                                    !Number.isNaN(lastYear)
+                                      ? String(lastYear + i + 1)
+                                      : `F+${i + 1}`,
+                                  value: v,
+                                }));
+                              })()
                             )}
                         >
                           <CartesianGrid strokeDasharray="3 3" />
