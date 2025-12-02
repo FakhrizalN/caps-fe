@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import {
-  getCurrentUser,
+  getCurrentUserFromAPI,
   getProgramStudyQuestions,
   getQuestions,
   getSections,
@@ -46,6 +46,7 @@ export default function AlumniAnswerPage() {
   const [sectionsWithQuestions, setSectionsWithQuestions] = useState<SectionWithQuestions[]>([]);
   const [programStudyQuestions, setProgramStudyQuestions] = useState<ResponseAnswer[]>([]);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [navigationHistory, setNavigationHistory] = useState<number[]>([0]); // Track navigation history
   const [answers, setAnswers] = useState<Record<string, ResponseAnswer>>({});
   const [loading, setLoading] = useState(true);
 
@@ -112,6 +113,7 @@ export default function AlumniAnswerPage() {
               description: q.description || "",
               required: q.is_required,
               options: formattedOptions,
+              branches: q.branches || [], // Store branches for navigation
               minValue: 1,
               maxValue: 5,
               minLabel: "Sangat Tidak Setuju",
@@ -128,9 +130,9 @@ export default function AlumniAnswerPage() {
         console.log("✅ Sections with questions:", sectionsWithQuestionsData);
         setSectionsWithQuestions(sectionsWithQuestionsData);
         
-        // Get program study ID from user localStorage (from JWT token)
-        const user = getCurrentUser();
-        console.log("📋 Current user from localStorage:", user);
+        // Get program study ID from user API
+        const user = await getCurrentUserFromAPI();
+        console.log("📋 Current user from API:", user);
         console.log("📋 User program_study ID:", user?.program_study);
         
         if (user?.program_study) {
@@ -310,13 +312,49 @@ export default function AlumniAnswerPage() {
         return;
       }
       
-      // Pindah ke section berikutnya atau ke program study questions
-      if (currentSectionIndex < sectionsWithQuestions.length - 1) {
-        setCurrentSectionIndex(prev => prev + 1);
+      // Check for branch navigation in radio questions
+      let targetSectionIndex = -1;
+      
+      for (const question of currentSection.questions) {
+        if (question.type === 'multiple_choice' && question.branches && question.branches.length > 0) {
+          const answer = answers[question.id];
+          if (answer?.selectedOption) {
+            // Find the selected option label
+            const selectedOption = question.options?.find(opt => opt.id === answer.selectedOption);
+            if (selectedOption) {
+              // Check if this answer triggers a branch
+              const branch = question.branches.find(b => b.answer_value === selectedOption.label);
+              if (branch) {
+                // Find target section index
+                const targetIndex = sectionsWithQuestions.findIndex(s => s.id === branch.next_section);
+                if (targetIndex !== -1) {
+                  targetSectionIndex = targetIndex;
+                  console.log(`🔀 Branch navigation triggered: ${selectedOption.label} → Section ${branch.next_section}`);
+                  break; // Use first matching branch
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // Navigate based on branch or sequential order
+      if (targetSectionIndex !== -1) {
+        // Branch navigation - add to history
+        setCurrentSectionIndex(targetSectionIndex);
+        setNavigationHistory(prev => [...prev, targetSectionIndex]);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (currentSectionIndex < sectionsWithQuestions.length - 1) {
+        // Sequential navigation - add to history
+        const nextIndex = currentSectionIndex + 1;
+        setCurrentSectionIndex(nextIndex);
+        setNavigationHistory(prev => [...prev, nextIndex]);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else if (programStudyQuestions.length > 0) {
-        // Pindah ke program study questions page
-        setCurrentSectionIndex(sectionsWithQuestions.length);
+        // Pindah ke program study questions page - add to history
+        const programStudyIndex = sectionsWithQuestions.length;
+        setCurrentSectionIndex(programStudyIndex);
+        setNavigationHistory(prev => [...prev, programStudyIndex]);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         handleSubmit();
@@ -325,8 +363,15 @@ export default function AlumniAnswerPage() {
   };
 
   const handleBack = () => {
-    if (currentSectionIndex > 0) {
-      setCurrentSectionIndex(prev => prev - 1);
+    if (navigationHistory.length > 1) {
+      // Remove current index from history
+      const newHistory = [...navigationHistory];
+      newHistory.pop();
+      
+      // Go to previous index in history
+      const previousIndex = newHistory[newHistory.length - 1];
+      setNavigationHistory(newHistory);
+      setCurrentSectionIndex(previousIndex);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -336,55 +381,137 @@ export default function AlumniAnswerPage() {
     
     try {
       console.log("📤 Submitting answers:", answers);
+      console.log("📤 Total answered questions:", Object.keys(answers).length);
     
-      // Kirim jawaban ke backend
-      const formattedAnswers: CreateAnswerData[] = Object.values(answers).map(answer => {
-        let answerValue: any;
+      // Collect ALL questions from ALL sections (including skipped ones)
+      const allQuestions: ResponseAnswer[] = [];
+      
+      // Add regular section questions
+      sectionsWithQuestions.forEach(section => {
+        section.questions.forEach(q => {
+          allQuestions.push(q);
+        });
+      });
+      
+      // Add program study questions
+      programStudyQuestions.forEach(q => {
+        allQuestions.push(q);
+      });
+      
+      console.log("📋 Total questions in survey:", allQuestions.length);
+      console.log("📋 Answered questions:", Object.keys(answers).length);
+      console.log("📋 Skipped questions:", allQuestions.length - Object.keys(answers).length);
+      
+      // Kirim jawaban ke backend (termasuk yang diskip dengan nilai "-")
+      const formattedAnswers: CreateAnswerData[] = allQuestions.map(question => {
+        // Check if this question was answered
+        const answer = answers[question.id];
         
         // Determine if this is a program study question or regular question
-        const isProgramStudyQuestion = answer.id.toString().startsWith('ps-');
+        const isProgramStudyQuestion = question.id.toString().startsWith('ps-');
         const questionId = isProgramStudyQuestion 
-          ? Number(answer.id.toString().replace('ps-', ''))
-          : Number(answer.id);
+          ? Number(question.id.toString().replace('ps-', ''))
+          : Number(question.id);
         
-        if (answer.type === 'multiple_choice' || answer.type === 'dropdown') {
-          // Find the actual option label/value instead of just ID
-          const selectedOptionId = answer.selectedOption || "";
-          const option = answer.options?.find(opt => opt.id === selectedOptionId);
-          // Send the label as the answer value (backend expects the actual text)
-          answerValue = option?.label || selectedOptionId;
-        } else if (answer.type === 'checkbox') {
-          // Map selected option IDs to their labels
-          const selectedIds = answer.selectedOptions || [];
-          const selectedLabels = selectedIds.map(id => {
-            const option = answer.options?.find(opt => opt.id === id);
-            return option?.label || id;
-          });
-          // Send array of labels
-          answerValue = selectedLabels;
-        } else if (answer.type === 'short_answer' || answer.type === 'paragraph') {
-          answerValue = answer.textAnswer || "";
-        } else if (answer.type === 'linear_scale') {
-          answerValue = answer.selectedValue || 0;
+        let answerValue: any;
+        let isSkipped = false;
+        
+        if (!answer) {
+          // Question was skipped - send default value based on question type
+          if (question.type === 'checkbox') {
+            // For checkbox, send empty JSON array
+            answerValue = JSON.stringify([]);
+            console.log(`📋 Question ${question.id} (ID: ${questionId}) SKIPPED (checkbox) - sending empty array: ${answerValue}`);
+          } else {
+            // For other types, send "-"
+            answerValue = "-";
+            console.log(`📋 Question ${question.id} (ID: ${questionId}) SKIPPED - sending "-"`);
+          }
+          isSkipped = true;
         } else {
-          answerValue = "";
+          // Question was answered - process the answer
+          console.log(`📋 Processing question: ID=${question.id}, isProgramStudy=${isProgramStudyQuestion}, numericId=${questionId}, type=${answer.type}`);
+          
+          if (answer.type === 'multiple_choice' || answer.type === 'dropdown') {
+            const selectedOptionId = answer.selectedOption || "";
+            const option = answer.options?.find(opt => opt.id === selectedOptionId);
+            answerValue = option?.label || selectedOptionId;
+            console.log(`  → Selected option: ${selectedOptionId} → label: ${answerValue}`);
+          } else if (answer.type === 'checkbox') {
+            const selectedIds = answer.selectedOptions || [];
+            const selectedLabels = selectedIds.map(id => {
+              const option = answer.options?.find(opt => opt.id === id);
+              return option?.label || id;
+            });
+            // Convert array to JSON string for backend (backend expects JSON array)
+            answerValue = JSON.stringify(selectedLabels);
+            console.log(`  → Selected checkboxes: ${selectedLabels.join(', ')} → JSON: ${answerValue}`);
+          } else if (answer.type === 'short_answer' || answer.type === 'paragraph') {
+            answerValue = answer.textAnswer || "";
+            console.log(`  → Text answer: ${answerValue}`);
+          } else if (answer.type === 'linear_scale') {
+            answerValue = answer.selectedValue || 0;
+            console.log(`  → Scale value: ${answerValue}`);
+          } else {
+            answerValue = "";
+          }
         }
         
-        // For program study questions, use program_specific_question field
-        // For regular questions, use question field
-        return {
+        const formattedAnswer = {
           survey: surveyId,
           question: isProgramStudyQuestion ? undefined : questionId,
           answer_value: answerValue,
           program_specific_question: isProgramStudyQuestion ? questionId : undefined
         } as CreateAnswerData;
+        
+        if (!isSkipped) {
+          console.log(`  → Formatted:`, formattedAnswer);
+        }
+        
+        return formattedAnswer;
       });
     
-      console.log("📤 Formatted answers for API:", formattedAnswers);
-      console.log("📤 First answer sample:", JSON.stringify(formattedAnswers[0], null, 2));
+      console.log("📤 Total formatted answers:", formattedAnswers.length);
+      console.log("📤 All formatted answers:", JSON.stringify(formattedAnswers, null, 2));
+
+      const response = await submitBulkAnswers(surveyId, formattedAnswers);
+      console.log("✅ Backend response:", response);
+      
+      // Check response format
+      if (response && typeof response === 'object' && 'success' in response && 'errors' in response) {
+        // New format: {success: [...], errors: [...]}
+        const successAnswers = Array.isArray(response.success) ? response.success : [];
+        const errorAnswers = Array.isArray(response.errors) ? response.errors : [];
+        
+        console.log("✅ Successfully saved:", successAnswers.length, "answers");
+        console.log("❌ Failed to save:", errorAnswers.length, "answers");
+        
+        if (errorAnswers.length > 0) {
+          console.error("❌ Error details:", errorAnswers);
+          errorAnswers.forEach((err: any) => {
+            console.error(`  - Full error object:`, err);
+            console.error(`  - Question ${err.question || err.question_id || 'unknown'}: ${err.error || err.message || JSON.stringify(err)}`);
+          });
+        }
+        
+        if (successAnswers.length > 0) {
+          const savedQuestionIds = successAnswers.map((r: any) => r.question);
+          console.log("✅ Saved question IDs:", savedQuestionIds);
+        }
+      } else if (Array.isArray(response)) {
+        // Old format: array of answers
+        console.log("✅ Total answers saved:", response.length);
+        const savedQuestionIds = response.map((r: any) => r.question);
+        const sentQuestionIds = formattedAnswers.map(a => a.question).filter(id => id !== undefined);
+        const missingSaves = sentQuestionIds.filter(id => !savedQuestionIds.includes(id));
+        
+        if (missingSaves.length > 0) {
+          console.warn("⚠️ Some answers were not saved:", missingSaves);
+        }
+      }
 
       await toast.promise(
-        submitBulkAnswers(surveyId, formattedAnswers),
+        Promise.resolve(response),
         {
           loading: 'Mengirim jawaban...',
           success: () => {
@@ -456,7 +583,7 @@ export default function AlumniAnswerPage() {
           size="lg"
           variant="outline"
           onClick={handleBack}
-          disabled={currentSectionIndex === 0 || isSubmitting}
+          disabled={navigationHistory.length <= 1 || isSubmitting}
         >
           Back
         </Button>

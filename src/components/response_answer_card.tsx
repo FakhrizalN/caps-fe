@@ -14,6 +14,13 @@ export interface QuestionOption {
   isOther?: boolean
 }
 
+export interface QuestionBranch {
+  id?: number
+  question_id?: number
+  answer_value: string
+  next_section: number
+}
+
 export interface ResponseAnswer {
   id: string
   type: "multiple_choice" | "checkbox" | "dropdown" | "short_answer" | "paragraph" | "linear_scale" | "date" | "time"
@@ -22,6 +29,7 @@ export interface ResponseAnswer {
   required: boolean
   
   options?: QuestionOption[]
+  branches?: QuestionBranch[]
   
   // Linear scale
   minValue?: number

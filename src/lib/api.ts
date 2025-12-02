@@ -168,6 +168,13 @@ export function getCurrentUser(): any | null {
 }
 
 /**
+ * Get current user data from API
+ */
+export async function getCurrentUserFromAPI(): Promise<any> {
+  return fetchWithAuth('/accounts/me/');
+}
+
+/**
  * Check if user is authenticated
  */
 export function isAuthenticated(): boolean {
