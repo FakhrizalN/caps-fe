@@ -1,10 +1,11 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
 export interface QuestionOption {
@@ -195,18 +196,21 @@ export function ResponseAnswerCard({
           )
         }
         return (
-          <select
-            value={answer.selectedOption || ""}
-            onChange={(e) => updateAnswer({ selectedOption: e.target.value })}
-            className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+          <Select 
+            value={answer.selectedOption || ""} 
+            onValueChange={(value) => updateAnswer({ selectedOption: value })}
           >
-            <option value="">Choose</option>
-            {answer.options?.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full max-w-md">
+              <SelectValue placeholder="Choose" />
+            </SelectTrigger>
+            <SelectContent>
+              {answer.options?.map((option) => (
+                <SelectItem key={option.id} value={option.id}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )
 
         default:

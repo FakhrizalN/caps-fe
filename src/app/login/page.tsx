@@ -99,9 +99,11 @@ export default function LoginPage() {
             // Also store in localStorage for sidebar
             const userData = {
               id: payload.user_id,
-              role_name: payload.role
+              role_name: payload.role,
+              program_study: payload.program_study || null
             }
             setUser(userData)
+            console.log('User data stored:', userData)
           }
         } catch (err) {
           console.error('Error decoding JWT:', err)
