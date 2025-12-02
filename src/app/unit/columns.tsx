@@ -35,12 +35,14 @@ export type ProgramStudi = {
   name: string
   faculty?: number
   faculty_name?: string
+  department?: number
+  department_name?: string
   created_at?: string
   updated_at?: string
 }
 
 // Helper function to create actions cell
-const createActionsCell = (activeTab: string, fakultasData?: Fakultas[]) => 
+const createActionsCell = (activeTab: string, fakultasData?: Fakultas[], jurusanData?: Jurusan[]) => 
   ({ row }: { row: any }) => {
     const unit = row.original
 
@@ -77,6 +79,7 @@ const createActionsCell = (activeTab: string, fakultasData?: Fakultas[]) =>
             <EditUnitDialog
               activeTab={activeTab}
               fakultasData={fakultasData || []}
+              jurusanData={jurusanData || []}
               unitData={unit}
               trigger={
                 <div className="w-full cursor-pointer px-2 py-1.5 text-sm">
@@ -211,7 +214,7 @@ export const createJurusanColumns = (fakultasData: Fakultas[]): ColumnDef<Jurusa
 ]
 
 // Columns for Program Studi
-export const createProdiColumns = (fakultasData: Fakultas[]): ColumnDef<ProgramStudi>[] => [
+export const createProdiColumns = (fakultasData: Fakultas[], jurusanData: Jurusan[]): ColumnDef<ProgramStudi>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -253,7 +256,7 @@ export const createProdiColumns = (fakultasData: Fakultas[]): ColumnDef<ProgramS
     enableResizing: false,
   },
   {
-    accessorKey: "faculty_name",
+    accessorKey: "department_name",
     header: ({ column }) => {
       return (
         <Button
@@ -261,7 +264,7 @@ export const createProdiColumns = (fakultasData: Fakultas[]): ColumnDef<ProgramS
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="justify-start h-8 px-2 w-full"
         >
-          Fakultas
+          Jurusan
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
@@ -271,7 +274,7 @@ export const createProdiColumns = (fakultasData: Fakultas[]): ColumnDef<ProgramS
   {
     id: "actions",
     enableHiding: false,
-    cell: createActionsCell("prodi", fakultasData),
+    cell: createActionsCell("prodi", fakultasData, jurusanData),
   },
 ]
 

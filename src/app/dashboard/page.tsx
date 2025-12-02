@@ -1104,7 +1104,7 @@ export default function Dashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex gap-2 mb-3 items-center">
-                      <label className="text-sm">Riwayat (p):</label>
+                      {/* <label className="text-sm">Riwayat (p):</label>
                       <input
                         type="number"
                         min={0}
@@ -1121,7 +1121,7 @@ export default function Dashboard() {
                         value={diff}
                         onChange={(e) => setDiff(Number(e.target.value) || 0)}
                         className="input w-20"
-                      />
+                      /> */}
                       <label className="text-sm">Tahun yang diprediksi:</label>
                       <input
                         type="number"

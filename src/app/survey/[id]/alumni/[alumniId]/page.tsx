@@ -19,6 +19,27 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+// Helper function to convert text formatting to HTML
+function formatText(text: string): string {
+  if (!text) return text;
+  
+  // Convert <b><i><u>text</u></i></b> patterns to HTML
+  let formatted = text;
+  
+  // Handle combined formatting tags
+  formatted = formatted.replace(/<b><i><u>(.*?)<\/u><\/i><\/b>/g, '<strong><em><u>$1</u></em></strong>');
+  formatted = formatted.replace(/<b><i>(.*?)<\/i><\/b>/g, '<strong><em>$1</em></strong>');
+  formatted = formatted.replace(/<b><u>(.*?)<\/u><\/b>/g, '<strong><u>$1</u></strong>');
+  formatted = formatted.replace(/<i><u>(.*?)<\/u><\/i>/g, '<em><u>$1</u></em>');
+  
+  // Handle single formatting tags
+  formatted = formatted.replace(/<b>(.*?)<\/b>/g, '<strong>$1</strong>');
+  formatted = formatted.replace(/<i>(.*?)<\/i>/g, '<em>$1</em>');
+  // <u> tag is already valid HTML, no need to replace
+  
+  return formatted;
+}
+
 function mapQuestionType(backendType: string): ResponseAnswer['type'] {
   const typeMap: Record<string, ResponseAnswer['type']> = {
     'radio': 'multiple_choice',
@@ -79,45 +100,72 @@ export default function AlumniAnswerPage() {
           const questionsData = await getQuestions(surveyId, section.id);
           console.log(`✅ Questions for section ${section.id}:`, questionsData);
           
+          // Log raw options for each question BEFORE any transformation
+          questionsData.forEach(q => {
+            console.log(`🔍 RAW Q${q.id} options BEFORE transformation:`, JSON.stringify(q.options));
+          });
+          
           // Transform questions ke format ResponseAnswer
           const transformedQuestions: ResponseAnswer[] = questionsData.map(q => {
             let options = q.options;
+            let minValue = 1;
+            let maxValue = 5;
+            let minLabel = "Sangat Tidak Setuju";
+            let maxLabel = "Sangat Setuju";
+            
+            console.log(`🔍 Question ${q.id} raw options from API:`, options);
+            console.log(`   Type: ${typeof options}, Is array: ${Array.isArray(options)}`);
             
             if (typeof options === 'string') {
               try {
                 options = JSON.parse(options);
+                console.log(`   After JSON.parse:`, options);
               } catch (e) {
                 console.error(`Failed to parse options for question ${q.id}:`, e);
                 options = [];
               }
             }
             
-            // Transform options format ke {id, label}
+            // For linear scale questions, extract min/max data from options
             let formattedOptions: Array<{ id: string; label: string }> = [];
-            if (Array.isArray(options)) {
+            if (q.question_type === 'scale' && options && typeof options === 'object' && !Array.isArray(options)) {
+              // Extract linear scale data from options object
+              minValue = options.minValue ?? 1;
+              maxValue = options.maxValue ?? 5;
+              minLabel = formatText(options.minLabel ?? "Sangat Tidak Setuju");
+              maxLabel = formatText(options.maxLabel ?? "Sangat Setuju");
+              console.log(`📊 Linear scale question ${q.id}: ${minValue}-${maxValue}, "${minLabel}" - "${maxLabel}"`);
+            }
+            // Transform options format ke {id, label}
+            else if (Array.isArray(options)) {
               formattedOptions = options.map((opt, idx) => {
                 if (typeof opt === 'string') {
-                  return { id: String(idx + 1), label: opt };
+                  return { id: String(idx + 1), label: formatText(opt) };
                 }
                 if (opt && typeof opt === 'object' && opt.label) {
-                  return { id: opt.id || String(idx + 1), label: opt.label };
+                  // Keep the original structure including navigation if exists
+                  return {
+                    id: opt.id || String(idx + 1),
+                    label: formatText(opt.label),
+                    navigation: opt.navigation // Preserve navigation for branching
+                  };
                 }
-                return { id: String(idx + 1), label: String(opt) };
+                return { id: String(idx + 1), label: formatText(String(opt)) };
               });
             }
             
             return {
               id: String(q.id),
               type: mapQuestionType(q.question_type),
-              title: q.text,
-              description: q.description || "",
+              title: formatText(q.text),
+              description: formatText(q.description || ""),
               required: q.is_required,
               options: formattedOptions,
               branches: q.branches || [], // Store branches for navigation
-              minValue: 1,
-              maxValue: 5,
-              minLabel: "Sangat Tidak Setuju",
-              maxLabel: "Sangat Setuju"
+              minValue,
+              maxValue,
+              minLabel,
+              maxLabel
             };
           });
           
@@ -151,6 +199,10 @@ export default function AlumniAnswerPage() {
               // Transform program study questions ke format ResponseAnswer
               const transformedProgramQuestions: ResponseAnswer[] = programStudyQuestionsData.map(q => {
                 let options = q.options;
+                let minValue = 1;
+                let maxValue = 5;
+                let minLabel = "Sangat Tidak Setuju";
+                let maxLabel = "Sangat Setuju";
                 
                 if (typeof options === 'string') {
                   try {
@@ -161,31 +213,45 @@ export default function AlumniAnswerPage() {
                   }
                 }
                 
-                // Transform options format ke {id, label}
+                // For linear scale questions, extract min/max data from options
                 let formattedOptions: Array<{ id: string; label: string }> = [];
-                if (Array.isArray(options)) {
+                if (q.question_type === 'scale' && options && typeof options === 'object' && !Array.isArray(options)) {
+                  // Extract linear scale data from options object
+                  minValue = options.minValue ?? 1;
+                  maxValue = options.maxValue ?? 5;
+                  minLabel = formatText(options.minLabel ?? "Sangat Tidak Setuju");
+                  maxLabel = formatText(options.maxLabel ?? "Sangat Setuju");
+                  console.log(`📊 Program study linear scale question ${q.id}: ${minValue}-${maxValue}, "${minLabel}" - "${maxLabel}"`);
+                }
+                // Transform options format ke {id, label}
+                else if (Array.isArray(options)) {
                   formattedOptions = options.map((opt, idx) => {
                     if (typeof opt === 'string') {
-                      return { id: String(idx + 1), label: opt };
+                      return { id: String(idx + 1), label: formatText(opt) };
                     }
                     if (opt && typeof opt === 'object' && opt.label) {
-                      return { id: opt.id || String(idx + 1), label: opt.label };
+                      // Keep the original structure including navigation if exists
+                      return {
+                        id: opt.id || String(idx + 1),
+                        label: formatText(opt.label),
+                        navigation: opt.navigation // Preserve navigation for branching
+                      };
                     }
-                    return { id: String(idx + 1), label: String(opt) };
+                    return { id: String(idx + 1), label: formatText(String(opt)) };
                   });
                 }
                 
                 return {
                   id: `ps-${q.id}`,
                   type: mapQuestionType(q.question_type),
-                  title: q.text,
-                  description: q.description || "",
+                  title: formatText(q.text),
+                  description: formatText(q.description || ""),
                   required: q.is_required,
                   options: formattedOptions,
-                  minValue: 1,
-                  maxValue: 5,
-                  minLabel: "Sangat Tidak Setuju",
-                  maxLabel: "Sangat Setuju"
+                  minValue,
+                  maxValue,
+                  minLabel,
+                  maxLabel
                 };
               });
               
@@ -431,16 +497,30 @@ export default function AlumniAnswerPage() {
         } else {
           // Question was answered - process the answer
           console.log(`📋 Processing question: ID=${question.id}, isProgramStudy=${isProgramStudyQuestion}, numericId=${questionId}, type=${answer.type}`);
+          console.log(`   Question options:`, question.options);
+          console.log(`   Answer data:`, answer);
           
           if (answer.type === 'multiple_choice' || answer.type === 'dropdown') {
             const selectedOptionId = answer.selectedOption || "";
-            const option = answer.options?.find(opt => opt.id === selectedOptionId);
+            console.log(`  → Selected option ID: "${selectedOptionId}"`);
+            console.log(`  → All option IDs:`, question.options?.map(opt => `"${opt.id}"`));
+            
+            // Use question.options (from original data) instead of answer.options
+            const option = question.options?.find(opt => {
+              console.log(`     Comparing: opt.id="${opt.id}" vs selectedId="${selectedOptionId}"`);
+              return opt.id === selectedOptionId;
+            });
+            
+            console.log(`  → Found option:`, option);
+            
+            // Send the option LABEL for backend validation (backend expects label in options array)
             answerValue = option?.label || selectedOptionId;
-            console.log(`  → Selected option: ${selectedOptionId} → label: ${answerValue}`);
+            console.log(`  → Final answer value (LABEL): "${answerValue}"`);
           } else if (answer.type === 'checkbox') {
             const selectedIds = answer.selectedOptions || [];
             const selectedLabels = selectedIds.map(id => {
-              const option = answer.options?.find(opt => opt.id === id);
+              // Use question.options (from original data) instead of answer.options
+              const option = question.options?.find(opt => opt.id === id);
               return option?.label || id;
             });
             // Convert array to JSON string for backend (backend expects JSON array)
@@ -547,20 +627,22 @@ export default function AlumniAnswerPage() {
   const isOnProgramStudyPage = currentSectionIndex === sectionsWithQuestions.length;
   const currentSection = isOnProgramStudyPage ? null : sectionsWithQuestions[currentSectionIndex];
   const currentQuestions = isOnProgramStudyPage ? programStudyQuestions : (currentSection?.questions || []);
-  const sectionTitle = isOnProgramStudyPage ? "Pertanyaan Khusus Program Studi" : currentSection?.title;
+  const sectionTitle = isOnProgramStudyPage ? "Pertanyaan Khusus Program Studi" : (currentSection?.title ? formatText(currentSection.title) : "");
 
   return (
     <div className="max-w-3xl mx-auto bg-gray-50 py-8 px-4">
       {/* Header Survey */}
       <Card className="border-t-8 border-t-primary shadow-sm mb-6">
         <CardContent className="pt-6 pb-4 space-y-2">
-          <h1 className="text-3xl font-normal text-gray-900">
-            {sectionTitle || "Survey"}
-          </h1>
+          <h1 
+            className="text-3xl font-normal text-gray-900"
+            dangerouslySetInnerHTML={{ __html: sectionTitle || "Survey" }}
+          />
           {(isOnProgramStudyPage ? null : currentSection?.description) && (
-            <p className="text-sm text-gray-600">
-              {currentSection?.description}
-            </p>
+            <p 
+              className="text-sm text-gray-600"
+              dangerouslySetInnerHTML={{ __html: formatText(currentSection?.description || "") }}
+            />
           )}
         </CardContent>
       </Card>

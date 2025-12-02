@@ -19,9 +19,9 @@ export function UnitManagementClient({
 }: UnitManagementClientProps) {
   const [activeTab, setActiveTab] = useState("fakultas")
   
-  // Create jurusan and prodi columns with fakultasData
+  // Create jurusan and prodi columns with fakultasData and jurusanData
   const jurusanColumns = createJurusanColumns(fakultasData)
-  const prodiColumns = createProdiColumns(fakultasData)
+  const prodiColumns = createProdiColumns(fakultasData, jurusanData)
 
   return (
     <>
@@ -38,6 +38,7 @@ export function UnitManagementClient({
           <AddUnitDialog 
             activeTab={activeTab}
             fakultasData={fakultasData}
+            jurusanData={jurusanData}
           />
         </div>
         

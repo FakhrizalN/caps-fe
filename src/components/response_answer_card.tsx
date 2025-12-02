@@ -81,9 +81,8 @@ export function ResponseAnswerCard({
                 <Label 
                   htmlFor={`${answer.id}-${option.id}`} 
                   className={`font-normal ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
-                >
-                  {option.label}
-                </Label>
+                  dangerouslySetInnerHTML={{ __html: option.label }}
+                />
               </div>
             ))}
           </RadioGroup>
@@ -113,9 +112,8 @@ export function ResponseAnswerCard({
                 <Label 
                   htmlFor={`${answer.id}-${option.id}`} 
                   className={`font-normal ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
-                >
-                  {option.label}
-                </Label>
+                  dangerouslySetInnerHTML={{ __html: option.label }}
+                />
               </div>
             ))}
           </div>
@@ -146,8 +144,8 @@ export function ResponseAnswerCard({
             </RadioGroup>
             {(answer.minLabel || answer.maxLabel) && (
               <div className="flex items-center justify-between text-sm text-gray-600">
-                <span>{answer.minLabel}</span>
-                <span>{answer.maxLabel}</span>
+                <span dangerouslySetInnerHTML={{ __html: answer.minLabel || "" }} />
+                <span dangerouslySetInnerHTML={{ __html: answer.maxLabel || "" }} />
               </div>
             )}
           </div>
@@ -194,11 +192,15 @@ export function ResponseAnswerCard({
 
       case "dropdown":
         if (isReadOnly) {
+          const selectedOption = answer.options?.find(opt => opt.id === answer.selectedOption);
           return (
             <div className="p-3 bg-gray-50 rounded-md border border-gray-200 w-full max-w-xs">
               <p className="text-sm text-gray-700">
-                {answer.options?.find(opt => opt.id === answer.selectedOption)?.label || 
-                  <span className="text-gray-400 italic">No selection</span>}
+                {selectedOption ? (
+                  <span dangerouslySetInnerHTML={{ __html: selectedOption.label }} />
+                ) : (
+                  <span className="text-gray-400 italic">No selection</span>
+                )}
               </p>
             </div>
           )
@@ -214,7 +216,7 @@ export function ResponseAnswerCard({
             <SelectContent>
               {answer.options?.map((option) => (
                 <SelectItem key={option.id} value={option.id}>
-                  {option.label}
+                  <span dangerouslySetInnerHTML={{ __html: option.label }} />
                 </SelectItem>
               ))}
             </SelectContent>
@@ -233,11 +235,11 @@ export function ResponseAnswerCard({
           {/* Question Title */}
           <div>
             <h3 className="text-base font-medium text-gray-900">
-              {answer.title}
+              <span dangerouslySetInnerHTML={{ __html: answer.title }} />
               {answer.required && <span className="text-red-500 ml-1">*</span>}
             </h3>
             {answer.description && (
-              <p className="text-sm text-gray-600 mt-1">{answer.description}</p>
+              <p className="text-sm text-gray-600 mt-1" dangerouslySetInnerHTML={{ __html: answer.description }} />
             )}
           </div>
 

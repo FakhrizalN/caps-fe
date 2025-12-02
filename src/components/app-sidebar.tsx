@@ -7,22 +7,22 @@ import { useEffect, useState } from "react"
 
 import { NavUser } from "@/components/nav-user"
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarRail,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
 } from "@/components/ui/sidebar"
 import { getCurrentUserFromAPI } from "@/lib/api"
 
@@ -143,29 +143,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <CollapsibleContent>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {item.items
-                      .filter((subItem) => {
-                        // Hide User Management and Role Management for non-admin users
-                        if (subItem.url === "/employee" || subItem.url === "/roles") {
-                          return userRole?.toLowerCase() === "admin"
-                        }
-                        return true
-                      })
-                      .map((subItem) => {
-                        const isActive = pathname.startsWith(subItem.url)
-                        const IconComponent = subItem.icon
+                    {item.items.map((subItem) => {
+                      const isActive = pathname.startsWith(subItem.url)
+                      const IconComponent = subItem.icon
 
-                        return (
-                          <SidebarMenuItem key={subItem.title}>
-                            <SidebarMenuButton asChild isActive={isActive}>
-                              <a href={subItem.url} className="flex items-center gap-2">
-                                <IconComponent className="h-4 w-4" />
-                                {subItem.title}
-                              </a>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        )
-                      })}
+                      return (
+                        <SidebarMenuItem key={subItem.title}>
+                          <SidebarMenuButton asChild isActive={isActive}>
+                            <a href={subItem.url} className="flex items-center gap-2">
+                              <IconComponent className="h-4 w-4" />
+                              {subItem.title}
+                            </a>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      )
+                    })}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </CollapsibleContent>

@@ -2,50 +2,58 @@
 
 import { Button } from "@/components/ui/button"
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select"
 import { createDepartment, createFaculty, createProgramStudy } from "@/lib/api"
 import { Plus } from "lucide-react"
 import { useState } from "react"
-import { Fakultas } from "./columns"
+import { Fakultas, Jurusan } from "./columns"
 
 interface AddUnitDialogProps {
   activeTab: string
   fakultasData: Fakultas[]
+  jurusanData: Jurusan[]
 }
 
-export function AddUnitDialog({ activeTab, fakultasData }: AddUnitDialogProps) {
+export function AddUnitDialog({ activeTab, fakultasData, jurusanData }: AddUnitDialogProps) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [selectedFakultas, setSelectedFakultas] = useState("")
+  const [selectedJurusan, setSelectedJurusan] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   const resetForm = () => {
     setName("")
     setSelectedFakultas("")
+    setSelectedJurusan("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
 
-    if ((activeTab === "jurusan" || activeTab === "prodi") && !selectedFakultas) {
+    if (activeTab === "jurusan" && !selectedFakultas) {
       alert("Please select a fakultas")
+      return
+    }
+
+    if (activeTab === "prodi" && !selectedJurusan) {
+      alert("Please select a jurusan")
       return
     }
 
@@ -62,7 +70,7 @@ export function AddUnitDialog({ activeTab, fakultasData }: AddUnitDialogProps) {
       } else if (activeTab === "prodi") {
         await createProgramStudy({
           name: name.trim(),
-          faculty: parseInt(selectedFakultas)
+          department: parseInt(selectedJurusan)
         })
       }
       
@@ -160,8 +168,8 @@ export function AddUnitDialog({ activeTab, fakultasData }: AddUnitDialogProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
-            {/* Fakultas Selection for Jurusan and Program Studi */}
-            {(activeTab === "jurusan" || activeTab === "prodi") && (
+            {/* Fakultas Selection for Jurusan */}
+            {activeTab === "jurusan" && (
               <div className="space-y-2">
                 <Label htmlFor="fakultas">Fakultas</Label>
                 <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
@@ -172,6 +180,25 @@ export function AddUnitDialog({ activeTab, fakultasData }: AddUnitDialogProps) {
                     {fakultasData.map((fakultas) => (
                       <SelectItem key={fakultas.id} value={fakultas.id.toString()}>
                         {fakultas.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Jurusan Selection for Program Studi */}
+            {activeTab === "prodi" && (
+              <div className="space-y-2">
+                <Label htmlFor="jurusan">Jurusan</Label>
+                <Select value={selectedJurusan} onValueChange={setSelectedJurusan}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select jurusan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {jurusanData.map((jurusan) => (
+                      <SelectItem key={jurusan.id} value={jurusan.id.toString()}>
+                        {jurusan.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

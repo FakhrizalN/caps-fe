@@ -198,6 +198,8 @@ export default function SurveyQuestionsPage() {
           const processedQuestions = questions.map(q => {
             // Parse options
             let options = q.options
+            let minValue, maxValue, minLabel, maxLabel
+            
             if (typeof options === 'string') {
               try {
                 options = JSON.parse(options)
@@ -206,9 +208,17 @@ export default function SurveyQuestionsPage() {
               }
             }
 
+            // For linear scale questions, extract min/max data from options
+            if (q.question_type === 'scale' && options && typeof options === 'object' && !Array.isArray(options)) {
+              minValue = options.minValue
+              maxValue = options.maxValue
+              minLabel = options.minLabel
+              maxLabel = options.maxLabel
+              options = [] // Clear options for scale type
+            }
             // Convert simple string array to object format if needed
             // Backend stores as ["label1", "label2"] but frontend needs [{id, label}]
-            if (Array.isArray(options) && options.length > 0 && typeof options[0] === 'string') {
+            else if (Array.isArray(options) && options.length > 0 && typeof options[0] === 'string') {
               options = options.map((label, idx) => ({
                 id: String(idx + 1),
                 label: label
@@ -226,7 +236,7 @@ export default function SurveyQuestionsPage() {
               })
             }
 
-            return { ...q, options }
+            return { ...q, options, minValue, maxValue, minLabel, maxLabel }
           })
           
           // Separate text elements (questions with type "description") from regular questions
@@ -650,18 +660,26 @@ export default function SurveyQuestionsPage() {
         is_required: question.is_required
       }
 
+      // Handle linear scale - store min/max values and labels in options field
+      if (question.question_type === 'scale') {
+        payload.options = {
+          minValue: question.minValue,
+          maxValue: question.maxValue,
+          minLabel: question.minLabel,
+          maxLabel: question.maxLabel
+        }
+      }
       // Clean options - remove navigation field and keep only labels for backend
-      if (Array.isArray(parsedOptions)) {
-        // For branches validation, backend expects simple array of strings (labels)
+      // Backend expects simple array of strings for validation
+      else if (Array.isArray(parsedOptions)) {
         payload.options = parsedOptions.map(opt => opt.label)
       } else {
         payload.options = question.options
       }
 
-      // Add branches only for radio type questions
-      if (question.question_type === 'radio') {
-        payload.branches = branches
-      }
+      // Add branches array separately (backend will create QuestionBranch entries)
+      // This field is separate from options and handled by backend serializer
+      payload.branches = branches
 
       console.log('Updating question with payload:', payload)
 
@@ -1212,17 +1230,32 @@ export default function SurveyQuestionsPage() {
       ? questionData.id as any 
       : parseInt(questionData.id)
     
+    // For linear scale, store min/max data in options field
+    let options = questionData.options
+    if (frontendToBackendType(questionData.type) === 'scale') {
+      options = {
+        minValue: questionData.minValue,
+        maxValue: questionData.maxValue,
+        minLabel: questionData.minLabel,
+        maxLabel: questionData.maxLabel
+      } as any
+    }
+    
     return {
       id: questionId,
       text: questionData.title,
       question_type: frontendToBackendType(questionData.type),
-      options: questionData.options, // Will be stringified in API call
+      options: options, // Will be stringified in API call
       code: questionData.code,
       source: questionData.source,
       description: questionData.description,
       order: 0, // Will be set properly by backend
       is_required: questionData.required,
-      section_id: sectionId
+      section_id: sectionId,
+      minValue: questionData.minValue,
+      maxValue: questionData.maxValue,
+      minLabel: questionData.minLabel,
+      maxLabel: questionData.maxLabel
     }
   }
 

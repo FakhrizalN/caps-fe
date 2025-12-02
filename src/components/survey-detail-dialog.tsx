@@ -2,21 +2,21 @@
 
 import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
@@ -94,7 +94,13 @@ export function SurveyDetailDialog({
       setDescription(typeof survey.description === "string" ? survey.description : "")
       setIsActive(survey.isOpen ?? survey.is_active ?? false)
       setSurveyType(survey.survey_type || "exit")
-      setSelectedPeriode(survey.periode ? survey.periode.toString() : "none")
+      
+      // Handle periode - check if it's an object or number
+      const periodeId = survey.periode 
+        ? (typeof survey.periode === 'object' ? (survey.periode as any).id : survey.periode)
+        : null
+      setSelectedPeriode(periodeId ? periodeId.toString() : "none")
+      
       // Format datetime for input fields
       if (survey.start_at) {
         const startDate = new Date(survey.start_at)

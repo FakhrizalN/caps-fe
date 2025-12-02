@@ -330,23 +330,28 @@ export default function AddEmployeePage() {
                   )}
                 </Field>
 
-                <Field>
-                  <Label htmlFor="last_survey">Last Survey</Label>
-                  <Select 
-                    value={formData.last_survey} 
-                    onValueChange={(value) => handleSelectChange("last_survey", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select last survey" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="exit">Exit</SelectItem>
-                      <SelectItem value="lv1">Level 1</SelectItem>
-                      <SelectItem value="lv2">Level 2</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
+                {(() => {
+                  const selectedRole = roles.find(r => r.id === formData.role);
+                  return selectedRole?.name === "Alumni" ? (
+                    <Field>
+                      <Label htmlFor="last_survey">Last Survey</Label>
+                      <Select 
+                        value={formData.last_survey} 
+                        onValueChange={(value) => handleSelectChange("last_survey", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select last survey" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          <SelectItem value="exit">Exit</SelectItem>
+                          <SelectItem value="lv1">Level 1</SelectItem>
+                          <SelectItem value="lv2">Level 2</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  ) : null;
+                })()}
 
                 <Field className="md:col-span-2">
                   <Label htmlFor="address">Address</Label>

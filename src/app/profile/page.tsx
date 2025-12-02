@@ -49,6 +49,13 @@ export default function ProfilePage() {
       try {
         // Fetch user data from API
         const userData = await getCurrentUserFromAPI()
+        
+        // Redirect Alumni to profile-user page (without sidebar)
+        if (userData.role_name === 'Alumni') {
+          router.push('/profile-user')
+          return
+        }
+        
         setFormData({
           id: userData.id || '',
           username: userData.username || '',
@@ -69,7 +76,7 @@ export default function ProfilePage() {
     }
 
     fetchUserData()
-  }, [])
+  }, [router])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target

@@ -97,12 +97,22 @@ export default function SurveyManagementPage() {
       
       setAllPeriods(periodsData)
       
+      console.log('Surveys data:', surveysData)
+      console.log('Periods data:', periodsData)
+      
       // Separate surveys without periode and with periode
       const withoutPeriode: any[] = []
       const surveysByPeriode: any = {}
       
       surveysData.forEach((survey: Survey) => {
-        if (!survey.periode) {
+        console.log(`Survey "${survey.title}" - periode:`, survey.periode)
+        
+        // Check if periode exists and get the ID
+        const periodeId = survey.periode 
+          ? (typeof survey.periode === 'object' ? (survey.periode as any).id : survey.periode)
+          : null
+        
+        if (!periodeId) {
           // Survey without periode
           withoutPeriode.push({
             id: survey.id,
@@ -121,7 +131,7 @@ export default function SurveyManagementPage() {
           })
         } else {
           // Survey with periode - use periode ID as key
-          const periodeKey = survey.periode.toString()
+          const periodeKey = periodeId.toString()
           if (!surveysByPeriode[periodeKey]) {
             surveysByPeriode[periodeKey] = []
           }
@@ -146,17 +156,24 @@ export default function SurveyManagementPage() {
       // Set surveys without periode
       setSurveysWithoutPeriode(withoutPeriode)
 
+      console.log('Surveys by periode:', surveysByPeriode)
+
       // Convert to sections format using real periode data
       const newSections = periodsData
         .sort((a, b) => (a.order || 0) - (b.order || 0)) // Sort by order
-        .map((periode) => ({
-          id: periode.id, // Use real periode ID
-          name: periode.category || periode.name || `Periode ${periode.id}`,
-          order: periode.order || 0,
-          surveys: surveysByPeriode[periode.id.toString()] || [],
-          isCollapsed: false
-        }))
+        .map((periode) => {
+          const periodeKey = periode.id.toString()
+          console.log(`Periode ${periode.id}:`, surveysByPeriode[periodeKey] || [])
+          return {
+            id: periode.id, // Use real periode ID
+            name: periode.category || periode.name || `Periode ${periode.id}`,
+            order: periode.order || 0,
+            surveys: surveysByPeriode[periodeKey] || [],
+            isCollapsed: false
+          }
+        })
 
+      console.log('Sections created:', newSections)
       setSections(newSections)
       
     } catch (err) {

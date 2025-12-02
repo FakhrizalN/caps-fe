@@ -845,12 +845,12 @@ export interface ProgramStudyDetailed {
 
 export interface CreateProgramStudyData {
   name: string
-  faculty: number
+  department: number
 }
 
 export interface UpdateProgramStudyData {
   name?: string
-  faculty?: number
+  department?: number
 }
 
 /**
@@ -993,6 +993,10 @@ export interface Question {
   created_at?: string
   section_id: number
   branches?: QuestionBranch[]
+  minValue?: number
+  maxValue?: number
+  minLabel?: string
+  maxLabel?: string
 }
 
 export interface QuestionBranch {
