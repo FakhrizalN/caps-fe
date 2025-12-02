@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 export interface QuestionOption {
   id: string
@@ -30,23 +32,47 @@ export interface ResponseAnswer {
   selectedOption?: string       
   selectedOptions?: string[]   
   selectedValue?: number          
-  textAnswer?: string             
+  textAnswer?: string  
+  
+  code?: string
+  source?: string
 }
 
 interface ResponseAnswerCardProps {
   answer: ResponseAnswer
+  isReadOnly?: boolean
+  onUpdate?: (answer: ResponseAnswer) => void
 }
 
-export function ResponseAnswerCard({ answer }: ResponseAnswerCardProps) {
+export function ResponseAnswerCard({
+  answer,
+  isReadOnly = true,
+  onUpdate 
+}: ResponseAnswerCardProps) {
+
+  const updateAnswer = (updates: Partial<ResponseAnswer>) => {
+    if (!isReadOnly && onUpdate) {
+      onUpdate({ ...answer, ...updates })
+    }
+  }
+
   const renderAnswer = () => {
     switch (answer.type) {
       case "multiple_choice":
         return (
-          <RadioGroup value={answer.selectedOption} disabled className="space-y-2">
+          <RadioGroup 
+            value={answer.selectedOption || ""} 
+            disabled={isReadOnly}
+            onValueChange={(value) => updateAnswer({ selectedOption: value })}
+            className="space-y-2"
+          >
             {answer.options?.map((option) => (
               <div key={option.id} className="flex items-center space-x-2">
-                <RadioGroupItem value={option.id} id={option.id} disabled />
-                <Label htmlFor={option.id} className="font-normal cursor-default">
+                <RadioGroupItem value={option.id} id={`${answer.id}-${option.id}`} disabled={isReadOnly} />
+                <Label 
+                  htmlFor={`${answer.id}-${option.id}`} 
+                  className={`font-normal ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
+                >
                   {option.label}
                 </Label>
               </div>
@@ -55,16 +81,30 @@ export function ResponseAnswerCard({ answer }: ResponseAnswerCardProps) {
         )
 
       case "checkbox":
+        const handleCheckboxChange = (optionId: string, checked: boolean) => {
+          if (isReadOnly) return
+          
+          const currentSelected = answer.selectedOptions || []
+          const newSelected = checked 
+            ? [...currentSelected, optionId]
+            : currentSelected.filter(id => id !== optionId)
+          
+          updateAnswer({ selectedOptions: newSelected })
+        }
         return (
           <div className="space-y-2">
             {answer.options?.map((option) => (
               <div key={option.id} className="flex items-center space-x-2">
                 <Checkbox
                   checked={answer.selectedOptions?.includes(option.id)}
-                  disabled
-                  id={option.id}
+                  disabled={isReadOnly}
+                  onCheckedChange={(checked) => handleCheckboxChange(option.id, checked as boolean)}
+                  id={`${answer.id}-${option.id}`}
                 />
-                <Label htmlFor={option.id} className="font-normal cursor-default">
+                <Label 
+                  htmlFor={`${answer.id}-${option.id}`} 
+                  className={`font-normal ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}
+                >
                   {option.label}
                 </Label>
               </div>
@@ -75,9 +115,13 @@ export function ResponseAnswerCard({ answer }: ResponseAnswerCardProps) {
       case "linear_scale":
         return (
           <div className="space-y-4">
-             <RadioGroup value={answer.selectedValue?.toString()} disabled>
-            <div className="flex items-center justify-between gap-2">
-              {Array.from(
+             <RadioGroup 
+              value={answer.selectedValue?.toString() || ""} 
+              disabled={isReadOnly}
+              onValueChange={(value) => updateAnswer({ selectedValue: Number(value) })}
+            >
+              <div className="flex items-center justify-between gap-2">
+                {Array.from(
                 { length: (answer.maxValue ?? 5) - (answer.minValue ?? 1) + 1 },
                 (_, i) => (answer.minValue ?? 1) + i
               ).map((num) => (
@@ -85,9 +129,7 @@ export function ResponseAnswerCard({ answer }: ResponseAnswerCardProps) {
                   <span className="text-sm font-medium">{num}</span>
                   <RadioGroupItem
                     value={num.toString()}
-                    checked={answer.selectedValue === num}
-                    disabled
-                    className="cursor-default"
+                    disabled={isReadOnly}
                   />
                 </div>
               ))}
@@ -103,27 +145,72 @@ export function ResponseAnswerCard({ answer }: ResponseAnswerCardProps) {
         )
 
       case "short_answer":
+         if (isReadOnly) {
+          return (
+            <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+              <p className="text-sm text-gray-700">
+                {answer.textAnswer || <span className="text-gray-400 italic">No answer provided</span>}
+              </p>
+            </div>
+          )
+        }
+          return (
+            <Input
+              type="text"
+              placeholder="Your answer"
+              value={answer.textAnswer || ""}
+              onChange={(e) => updateAnswer({ textAnswer: e.target.value })}
+              className="max-w-md"
+            />
+        )       
       case "paragraph":
+        if (isReadOnly) {
+          return (
+            <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                {answer.textAnswer || <span className="text-gray-400 italic">No answer provided</span>}
+              </p>
+            </div>
+          )
+        }
         return (
-          <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
-            <p className="text-sm text-gray-700">
-              {answer.textAnswer || <span className="text-gray-400 italic">No answer provided</span>}
-            </p>
-          </div>
+          <Textarea
+            placeholder="Your answer"
+            value={answer.textAnswer || ""}
+            onChange={(e) => updateAnswer({ textAnswer: e.target.value })}
+            rows={4}
+            className="w-full"
+          />
         )
 
       case "dropdown":
+        if (isReadOnly) {
+          return (
+            <div className="p-3 bg-gray-50 rounded-md border border-gray-200 w-full max-w-xs">
+              <p className="text-sm text-gray-700">
+                {answer.options?.find(opt => opt.id === answer.selectedOption)?.label || 
+                  <span className="text-gray-400 italic">No selection</span>}
+              </p>
+            </div>
+          )
+        }
         return (
-          <div className="p-3 bg-gray-50 rounded-md border border-gray-200 w-full max-w-xs">
-            <p className="text-sm text-gray-700">
-              {answer.options?.find(opt => opt.id === answer.selectedOption)?.label || 
-                <span className="text-gray-400 italic">No selection</span>}
-            </p>
-          </div>
+          <select
+            value={answer.selectedOption || ""}
+            onChange={(e) => updateAnswer({ selectedOption: e.target.value })}
+            className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">Choose</option>
+            {answer.options?.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         )
 
-      default:
-        return <p className="text-sm text-gray-500">Answer type not supported</p>
+        default:
+          return <p className="text-sm text-gray-500">Answer type not supported</p>
     }
   }
 
@@ -142,7 +229,7 @@ export function ResponseAnswerCard({ answer }: ResponseAnswerCardProps) {
             )}
           </div>
 
-          {/* Answer Content */}
+
           <div className="mt-4">
             {renderAnswer()}
           </div>

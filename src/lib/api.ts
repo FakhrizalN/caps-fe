@@ -1124,6 +1124,17 @@ export interface Answer {
   updated_at: string
 }
 
+export interface CreateAnswerData {
+  survey: number
+  question: number
+  program_specific_question?: number | null
+  answer_value: string | number | boolean | any
+}
+
+export interface BulkAnswerData {
+  answers: CreateAnswerData[]
+}
+
 /**
  * Get all answers for a survey
  */
@@ -1157,6 +1168,26 @@ export async function getAnswer(surveyId: number, answerId: number): Promise<Ans
 export async function deleteAnswer(surveyId: number, answerId: number): Promise<void> {
   return fetchWithAuth(`/api/surveys/${surveyId}/answers/${answerId}/`, {
     method: 'DELETE',
+  })
+}
+
+/**
+ * Submit a single answer to a survey
+ */
+export async function submitAnswer(surveyId: number, data: CreateAnswerData): Promise<Answer> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/answers/`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Submit multiple answers to a survey at once
+ */
+export async function submitBulkAnswers(surveyId: number, answers: CreateAnswerData[]): Promise<Answer[]> {
+  return fetchWithAuth(`/api/surveys/${surveyId}/answers/bulk/`, {
+    method: 'POST',
+    body: JSON.stringify({ answers }),
   })
 }
 
