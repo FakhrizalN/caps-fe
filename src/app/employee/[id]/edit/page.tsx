@@ -321,17 +321,44 @@ export default function EditEmployeePage() {
 
                       <Field>
                         <Label htmlFor="program_study">Program Study</Label>
-                        <Input
-                          id="program_study"
-                          name="program_study"
-                          type="text"
-                          value={(() => {
-                            const selectedProdi = programStudies.find(p => p.id === formData.program_study);
-                            return selectedProdi?.name || "";
-                          })()}
-                          placeholder="-"
-                          disabled={true}
-                        />
+                        {(() => {
+                          const selectedRole = roles.find(r => r.id === formData.role);
+                          const isAlumni = selectedRole && selectedRole.name.toLowerCase() === "alumni";
+                          
+                          if (isAlumni) {
+                            return (
+                              <Select 
+                                value={formData.program_study?.toString()} 
+                                onValueChange={(value) => handleSelectChange("program_study", value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select program study" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {programStudies.map((program) => (
+                                    <SelectItem key={program.id} value={program.id.toString()}>
+                                      {program.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            );
+                          }
+                          
+                          return (
+                            <Input
+                              id="program_study"
+                              name="program_study"
+                              type="text"
+                              value={(() => {
+                                const selectedProdi = programStudies.find(p => p.id === formData.program_study);
+                                return selectedProdi?.name || "";
+                              })()}
+                              placeholder="-"
+                              disabled={true}
+                            />
+                          );
+                        })()}
                       </Field>
 
                       {(() => {
