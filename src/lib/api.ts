@@ -371,10 +371,20 @@ export interface UpdateSurveyData {
 /**
  * Get all surveys
  */
+// export async function getSurveys(): Promise<Survey[]> {
+//   // return fetchWithAuth('/api/surveys/', {
+//   //   method: 'GET',
+//   // })
+//   return fetch("/api/surveys/").then(res => res.json());
+// }
+
 export async function getSurveys(): Promise<Survey[]> {
-  return fetchWithAuth('/api/surveys/', {
+  return fetch(`${API_BASE_URL}/api/surveys/`, {
     method: 'GET',
-  })
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  }).then(res => res.json());
 }
 
 /**
