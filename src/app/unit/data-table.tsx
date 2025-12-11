@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import {
   ColumnDef,
@@ -97,7 +97,7 @@ export function DataTable<TData, TValue>({
       try {
         const selectedIds = selectedRows.map(row => (row.original as any).id)
         
-        console.log('Delete units:', selectedIds)
+
         
         await new Promise(resolve => setTimeout(resolve, 1000))
         

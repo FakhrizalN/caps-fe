@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -69,21 +69,14 @@ export default function LoginPage() {
 
     toast.promise(
       (async () => {
-        console.log('Attempting login to:', process.env.NEXT_PUBLIC_API_URL)
-        console.log('Login credentials:', { id: formData.id, password: '***' })
+
+
         
         // Call Django login API
         const response = await login({
           id: formData.id,
           password: formData.password
         })
-        
-        console.log('Login successful:', { 
-          hasAccess: !!response.access, 
-          hasRefresh: !!response.refresh,
-          hasUser: !!response.user 
-        })
-        
         // Store tokens
         setTokens(response.access, response.refresh)
         
@@ -91,7 +84,7 @@ export default function LoginPage() {
         let isAlumni = false
         try {
           const payload = JSON.parse(atob(response.access.split('.')[1]))
-          console.log('JWT Payload:', payload)
+
           
           // Store user role from JWT token
           if (payload.role) {
@@ -107,7 +100,7 @@ export default function LoginPage() {
               program_study: payload.program_study || null
             }
             setUser(userData)
-            console.log('User data stored:', userData)
+
           }
         } catch (err) {
           console.error('Error decoding JWT:', err)
@@ -115,10 +108,9 @@ export default function LoginPage() {
         
         // Redirect based on role
         if (isAlumni) {
-          console.log('Redirecting to landing page (Alumni)...')
           router.push('/')
         } else {
-          console.log('Redirecting to dashboard...')
+
           router.push('/dashboard')
         }
       })(),

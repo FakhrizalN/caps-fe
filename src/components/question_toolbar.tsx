@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -49,11 +49,11 @@ export function QuestionToolbar({
 
   // Log when programStudyId changes
   useEffect(() => {
-    console.log("QuestionToolbar - programStudyId updated:", programStudyId)
+
   }, [programStudyId])
 
   const handleTabChange = (tab: "questions" | "responses" | "program-study") => {
-    console.log("Tab change:", tab, "surveyId:", surveyId, "programStudyId:", programStudyId)
+
     setCurrentTab(tab)
     onTabChange?.(tab)
     
@@ -72,7 +72,7 @@ export function QuestionToolbar({
       }
     } else if (tab === "program-study") {
       if (surveyId && programStudyId) {
-        console.log("Navigating to:", `/survey/${surveyId}/program-study/${programStudyId}`)
+
         router.push(`/survey/${surveyId}/program-study/${programStudyId}`)
       } else {
         console.warn("Cannot navigate to program-study: missing surveyId or programStudyId", { surveyId, programStudyId })

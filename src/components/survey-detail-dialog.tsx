@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -170,7 +170,6 @@ export function SurveyDetailDialog({
           console.error('Invalid end_at format:', endAt)
         }
       }
-      console.log('Updating survey with data:', updateData)
       // Call API to update survey
       await updateSurvey(survey.id, updateData)
       // Call the legacy onSave callback if provided

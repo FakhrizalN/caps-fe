@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
@@ -83,7 +83,7 @@ export default function ResponsesPage() {
           }
         })
         
-        console.log('Users with details:', usersWithDetails)
+
         setUsers(usersWithDetails)
       } catch (error) {
         console.error('Error fetching users:', error)

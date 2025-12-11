@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import {
@@ -52,11 +52,11 @@ export default function EmployeePage() {
       setProgramStudies(programStudiesData)
       
       // Debug: Log data dari API
-      console.log('Users from API:', users)
-      console.log('Roles from API:', rolesData)
-      console.log('Program Studies from API:', programStudiesData)
+
+
+
       if (users.length > 0) {
-        console.log('Sample user data:', users[0])
+
       }
       
       // Convert User API format to Employee format
@@ -78,7 +78,7 @@ export default function EmployeePage() {
         }
       })
       
-      console.log('Formatted employees:', formattedEmployees)
+
       
       setEmployees(formattedEmployees)
     } catch (err) {

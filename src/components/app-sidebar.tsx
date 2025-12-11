@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { BarChart2, Building2, ChevronRight, ClipboardList, Shield, Users } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
@@ -86,10 +86,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       try {
         // Fetch user data from API
         const currentUser = await getCurrentUserFromAPI()
-        
-        console.log('Sidebar - Current user data:', currentUser)
-        console.log('Sidebar - Role name:', currentUser.role_name)
-        console.log('Sidebar - Role:', currentUser.role)
         
         // Use 'role' field instead of 'role_name'
         setUserRole(currentUser.role || currentUser.role_name || null)

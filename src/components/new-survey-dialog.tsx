@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -77,7 +77,7 @@ export function NewSurveyDialog({ isOpen, onOpenChange, onSave }: NewSurveyDialo
       end_at: endAt || null,
     }
     
-    console.log('Form data before sending:', formData)
+
     
     onSave(formData)
     

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { NewSurveyDialog, type SurveyFormData } from "@/components/new-survey-dialog"
@@ -97,15 +97,15 @@ export default function SurveyManagementPage() {
       
       setAllPeriods(periodsData)
       
-      console.log('Surveys data:', surveysData)
-      console.log('Periods data:', periodsData)
+
+
       
       // Separate surveys without periode and with periode
       const withoutPeriode: any[] = []
       const surveysByPeriode: any = {}
       
       surveysData.forEach((survey: Survey) => {
-        console.log(`Survey "${survey.title}" - periode:`, survey.periode)
+
         
         // Check if periode exists and get the ID
         const periodeId = survey.periode 
@@ -156,14 +156,14 @@ export default function SurveyManagementPage() {
       // Set surveys without periode
       setSurveysWithoutPeriode(withoutPeriode)
 
-      console.log('Surveys by periode:', surveysByPeriode)
+
 
       // Convert to sections format using real periode data
       const newSections = periodsData
         .sort((a, b) => (a.order || 0) - (b.order || 0)) // Sort by order
         .map((periode) => {
           const periodeKey = periode.id.toString()
-          console.log(`Periode ${periode.id}:`, surveysByPeriode[periodeKey] || [])
+
           return {
             id: periode.id, // Use real periode ID
             name: periode.category || periode.name || `Periode ${periode.id}`,
@@ -173,7 +173,7 @@ export default function SurveyManagementPage() {
           }
         })
 
-      console.log('Sections created:', newSections)
+
       setSections(newSections)
       
     } catch (err) {
@@ -191,7 +191,7 @@ export default function SurveyManagementPage() {
 
   const handleEdit = () => {
     // Handle edit action
-    console.log("Edit survey")
+
   }
 
   const handleDuplicate = async (surveyId: string) => {
@@ -277,7 +277,7 @@ export default function SurveyManagementPage() {
   const handleSave = async (data: SurveyFormData) => {
     try {
       
-      console.log('Received form data:', data)
+
       
       // Prepare data for API
       const surveyData: any = {
@@ -322,11 +322,11 @@ export default function SurveyManagementPage() {
         }
       }
       
-      console.log('Sending to API:', surveyData)
+
       
       // Create survey via API
       const result = await createSurvey(surveyData)
-      console.log('Survey created successfully:', result)
+
       
       setIsDialogOpen(false)
       
@@ -406,7 +406,7 @@ export default function SurveyManagementPage() {
 
   const handleDeleteSelected = () => {
     // Handle delete selected surveys
-    console.log("Delete surveys")
+
   }
 
   const handleDeleteSection = (sectionId: number) => {

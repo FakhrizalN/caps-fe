@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -33,7 +33,7 @@ export function Navbar() {
         setIsLoggedIn(true)
         try {
           const user = await getCurrentUserFromAPI()
-          console.log('Navbar - Full user data:', user)
+
           const name = user.username || user.id || "User"
           const initials = name
             .split(' ')
@@ -65,8 +65,8 @@ export function Navbar() {
             role: roleName,
             initials,
           })
-          console.log('Navbar - User role:', roleName)
-          console.log('Navbar - Is Alumni:', roleName === 'Alumni')
+
+
         } catch (error) {
           console.error('Error fetching user data:', error)
           setIsLoggedIn(false)
