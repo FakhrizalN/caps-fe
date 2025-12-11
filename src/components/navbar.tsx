@@ -3,12 +3,12 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { getCurrentUserFromAPI, isAuthenticated, logout } from "@/lib/api"
 import { LayoutDashboard, LogOut, Menu, User, X } from "lucide-react"
@@ -33,6 +33,7 @@ export function Navbar() {
         setIsLoggedIn(true)
         try {
           const user = await getCurrentUserFromAPI()
+          console.log('Navbar - Full user data:', user)
           const name = user.username || user.id || "User"
           const initials = name
             .split(' ')
@@ -41,11 +42,31 @@ export function Navbar() {
             .toUpperCase()
             .slice(0, 2)
           
+          // Try different possible role fields
+          const roleFromStorage = localStorage.getItem('user')
+          let roleName = ''
+          
+          if (roleFromStorage) {
+            try {
+              const userData = JSON.parse(roleFromStorage)
+              roleName = userData.role_name || ''
+            } catch (e) {
+              console.error('Error parsing stored user data:', e)
+            }
+          }
+          
+          // Fallback to API data
+          if (!roleName) {
+            roleName = user.role_name || user.role || ''
+          }
+          
           setUserData({
             name,
-            role: user.role_name || '',
+            role: roleName,
             initials,
           })
+          console.log('Navbar - User role:', roleName)
+          console.log('Navbar - Is Alumni:', roleName === 'Alumni')
         } catch (error) {
           console.error('Error fetching user data:', error)
           setIsLoggedIn(false)

@@ -88,6 +88,7 @@ export default function LoginPage() {
         setTokens(response.access, response.refresh)
         
         // Decode JWT token to get user info
+        let isAlumni = false
         try {
           const payload = JSON.parse(atob(response.access.split('.')[1]))
           console.log('JWT Payload:', payload)
@@ -95,6 +96,9 @@ export default function LoginPage() {
           // Store user role from JWT token
           if (payload.role) {
             document.cookie = `user_role=${payload.role}; path=/; max-age=${60 * 60 * 24 * 7}` // 7 days
+            
+            // Check if user is alumni
+            isAlumni = payload.role === 'Alumni'
             
             // Also store in localStorage for sidebar
             const userData = {
@@ -109,9 +113,14 @@ export default function LoginPage() {
           console.error('Error decoding JWT:', err)
         }
         
-        // Redirect to dashboard after successful login
-        console.log('Redirecting to dashboard...')
-        router.push('/dashboard')
+        // Redirect based on role
+        if (isAlumni) {
+          console.log('Redirecting to landing page (Alumni)...')
+          router.push('/')
+        } else {
+          console.log('Redirecting to dashboard...')
+          router.push('/dashboard')
+        }
       })(),
       {
         loading: 'Memproses...',

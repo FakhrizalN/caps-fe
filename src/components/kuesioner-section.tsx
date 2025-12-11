@@ -45,9 +45,31 @@ export function KuesionerSection() {
     fetchActiveSurveys()
   }, [])
 
-  const handleSurveyClick = (surveyId: string | number) => {
-    // TODO: Navigate to survey page or check if user needs to login
-    router.push('/login')
+  const handleSurveyClick = async (surveyId: string | number) => {
+    // Check if user is authenticated
+    const accessToken = localStorage.getItem('access_token')
+    if (!accessToken) {
+      router.push('/login')
+      return
+    }
+
+    // Get user data from localStorage
+    try {
+      const userDataString = localStorage.getItem('user')
+      if (!userDataString) {
+        router.push('/login')
+        return
+      }
+
+      const userData = JSON.parse(userDataString)
+      const alumniId = userData.id
+
+      // Navigate to survey page for alumni
+      router.push(`/survey/${surveyId}/alumni/${alumniId}`)
+    } catch (error) {
+      console.error('Error parsing user data:', error)
+      router.push('/login')
+    }
   }
 
   if (loading) {
@@ -91,7 +113,12 @@ export function KuesionerSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className={`grid gap-6 ${
+          surveys.length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
+          surveys.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-3xl mx-auto' :
+          surveys.length === 3 ? 'grid-cols-1 md:grid-cols-3 max-w-5xl mx-auto' :
+          'grid-cols-1 md:grid-cols-4'
+        }`}>
           {surveys.map((survey) => {
             const Icon = surveyIcons[survey.survey_type || ''] || FileText
             

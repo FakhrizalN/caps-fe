@@ -2,21 +2,21 @@
 
 import { Button } from "@/components/ui/button"
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
@@ -137,8 +137,13 @@ export function SurveyDetailDialog({
         title,
         is_active: isActive,
         survey_type: surveyType,
-        description: description && description.trim() !== '' ? description.trim() : null,
       }
+      
+      // Only add description if it has a value
+      if (description && description.trim() !== '') {
+        updateData.description = description.trim()
+      }
+      
       // Handle periode_id - backend serializer requires this field
       if (selectedPeriode && selectedPeriode !== "none") {
         const periodeId = parseInt(selectedPeriode)
