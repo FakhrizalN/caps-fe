@@ -87,7 +87,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         // Fetch user data from API
         const currentUser = await getCurrentUserFromAPI()
         
-        setUserRole(currentUser.role_name || null)
+        console.log('Sidebar - Current user data:', currentUser)
+        console.log('Sidebar - Role name:', currentUser.role_name)
+        console.log('Sidebar - Role:', currentUser.role)
+        
+        // Use 'role' field instead of 'role_name'
+        setUserRole(currentUser.role || currentUser.role_name || null)
         setUserData({
           name: currentUser.username || currentUser.id || "User",
           email: currentUser.email || "user@example.com",
@@ -123,47 +128,54 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent className="gap-0">
         {/* We create a collapsible SidebarGroup for each parent. */}
-        {data.navMain.map((item) => (
-          <Collapsible
-            key={item.title}
-            title={item.title}
-            defaultOpen
-            className="group/collapsible"
-          >
-            <SidebarGroup>
-              <SidebarGroupLabel
-                asChild
-                className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
-              >
-                <CollapsibleTrigger>
-                  {item.title}{" "}
-                  <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                </CollapsibleTrigger>
-              </SidebarGroupLabel>
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {item.items.map((subItem) => {
-                      const isActive = pathname.startsWith(subItem.url)
-                      const IconComponent = subItem.icon
+        {data.navMain.map((item) => {
+          // Hide System Administration menu for non-admin users
+          if (item.title === "System Administration" && userRole !== "Admin") {
+            return null
+          }
+          
+          return (
+            <Collapsible
+              key={item.title}
+              title={item.title}
+              defaultOpen
+              className="group/collapsible"
+            >
+              <SidebarGroup>
+                <SidebarGroupLabel
+                  asChild
+                  className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
+                >
+                  <CollapsibleTrigger>
+                    {item.title}{" "}
+                    <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                  </CollapsibleTrigger>
+                </SidebarGroupLabel>
+                <CollapsibleContent>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {item.items.map((subItem) => {
+                        const isActive = pathname.startsWith(subItem.url)
+                        const IconComponent = subItem.icon
 
-                      return (
-                        <SidebarMenuItem key={subItem.title}>
-                          <SidebarMenuButton asChild isActive={isActive}>
-                            <a href={subItem.url} className="flex items-center gap-2">
-                              <IconComponent className="h-4 w-4" />
-                              {subItem.title}
-                            </a>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      )
-                    })}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </SidebarGroup>
-          </Collapsible>
-        ))}
+                        return (
+                          <SidebarMenuItem key={subItem.title}>
+                            <SidebarMenuButton asChild isActive={isActive}>
+                              <a href={subItem.url} className="flex items-center gap-2">
+                                <IconComponent className="h-4 w-4" />
+                                {subItem.title}
+                              </a>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        )
+                      })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </CollapsibleContent>
+              </SidebarGroup>
+            </Collapsible>
+          )
+        })}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={userData} />
