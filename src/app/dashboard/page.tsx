@@ -69,8 +69,6 @@ import {
   YAxis,
 } from "recharts";
 import { parseCSV } from "../../../utils/csv";
-import { computeClustering } from "../../../utils/dashboard-utils";
-import { arForecast } from "../../../utils/forecasting";
 import { kmeans2D } from "../../../utils/clustering";
 import {
   clusteringPredict,
