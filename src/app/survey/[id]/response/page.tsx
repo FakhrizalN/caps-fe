@@ -4,17 +4,17 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { QuestionToolbar } from "@/components/question_toolbar"
 import { ResponseData, ResponseListTable } from "@/components/response_list_table"
 import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Spinner } from "@/components/ui/spinner"
-import { Answer, getAnswers, getCurrentUser, getSurvey } from "@/lib/api"
+import { Answer, getAnswers, getCurrentUserFromAPI, getSurvey } from "@/lib/api"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -44,11 +44,29 @@ export default function ResponsesPage() {
           throw new Error("Invalid survey ID")
         }
 
+        // Get current user from API to get program_study
+        const currentUser = await getCurrentUserFromAPI()
+        const userRole = currentUser.role || ""
+        const userProgramStudy = currentUser.program_study
+        
+        console.log("🔍 Response Page - User Info:")
+        console.log("  - User Role:", userRole)
+        console.log("  - Program Study:", userProgramStudy)
+        
+        if (userProgramStudy) {
+          setProgramStudyId(userProgramStudy.toString())
+        } else {
+          console.warn("⚠️ No program_study found in user data")
+          setProgramStudyId("1")
+        }
+
         // Fetch survey title
         const survey = await getSurvey(surveyId.toString())
         setSurveyTitle(survey.title)
 
         const answers: Answer[] = await getAnswers(surveyId)
+        console.log("📊 Total answers fetched:", answers.length)
+        console.log("📋 Sample answer structure:", answers[0])
 
         const uniqueUsers = new Map<string, UniqueUser>()
         
@@ -64,9 +82,10 @@ export default function ResponsesPage() {
         })
 
         const userList: ResponseData[] = Array.from(uniqueUsers.values())
+        console.log("👥 Unique users:", userList.length)
         setResponses(userList)
       } catch (err) {
-        console.error(err)
+        console.error("❌ Error fetching responses:", err)
         toast.error(
           err instanceof Error ? err.message : "Gagal mengambil data responses",
         )
@@ -76,17 +95,6 @@ export default function ResponsesPage() {
     }
 
     if (surveyId) fetchData()
-    
-    // Get program study ID from user
-    const user = getCurrentUser()
-    console.log("Response page - Current user:", user)
-    if (user?.program_study) {
-      console.log("Response page - Setting programStudyId to:", user.program_study)
-      setProgramStudyId(user.program_study.toString())
-    } else {
-      console.warn("Response page - No program_study found, using default: 1")
-      setProgramStudyId("1")
-    }
   }, [surveyId])
 
   return (
@@ -120,8 +128,8 @@ export default function ResponsesPage() {
           onPublish={() => console.log("Publish")}
         />
         
-        <div className="p-6 bg-gray-50 min-h-screen pt-12">
-          <div className="ml-0 w-full space-y-3 pr-20">
+        <div className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">
+          <div className="w-full space-y-3">
             {isLoading && (
               <div className="flex justify-center items-center py-12">
                 <Spinner className="size-8" />

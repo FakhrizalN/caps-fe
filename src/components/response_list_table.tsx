@@ -1,32 +1,33 @@
 "use client"
 
 import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+    ColumnDef,
+    ColumnFiltersState,
+    SortingState,
+    VisibilityState,
+    flexRender,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
 } from "@tanstack/react-table"
 import { ChevronDown, Eye, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
 import * as React from "react"
 
 import { DataTableViewOptions } from "@/components/column_toggle"
+import { DataTablePagination } from "@/components/pagination_table"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from "@/components/ui/table"
 
 export type ResponseData = {
@@ -45,8 +46,28 @@ export function ResponseListTable({ data, surveyId }: ResponseListTableProps) {
   const router = useRouter()
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
+    select: false, // Hide checkboxes by default on mobile
+    email: false,  // Hide email on mobile
+  })
   const [rowSelection, setRowSelection] = React.useState({})
+
+  // Update column visibility based on screen size
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        // Desktop: show all columns
+        setColumnVisibility({ select: true, email: true })
+      } else {
+        // Mobile: hide select and email
+        setColumnVisibility({ select: false, email: false })
+      }
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const columns: ColumnDef<ResponseData>[] = [
     {
@@ -159,7 +180,7 @@ export function ResponseListTable({ data, surveyId }: ResponseListTableProps) {
     },
     initialState: {
       pagination: {
-        pageSize: 5,
+        pageSize: 10,
       },
     },
   })
@@ -167,8 +188,8 @@ export function ResponseListTable({ data, surveyId }: ResponseListTableProps) {
   return (
     <div className="space-y-4">
       {/* Search */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative w-full max-w-sm">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="relative w-full sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             placeholder="Search..."
@@ -179,11 +200,13 @@ export function ResponseListTable({ data, surveyId }: ResponseListTableProps) {
             className="pl-10 w-full"
           />
         </div>
-        <DataTableViewOptions table={table} />
+        <div className="hidden sm:block">
+          <DataTableViewOptions table={table} />
+        </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-md border bg-white">
+      <div className="rounded-md border bg-white overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -235,43 +258,8 @@ export function ResponseListTable({ data, surveyId }: ResponseListTableProps) {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-center gap-4 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-          className="px-4"
-        >
-          Previous
-        </Button>
-
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Per page</span>
-          <select
-            value={table.getState().pagination.pageSize}
-            onChange={(e) => {
-              table.setPageSize(Number(e.target.value))
-            }}
-            className="h-9 w-16 rounded-md border border-gray-300 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            {[5, 10, 20, 50].map((pageSize) => (
-              <option key={pageSize} value={pageSize}>
-                {pageSize}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-          className="px-4"
-        >
-          Next
-        </Button>
+      <div className="flex items-center justify-end space-x-2 py-4">
+        <DataTablePagination table={table} />
       </div>
     </div>
   )

@@ -7,48 +7,50 @@ import { QuestionFloatingToolbar } from "@/components/question_floating_toolbar"
 import { QuestionToolbar } from "@/components/question_toolbar"
 import { SectionHeaderCard } from "@/components/section_header_card"
 import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
-    createProgramStudyQuestion,
-    deleteProgramStudyQuestion,
-    getProgramStudy,
-    getProgramStudyQuestions,
-    getSurvey,
-    ProgramStudyQuestion,
-    updateProgramStudyQuestion
+  createProgramStudyQuestion,
+  deleteProgramStudyQuestion,
+  getCurrentUserFromAPI,
+  getProgramStudy,
+  getProgramStudyQuestions,
+  getSurvey,
+  ProgramStudyQuestion,
+  updateProgramStudyQuestion
 } from "@/lib/api"
 import {
-    closestCenter,
-    DndContext,
-    DragEndEvent,
-    DragOverlay,
-    DragStartEvent,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core"
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import {
-    arrayMove,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    verticalListSortingStrategy,
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 export default function ProgramStudyQuestionsPage() {
   const params = useParams()
+  const router = useRouter()
   const surveyId = parseInt(params.id as string)
   const programStudyId = parseInt(params.programStudyId as string)
 
@@ -168,6 +170,30 @@ export default function ProgramStudyQuestionsPage() {
   useEffect(() => {
     const fetchData = async () => {
       if (surveyId && programStudyId) {
+        // Check user role and auto-redirect to their program study
+        try {
+          const currentUser = await getCurrentUserFromAPI()
+          const userRole = currentUser.role || ""
+          const userProgramStudy = currentUser.program_study
+          
+          console.log("🔍 Program Study Auto-Redirect Check:")
+          console.log("  - User Role:", userRole)
+          console.log("  - User Program Study:", userProgramStudy)
+          console.log("  - Current URL Program Study:", programStudyId)
+          
+          // If user is Tim Prodi, auto-redirect to their program study
+          if (userRole === "Tim Prodi" && userProgramStudy) {
+            if (userProgramStudy !== programStudyId) {
+              console.log(`🔄 Auto-redirecting to user's program study: ${userProgramStudy}`)
+              router.replace(`/survey/${surveyId}/program-study/${userProgramStudy}`)
+              return
+            }
+            console.log("✅ User already on their program study page")
+          }
+        } catch (error) {
+          console.error("Error checking user program study:", error)
+        }
+        
         await fetchQuestions()
         
         // Get program study name from API
@@ -193,7 +219,7 @@ export default function ProgramStudyQuestionsPage() {
       id: tempId,
       text: "Untitled question",
       question_type: "radio",
-      options: [{ id: "1", label: "Option 1" }],
+      options: ["Option 1"],
       order: newOrder,
       is_required: false,
       program_study: programStudyId,
@@ -210,7 +236,7 @@ export default function ProgramStudyQuestionsPage() {
       const created = await createProgramStudyQuestion(surveyId, programStudyId, {
         text: "Untitled question",
         question_type: "radio",
-        options: [{ id: "1", label: "Option 1" }] as any,
+        options: ["Option 1"],
         description: "",
         order: newOrder,
         is_required: false,
@@ -317,6 +343,20 @@ export default function ProgramStudyQuestionsPage() {
     }
   }
 
+  // Helper function to convert options to backend format
+  const convertOptionsForBackend = (options: any): string[] => {
+    if (!options) return []
+    if (Array.isArray(options)) {
+      // If it's array of objects like [{id: "1", label: "Option 1"}]
+      if (options.length > 0 && typeof options[0] === 'object' && 'label' in options[0]) {
+        return options.map(opt => opt.label)
+      }
+      // If it's already array of strings like ["Male", "Female"]
+      return options
+    }
+    return []
+  }
+
   const handleUpdateQuestion = async (updatedQuestion: QuestionData) => {
     const questionId = updatedQuestion.id
     const isTemp = questionId.startsWith('temp-')
@@ -335,7 +375,7 @@ export default function ProgramStudyQuestionsPage() {
           const created = await createProgramStudyQuestion(surveyId, programStudyId, {
             text: updates.text,
             question_type: updates.question_type || 'radio',
-            options: updates.options,
+            options: convertOptionsForBackend(updates.options),
             description: updates.description,
             order: questions.find(q => q.id === questionId)?.order || questions.length + 1,
             is_required: updates.is_required || false,
@@ -368,7 +408,7 @@ export default function ProgramStudyQuestionsPage() {
         await updateProgramStudyQuestion(surveyId, programStudyId, parseInt(questionId), {
           text: updates.text,
           question_type: updates.question_type,
-          options: updates.options,
+          options: convertOptionsForBackend(updates.options),
           description: updates.description,
           is_required: updates.is_required,
           code: updates.code,
@@ -419,7 +459,7 @@ export default function ProgramStudyQuestionsPage() {
       const created = await createProgramStudyQuestion(surveyId, programStudyId, {
         text: `${question.text} (Copy)`,
         question_type: question.question_type,
-        options: question.options,
+        options: convertOptionsForBackend(question.options),
         description: question.description,
         order: questions.length + 1,
         is_required: question.is_required,
@@ -432,6 +472,13 @@ export default function ProgramStudyQuestionsPage() {
       console.error("Error duplicating question:", error)
       alert("Failed to duplicate question")
     }
+  }
+
+  const handleImportSuccess = async () => {
+    console.log("Import successful, refreshing questions...")
+    await fetchQuestions()
+    // Force page refresh to ensure all imported questions are displayed
+    window.location.reload()
   }
 
   const handlePublish = () => {
@@ -489,8 +536,8 @@ export default function ProgramStudyQuestionsPage() {
           onPublish={handlePublish}
         />
 
-        <div className="bg-gray-50 min-h-screen p-6">
-          <div className="w-full mx-auto space-y-4 pr-24">
+        <div className="bg-gray-50 min-h-screen p-4 md:p-6">
+          <div className="w-full mx-auto space-y-4 pr-0 lg:pr-24">
             <div onClick={() => setActiveQuestionId(null)}>
               <SectionHeaderCard
                 sectionNumber={1}
@@ -544,7 +591,11 @@ export default function ProgramStudyQuestionsPage() {
         {!isPreviewMode && (
           <QuestionFloatingToolbar
             onAddQuestion={handleAddQuestion}
+            onAddText={undefined}
+            onImportSuccess={handleImportSuccess}
+            onAddSection={undefined}
             surveyId={surveyId}
+            sectionId={1}
           />
         )}
       </SidebarInset>

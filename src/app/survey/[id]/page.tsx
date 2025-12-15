@@ -24,6 +24,7 @@ import {
   deleteQuestion,
   deleteSection,
   getCurrentUser,
+  getCurrentUserFromAPI,
   getQuestions,
   getSections,
   getSurvey,
@@ -83,6 +84,7 @@ export default function SurveyQuestionsPage() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false)
   const [programStudyId, setProgramStudyId] = useState<string | undefined>(undefined)
+  const [isTimProdi, setIsTimProdi] = useState(false)
   
   // Ref to track which surveyId has been fetched to prevent double execution in React Strict Mode
   const fetchedSurveyIdRef = useRef<number | null>(null)
@@ -167,6 +169,20 @@ export default function SurveyQuestionsPage() {
       ))
       alert("Failed to update question order")
     }
+  }
+
+  // Helper function to convert options to backend format
+  const convertOptionsForBackend = (options: any): string[] => {
+    if (!options) return []
+    if (Array.isArray(options)) {
+      // If it's array of objects like [{id: "1", label: "Option 1"}]
+      if (options.length > 0 && typeof options[0] === 'object' && 'label' in options[0]) {
+        return options.map(opt => opt.label)
+      }
+      // If it's already array of strings like ["Male", "Female"]
+      return options
+    }
+    return []
   }
 
   // Fetch survey data and sections
@@ -284,18 +300,24 @@ export default function SurveyQuestionsPage() {
           const templateQuestion = await createQuestion(surveyId, sectionsWithQuestions[0].id, {
             text: "Sudah bekerja?",
             question_type: "radio",
-            options: [
-              { id: "1", label: "Sudah" },
-              { id: "2", label: "Belum" }
-            ],
+            options: ["Sudah", "Belum"],
             description: "",
             order: 1,
             is_required: true
           })
           
+          // Process options to convert from backend format to frontend format
+          let processedOptions = templateQuestion.options
+          if (Array.isArray(processedOptions) && processedOptions.length > 0 && typeof processedOptions[0] === 'string') {
+            processedOptions = processedOptions.map((label, idx) => ({
+              id: String(idx + 1),
+              label: label
+            }))
+          }
+          
           setSections([{
             ...sectionsWithQuestions[0],
-            questions: [templateQuestion]
+            questions: [{...templateQuestion, options: processedOptions}]
           }])
         } else if (survey.survey_type === 'lv1') {
           // For lv1 surveys, create supervisor email template question
@@ -318,15 +340,24 @@ export default function SurveyQuestionsPage() {
           const defaultQuestion = await createQuestion(surveyId, sectionsWithQuestions[0].id, {
             text: "Untitled question",
             question_type: "radio",
-            options: [{ id: "1", label: "Option 1" }],
+            options: ["Option 1"],
             description: "",
             order: 1,
             is_required: true
           })
           
+          // Process options to convert from backend format to frontend format
+          let processedOptions = defaultQuestion.options
+          if (Array.isArray(processedOptions) && processedOptions.length > 0 && typeof processedOptions[0] === 'string') {
+            processedOptions = processedOptions.map((label, idx) => ({
+              id: String(idx + 1),
+              label: label
+            }))
+          }
+          
           setSections([{
             ...sectionsWithQuestions[0],
-            questions: [defaultQuestion]
+            questions: [{...defaultQuestion, options: processedOptions}]
           }])
         }
       }
@@ -343,6 +374,26 @@ export default function SurveyQuestionsPage() {
     const loadData = async () => {
       if (isMounted) {
         await fetchSurveyData()
+        
+        // Get current user from API to check role
+        const currentUser = await getCurrentUserFromAPI()
+        const userRoleName = currentUser.role || ""  // Changed from role_name to role
+        
+        console.log("🔍 User Role Check:")
+        console.log("  - User:", currentUser)
+        console.log("  - Role Name:", userRoleName)
+        console.log("  - Is Tim Prodi?", userRoleName === "Tim Prodi")
+        
+        // If user is Tim Prodi, enable preview mode (disable editing) and lock it
+        if (userRoleName === "Tim Prodi") {
+          console.log("✅ Setting preview mode for Tim Prodi")
+          if (isMounted) {
+            setIsTimProdi(true)
+            setIsPreviewMode(true)
+          }
+        } else {
+          console.log("❌ Not Tim Prodi, editing enabled")
+        }
         
         // Get program study ID from user
         const user = getCurrentUser()
@@ -413,7 +464,7 @@ export default function SurveyQuestionsPage() {
       id: tempId as any, // Temporary ID
       text: "Untitled question",
       question_type: "radio",
-      options: [{ id: "1", label: "Option 1" }],
+      options: [{id: "1", label: "Option 1"}], // Use frontend format directly
       description: "",
       order: insertIndex + 1,
       is_required: false,
@@ -446,11 +497,20 @@ export default function SurveyQuestionsPage() {
         const newQuestion = await createQuestion(surveyId, targetSection!.id, {
           text: "Untitled question",
           question_type: "radio",
-          options: [{ id: "1", label: "Option 1" }],
+          options: ["Option 1"],
           description: "",
           order: insertIndex + 1,
           is_required: false
         })
+
+        // Process options to convert from backend format to frontend format
+        let processedOptions = newQuestion.options
+        if (Array.isArray(processedOptions) && processedOptions.length > 0 && typeof processedOptions[0] === 'string') {
+          processedOptions = processedOptions.map((label, idx) => ({
+            id: String(idx + 1),
+            label: label
+          }))
+        }
 
         // Replace temp question with real one
         setSections(prevSections => prevSections.map(s => 
@@ -458,7 +518,7 @@ export default function SurveyQuestionsPage() {
             ? { 
                 ...s, 
                 questions: s.questions.map(q => 
-                  q.id === tempId ? newQuestion : q
+                  q.id === tempId ? {...newQuestion, options: processedOptions} : q
                 )
               }
             : s
@@ -716,7 +776,9 @@ export default function SurveyQuestionsPage() {
         text: question.text,
         question_type: question.question_type,
         description: question.description,
-        is_required: question.is_required
+        is_required: question.is_required,
+        code: question.code,
+        source: question.source
       }
 
       // Handle linear scale - store min/max values and labels in options field
@@ -843,7 +905,7 @@ export default function SurveyQuestionsPage() {
       const duplicate = await createQuestion(surveyId, section.id, {
         text: `${question.text} (Copy)`,
         question_type: question.question_type,
-        options: question.options,
+        options: convertOptionsForBackend(question.options),
         description: question.description,
         order: question.order + 1,
         is_required: question.is_required
@@ -880,14 +942,23 @@ export default function SurveyQuestionsPage() {
       const defaultQuestion = await createQuestion(surveyId, newSection.id, {
         text: "Untitled question",
         question_type: "radio",
-        options: [{ id: "1", label: "Option 1" }],
+        options: ["Option 1"],
         description: "",
         order: 1,
         is_required: false
       })
 
+      // Process options to convert from backend format to frontend format
+      let processedOptions = defaultQuestion.options
+      if (Array.isArray(processedOptions) && processedOptions.length > 0 && typeof processedOptions[0] === 'string') {
+        processedOptions = processedOptions.map((label, idx) => ({
+          id: String(idx + 1),
+          label: label
+        }))
+      }
+
       // Add the new section with the default question
-      setSections([...sections, { ...newSection, questions: [defaultQuestion], texts: [] }])
+      setSections([...sections, { ...newSection, questions: [{...defaultQuestion, options: processedOptions}], texts: [] }])
       
       // Set the new section and question as active
       setActiveSectionId(newSection.id)
@@ -973,7 +1044,7 @@ export default function SurveyQuestionsPage() {
           return await createQuestion(surveyId, duplicateSection.id, {
             text: question.text,
             question_type: question.question_type,
-            options: question.options,
+            options: convertOptionsForBackend(question.options),
             description: question.description,
             order: question.order,
             is_required: question.is_required
@@ -1046,7 +1117,7 @@ export default function SurveyQuestionsPage() {
           const newQuestion = await createQuestion(surveyId, previousSection.id, {
             text: question.text,
             question_type: question.question_type,
-            options: question.options,
+            options: convertOptionsForBackend(question.options),
             description: question.description,
             is_required: question.is_required,
             order: maxOrder + index + 1
@@ -1346,6 +1417,12 @@ export default function SurveyQuestionsPage() {
     title: section.title || `Section${index + 1}`
   }))
 
+  // Debug log for preview mode state
+  console.log("📋 Survey Page State:")
+  console.log("  - isPreviewMode:", isPreviewMode)
+  console.log("  - isTimProdi:", isTimProdi)
+  console.log("  - Active Question ID:", activeQuestionId)
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -1377,24 +1454,27 @@ export default function SurveyQuestionsPage() {
           surveyId={surveyId.toString()}
           programStudyId={programStudyId}
           isPreviewMode={isPreviewMode}
-          onPreviewToggle={() => setIsPreviewMode(!isPreviewMode)}
+          onPreviewToggle={() => {
+            // Tim Prodi cannot toggle preview mode off
+            if (!isTimProdi) {
+              setIsPreviewMode(!isPreviewMode)
+            }
+          }}
           onPublish={handlePublish}
         />
 
-        {/* Floating Toolbar - Hidden on mobile */}
+        {/* Floating Toolbar */}
         {!isPreviewMode && (
-          <div className="hidden lg:block">
-            <QuestionFloatingToolbar 
-              onAddQuestion={handleAddQuestion}
-              onAddText={handleAddText}
-              onImportSuccess={fetchSurveyData}
-              onAddSection={handleAddSection}
-              activeQuestionId={activeQuestionId}
-              activeElementType={activeElementType}
-              surveyId={surveyId}
-              sectionId={activeSectionId || sections[0]?.id}
-            />
-          </div>
+          <QuestionFloatingToolbar 
+            onAddQuestion={handleAddQuestion}
+            onAddText={handleAddText}
+            onImportSuccess={fetchSurveyData}
+            onAddSection={handleAddSection}
+            activeQuestionId={activeQuestionId}
+            activeElementType={activeElementType}
+            surveyId={surveyId}
+            sectionId={activeSectionId || sections[0]?.id}
+          />
         )}
         
         <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
@@ -1404,8 +1484,7 @@ export default function SurveyQuestionsPage() {
               setActiveElementType('header')
               setActiveQuestionId(null)
               setActiveSectionId(null)
-            }}>
-              <SectionHeaderCard
+            }}>              <SectionHeaderCard
                 sectionNumber={1}
                 totalSections={sections.length}
                 title={surveyTitle}
@@ -1413,7 +1492,7 @@ export default function SurveyQuestionsPage() {
                 sectionId={sections[0]?.id}
                 sectionOrder={sections[0]?.order}
                 isActive={activeElementType === 'header'}
-                onTitleChange={async (newTitle) => {
+                onTitleChange={isPreviewMode ? undefined : async (newTitle) => {
                   setSurveyTitle(newTitle)
                   try {
                     await updateSurvey(surveyId.toString(), { title: newTitle })
@@ -1428,7 +1507,7 @@ export default function SurveyQuestionsPage() {
                     console.error("Error updating survey title:", error)
                   }
                 }}
-                onDescriptionChange={async (newDesc) => {
+                onDescriptionChange={isPreviewMode ? undefined : async (newDesc) => {
                   setSurveyDescription(newDesc)
                   try {
                     await updateSurvey(surveyId.toString(), { description: newDesc })
@@ -1443,8 +1522,8 @@ export default function SurveyQuestionsPage() {
                     console.error("Error updating survey description:", error)
                   }
                 }}
-                onMove={() => setIsReorderDialogOpen(true)}
-                onDuplicate={sections[0] ? () => handleDuplicateSection(sections[0].id) : undefined}
+                onMove={isPreviewMode ? undefined : () => setIsReorderDialogOpen(true)}
+                onDuplicate={isPreviewMode ? undefined : (sections[0] ? () => handleDuplicateSection(sections[0].id) : undefined)}
               />
             </div>
 
@@ -1500,13 +1579,13 @@ export default function SurveyQuestionsPage() {
                                 question={questionToQuestionData(question)}
                                 isEditMode={isQuestionEditable}
                                 sections={sectionsInfo}
-                                onUpdate={(updatedQuestionData) => {
+                                onUpdate={isPreviewMode ? undefined : (updatedQuestionData) => {
                                   const updatedQuestion = questionDataToQuestion(updatedQuestionData, section.id)
                                   handleUpdateQuestion(updatedQuestion)
                                 }}
-                                onDelete={() => handleDeleteQuestion(question.id)}
-                                onDuplicate={() => handleDuplicateQuestion(question.id)}
-                                onFocus={() => {
+                                onDelete={isPreviewMode ? undefined : () => handleDeleteQuestion(question.id)}
+                                onDuplicate={isPreviewMode ? undefined : () => handleDuplicateQuestion(question.id)}
+                                onFocus={isPreviewMode ? undefined : () => {
                                   setActiveQuestionId(question.id)
                                   setActiveSectionId(section.id)
                                   setActiveElementType('question')
@@ -1528,10 +1607,10 @@ export default function SurveyQuestionsPage() {
                             <TextCard
                               title={textItem.title}
                               description={textItem.description}
-                              isActive={isTextActive}
-                              onTitleChange={(title) => handleUpdateText(textItem.id, { title })}
-                              onDescriptionChange={(description) => handleUpdateText(textItem.id, { description })}
-                              onFocus={() => {
+                              isActive={isTextActive && !isPreviewMode}
+                              onTitleChange={isPreviewMode ? undefined : (title) => handleUpdateText(textItem.id, { title })}
+                              onDescriptionChange={isPreviewMode ? undefined : (description) => handleUpdateText(textItem.id, { description })}
+                              onFocus={isPreviewMode ? undefined : () => {
                                 setActiveQuestionId(textItem.id)
                                 setActiveSectionId(section.id)
                                 setActiveElementType('text')
@@ -1579,12 +1658,12 @@ export default function SurveyQuestionsPage() {
                           sectionId={section.id}
                           sectionOrder={section.order}
                           isActive={activeElementType === 'section' && activeQuestionId === section.id}
-                          onTitleChange={(title) => handleUpdateSection(section.id, { title })}
-                          onDescriptionChange={(description) => handleUpdateSection(section.id, { description })}
-                          onDelete={() => handleDeleteSection(section.id)}
-                          onDuplicate={() => handleDuplicateSection(section.id)}
-                          onMove={() => setIsReorderDialogOpen(true)}
-                          onMerge={() => handleMergeSection(section.id)}
+                          onTitleChange={isPreviewMode ? undefined : (title) => handleUpdateSection(section.id, { title })}
+                          onDescriptionChange={isPreviewMode ? undefined : (description) => handleUpdateSection(section.id, { description })}
+                          onDelete={isPreviewMode ? undefined : () => handleDeleteSection(section.id)}
+                          onDuplicate={isPreviewMode ? undefined : () => handleDuplicateSection(section.id)}
+                          onMove={isPreviewMode ? undefined : () => setIsReorderDialogOpen(true)}
+                          onMerge={isPreviewMode ? undefined : () => handleMergeSection(section.id)}
                         />
                       </div>
                     )}

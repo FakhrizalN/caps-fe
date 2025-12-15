@@ -40,11 +40,6 @@ const data = {
           icon: Users,
         },
         {
-          title: "Role Management",
-          url: "/roles",
-          icon: Shield,
-        },
-        {
           title: "Academic Units",
           url: "/unit",
           icon: Building2,

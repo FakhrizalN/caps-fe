@@ -2,12 +2,12 @@
 
 import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -305,8 +305,8 @@ export function ImportQuestionDialog({
               </Button>
             </div>
 
-            {/* Template Format Info */}
-            <div className="border rounded-lg p-4 bg-blue-50 border-blue-200">
+            {/* Template Format Info - Hidden on mobile */}
+            <div className="hidden md:block border rounded-lg p-4 bg-blue-50 border-blue-200">
               <h4 className="font-semibold text-sm mb-2 text-blue-900">Template Format:</h4>
               <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
                 <li><strong>section_title:</strong> Title of the section (optional - creates/reuses section)</li>

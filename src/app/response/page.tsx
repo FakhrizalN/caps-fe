@@ -2,8 +2,16 @@
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
@@ -15,7 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { getProgramStudiesDetailed, getUsers, type ProgramStudyDetailed, type User } from "@/lib/api"
-import { Search } from "lucide-react"
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from "lucide-react"
 import { useEffect, useState } from "react"
 
 // Helper function to calculate progress percentage
@@ -62,6 +70,8 @@ export default function ResponsesPage() {
   const [users, setUsers] = useState<UserWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+  const [pageIndex, setPageIndex] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -108,6 +118,18 @@ export default function ResponsesPage() {
     )
   })
 
+  // Pagination
+  const totalPages = Math.ceil(filteredUsers.length / pageSize)
+  const paginatedUsers = filteredUsers.slice(
+    pageIndex * pageSize,
+    (pageIndex + 1) * pageSize
+  )
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setPageIndex(0)
+  }, [searchQuery])
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -118,14 +140,14 @@ export default function ResponsesPage() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbPage>User Survey Progress</BreadcrumbPage>
+                <BreadcrumbPage>Response Data</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
         </header>
         
         <div className="flex flex-1 flex-col gap-8 p-8">
-          <div className="text-3xl font-bold tracking-tight">User Survey Progress</div>
+          <div className="text-3xl font-bold tracking-tight">Response Data</div>
           
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -169,7 +191,7 @@ export default function ResponsesPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredUsers.map((user) => {
+                    paginatedUsers.map((user) => {
                       const progress = calculateProgress(user.last_survey)
                       const label = getProgressLabel(user.last_survey)
                       return (
@@ -195,6 +217,85 @@ export default function ResponsesPage() {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Pagination */}
+            {filteredUsers.length > 0 && (
+              <div className="w-full flex items-center justify-between px-2 py-4">
+                <div className="text-muted-foreground flex-1 text-sm hidden sm:block">
+                  Showing {pageIndex * pageSize + 1} to{" "}
+                  {Math.min((pageIndex + 1) * pageSize, filteredUsers.length)} of{" "}
+                  {filteredUsers.length} result(s)
+                </div>
+                <div className="flex items-center space-x-6 lg:space-x-8">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm font-medium hidden sm:block">Rows per page</p>
+                    <Select
+                      value={`${pageSize}`}
+                      onValueChange={(value) => {
+                        setPageSize(Number(value))
+                        setPageIndex(0)
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue placeholder={pageSize} />
+                      </SelectTrigger>
+                      <SelectContent side="top">
+                        {[10, 20, 25, 30, 40, 50].map((size) => (
+                          <SelectItem key={size} value={`${size}`}>
+                            {size}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="hidden size-8 lg:flex"
+                      onClick={() => setPageIndex(0)}
+                      disabled={pageIndex === 0}
+                    >
+                      <span className="sr-only">Go to first page</span>
+                      <ChevronsLeft />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="size-8"
+                      onClick={() => setPageIndex(pageIndex - 1)}
+                      disabled={pageIndex === 0}
+                    >
+                      <span className="sr-only">Go to previous page</span>
+                      <ChevronLeft />
+                    </Button>
+                    <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+                      Page {pageIndex + 1} of {totalPages}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="size-8"
+                      onClick={() => setPageIndex(pageIndex + 1)}
+                      disabled={pageIndex >= totalPages - 1}
+                    >
+                      <span className="sr-only">Go to next page</span>
+                      <ChevronRight />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="hidden size-8 lg:flex"
+                      onClick={() => setPageIndex(totalPages - 1)}
+                      disabled={pageIndex >= totalPages - 1}
+                    >
+                      <span className="sr-only">Go to last page</span>
+                      <ChevronsRight />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </SidebarInset>

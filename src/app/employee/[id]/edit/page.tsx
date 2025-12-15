@@ -124,18 +124,10 @@ export default function EditEmployeePage() {
   }
 
   const handleSelectChange = (name: string, value: string) => {
-    if (name === "role") {
-      const selectedRole = roles.find(r => r.id === parseInt(value))
+    if (name === "role" || name === "program_study") {
       setFormData(prev => ({
         ...prev,
-        role: parseInt(value),
-        // Auto-fill program_study if role has program_study
-        program_study: selectedRole?.program_study || prev.program_study
-      }))
-    } else if (name === "program_study") {
-      setFormData(prev => ({
-        ...prev,
-        program_study: parseInt(value)
+        [name]: parseInt(value)
       }))
     } else {
       setFormData(prev => ({

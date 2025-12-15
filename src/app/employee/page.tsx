@@ -44,7 +44,10 @@ export default function EmployeePage() {
       // Fetch roles and program studies first
       const [users, rolesData, programStudiesData] = await Promise.all([
         getUsers(),
-        getRoles(),
+        getRoles().catch(err => {
+          console.error('Error fetching roles, using empty array:', err)
+          return [] // Fallback to empty array if roles endpoint fails
+        }),
         getProgramStudiesDetailed()
       ])
       

@@ -5,26 +5,26 @@ import { QuestionCardGForm, QuestionData } from "@/components/question_card_gfor
 import { QuestionToolbar } from "@/components/question_toolbar"
 import { SectionHeaderCard } from "@/components/section_header_card"
 import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import {
-    SidebarInset,
-    SidebarProvider,
-    SidebarTrigger,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Answer, deleteAnswer, getAnswers, getCurrentUser, getProgramStudyQuestions, getQuestions, getSections, getSurvey, ProgramStudyQuestion, Question, Section } from "@/lib/api"
 import { ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react"
@@ -587,6 +587,37 @@ export default function ResponseDetailPage() {
           selectedOptions: selectedIds,
         }
 
+      case "dropdown":
+        // Parse options dari question
+        const dropdownOptionsRaw = parseOptions(question?.options)
+        const dropdownOptions = dropdownOptionsRaw
+        
+        let selectedDropdownId: string
+        if (typeof answer.answer_value === 'object' && answer.answer_value !== null && 'id' in answer.answer_value) {
+          selectedDropdownId = String((answer.answer_value as any).id)
+        } else if (typeof answer.answer_value === 'string') {
+          const isNumericId = /^\d+$/.test(answer.answer_value)
+          if (isNumericId) {
+            selectedDropdownId = answer.answer_value
+          } else {
+            const foundOption = dropdownOptions.find(opt => opt.label === answer.answer_value)
+            selectedDropdownId = foundOption ? foundOption.id : String(answer.answer_value)
+          }
+        } else {
+          selectedDropdownId = String(answer.answer_value)
+        }
+        
+        console.log(`📋 Program study dropdown options:`, dropdownOptions, `Selected:`, selectedDropdownId)
+        
+        return {
+          id: `pq${idx}`,
+          type: "dropdown",
+          title: answer.question_text,
+          required: question?.is_required || false,
+          options: dropdownOptions,
+          selectedOption: selectedDropdownId,
+        }
+
       default:
         return {
           id: `pq${idx}`,
@@ -809,6 +840,39 @@ export default function ResponseDetailPage() {
           selectedOptions: selectedIds,
         }
 
+      case "dropdown":
+        // Parse options dari question
+        const dropdownOptionsRaw = parseOptions(question?.options)
+        const dropdownOptions = dropdownOptionsRaw
+        
+        // answer_value bisa berupa object {id, label}, ID, atau label langsung
+        let selectedDropdownId: string
+        if (typeof answer.answer_value === 'object' && answer.answer_value !== null && 'id' in answer.answer_value) {
+          selectedDropdownId = String((answer.answer_value as any).id)
+        } else if (typeof answer.answer_value === 'string') {
+          const isNumericId = /^\d+$/.test(answer.answer_value)
+          if (isNumericId) {
+            selectedDropdownId = answer.answer_value
+          } else {
+            // Label - cari ID berdasarkan label
+            const foundOption = dropdownOptions.find(opt => opt.label === answer.answer_value)
+            selectedDropdownId = foundOption ? foundOption.id : String(answer.answer_value)
+          }
+        } else {
+          selectedDropdownId = String(answer.answer_value)
+        }
+        
+        console.log(`📋 Dropdown options:`, dropdownOptions, `Selected:`, selectedDropdownId)
+        
+        return {
+          id: `q${idx}`,
+          type: "dropdown",
+          title: answer.question_text,
+          required: question?.is_required || false,
+          options: dropdownOptions,
+          selectedOption: selectedDropdownId,
+        }
+
       default:
         return {
           id: `q${idx}`,
@@ -867,8 +931,8 @@ export default function ResponseDetailPage() {
 
         <div className="bg-gray-50 min-h-screen">
           {/* Navigation */}
-          <div className="bg-white border-b shadow-sm px-6 py-4">
-            <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="bg-white border-b shadow-sm px-4 md:px-6 py-4">
+            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 sm:gap-0">
               <div className="flex items-center gap-4">
                 <Select
                   value={currentUserNim}
@@ -931,7 +995,7 @@ export default function ResponseDetailPage() {
           </div>
 
           {/* Question Cards */}
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             <div className="max-w-6xl mx-auto space-y-3">
               {userAnswers.length === 0 ? (
                 <p className="text-gray-500 text-center py-12">

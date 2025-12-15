@@ -3,10 +3,10 @@
 import { ImportQuestionDialog } from "@/components/import-question-dialog"
 import { Button } from "@/components/ui/button"
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { AlignVerticalSpaceAround, PlusCircle, Type, Upload } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -135,76 +135,122 @@ export function QuestionFloatingToolbar({
   }, [activeQuestionId, activeElementType])
 
   return (
-    <div style={toolbarStyle} className="z-20 transition-all duration-200">
-      <div className="bg-white border rounded-lg shadow-lg p-2 flex flex-col gap-2">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={onAddQuestion}
-                className="h-12 w-12 hover:bg-gray-100"
-              >
-                <PlusCircle className="h-6 w-6 text-gray-600" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>Add Question</p>
-            </TooltipContent>
-          </Tooltip>
+    <>
+      {/* Desktop Version - Vertical Right Sidebar */}
+      <div style={toolbarStyle} className="hidden lg:block z-20 transition-all duration-200">
+        <div className="bg-white border rounded-lg shadow-lg p-2 flex flex-col gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={onAddQuestion}
+                  className="h-12 w-12 hover:bg-gray-100"
+                >
+                  <PlusCircle className="h-6 w-6 text-gray-600" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p>Add Question</p>
+              </TooltipContent>
+            </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={onAddText}
-                className="h-12 w-12 hover:bg-gray-100"
-              >
-                <Type className="h-6 w-6 text-gray-600" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>Add Text</p>
-            </TooltipContent>
-          </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={onAddText}
+                  className="h-12 w-12 hover:bg-gray-100"
+                >
+                  <Type className="h-6 w-6 text-gray-600" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p>Add Text</p>
+              </TooltipContent>
+            </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setIsImportDialogOpen(true)}
-                className="h-12 w-12 hover:bg-gray-100"
-              >
-                <Upload className="h-6 w-6 text-gray-600" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>Import Question</p>
-            </TooltipContent>
-          </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setIsImportDialogOpen(true)}
+                  className="h-12 w-12 hover:bg-gray-100"
+                >
+                  <Upload className="h-6 w-6 text-gray-600" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p>Import Question</p>
+              </TooltipContent>
+            </Tooltip>
 
-          {/* Divider */}
-          <div className="border-t my-1" />
+            {/* Divider */}
+            <div className="border-t my-1" />
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={onAddSection}
+                  className="h-12 w-12 hover:bg-gray-100"
+                >
+                  <AlignVerticalSpaceAround className="h-6 w-6 text-gray-600" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p>Add Section</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
+
+      {/* Mobile Version - Horizontal Bottom Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-20 bg-white border-t shadow-lg">
+        <div className="flex items-center justify-around py-3 px-4">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={onAddQuestion}
+            className="h-12 w-12 hover:bg-gray-100"
+          >
+            <PlusCircle className="h-6 w-6 text-gray-600" />
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={onAddText}
+            className="h-12 w-12 hover:bg-gray-100"
+          >
+            <Type className="h-6 w-6 text-gray-600" />
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setIsImportDialogOpen(true)}
+            className="h-12 w-12 hover:bg-gray-100"
+          >
+            <Upload className="h-6 w-6 text-gray-600" />
+          </Button>
+
+          <div className="border-l h-8" />
           
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={onAddSection}
-                className="h-12 w-12 hover:bg-gray-100"
-              >
-                <AlignVerticalSpaceAround className="h-6 w-6 text-gray-600" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>Add Section</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={onAddSection}
+            className="h-12 w-12 hover:bg-gray-100"
+          >
+            <AlignVerticalSpaceAround className="h-6 w-6 text-gray-600" />
+          </Button>
+        </div>
       </div>
 
       {/* Import Question Dialog */}
@@ -219,6 +265,6 @@ export function QuestionFloatingToolbar({
           }}
         />
       )}
-    </div>
+    </>
   )
 }
