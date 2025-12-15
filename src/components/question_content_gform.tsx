@@ -306,7 +306,6 @@ export function QuestionContentGForm({
                               Go to section {sectionIdx + 1} ({section.title})
                             </SelectItem>
                           ))}
-                          <SelectItem value="submit">Submit form</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

@@ -303,7 +303,8 @@ export default function SurveyQuestionsPage() {
             options: ["Sudah", "Belum"],
             description: "",
             order: 1,
-            is_required: true
+            is_required: true,
+            source: "template"
           })
           
           // Process options to convert from backend format to frontend format

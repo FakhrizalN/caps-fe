@@ -337,8 +337,8 @@ export default function AlumniAnswerPage() {
   };
 
   const handleNext = () => {
-    // Handle template question navigation
-    if (currentSectionIndex === -1 && templateQuestion) {
+    // Handle template question navigation (ONLY for exit survey template question)
+    if (currentSectionIndex === -1 && templateQuestion && surveyData?.survey_type === 'exit') {
       const templateAnswer = answers[templateQuestion.id];
       // Only validate if template question is required
       if (templateQuestion.required && !templateAnswer?.selectedOption) {
@@ -349,6 +349,8 @@ export default function AlumniAnswerPage() {
       // Find selected option
       const selectedOption = templateQuestion.options?.find(opt => opt.id === templateAnswer.selectedOption);
       
+      // ONLY trigger submit page for the actual template question (first question in exit survey)
+      // with "Sudah" answer - not for other similar questions
       if (selectedOption?.label === 'Sudah') {
         // Go directly to submit page
         setIsOnSubmitPage(true);
@@ -462,9 +464,9 @@ export default function AlumniAnswerPage() {
         }
       }
       
-      // Navigate based on branch or sequential order
+      // Navigate based on branch logic or sequential order
       if (targetSectionIndex !== -1) {
-        // Branch navigation - add to history
+        // Branch navigation to another section - add to history
         setCurrentSectionIndex(targetSectionIndex);
         setNavigationHistory(prev => [...prev, targetSectionIndex]);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -717,9 +719,9 @@ export default function AlumniAnswerPage() {
         </Card>
 
         {/* Submit Page Content */}
-        <Card className="shadow-sm">
-          <CardContent className="pt-12 pb-12 text-center">
-            <p className="text-xl text-gray-700 mb-8">
+        <Card className="border-t-4 border-t-primary shadow-sm mb-6">
+          <CardContent className="pt-4 pb-4">
+            <p className="text-xl font-medium text-gray-900">
               Klik kirim untuk menyelesaikan
             </p>
           </CardContent>
@@ -824,8 +826,8 @@ export default function AlumniAnswerPage() {
         </CardContent>
       </Card>
 
-      {/* Section Title Card - Only show after first page */}
-      {currentSectionIndex >= 0 && (
+      {/* Section Title Card - Only show after first section (skip section 0) */}
+      {currentSectionIndex > 0 && (
         <Card className="border-t-4 border-t-primary shadow-sm mb-6">
           <CardContent className="pt-4 pb-4">
             <h2 

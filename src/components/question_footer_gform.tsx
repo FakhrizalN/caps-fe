@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
@@ -19,6 +19,7 @@ interface QuestionFooterProps {
   questionType?: string
   showDescription?: boolean
   responseValidation?: boolean
+  isTemplateQuestion?: boolean
   onRequiredChange?: (required: boolean) => void
   onDuplicate?: () => void
   onDelete?: () => void
@@ -32,6 +33,7 @@ export function QuestionFooterGForm({
   questionType,
   showDescription = false,
   responseValidation = false,
+  isTemplateQuestion = false,
   onRequiredChange,
   onDuplicate,
   onDelete,
@@ -54,26 +56,30 @@ export function QuestionFooterGForm({
     <div className="flex justify-between items-center border-t pt-4">
       <div className="flex gap-2 items-center">
         {/* Duplicate Button */}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="hover:bg-gray-100"
-          onClick={onDuplicate}
-          title="Duplicate"
-        >
-          <Copy className="h-4 w-4 text-gray-600" />
-        </Button>
+        {!isTemplateQuestion && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="hover:bg-gray-100"
+            onClick={onDuplicate}
+            title="Duplicate"
+          >
+            <Copy className="h-4 w-4 text-gray-600" />
+          </Button>
+        )}
 
         {/* Delete Button */}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="hover:bg-gray-100"
-          onClick={onDelete}
-          title="Delete"
-        >
-          <Trash2 className="h-4 w-4 text-gray-600" />
-        </Button>
+        {!isTemplateQuestion && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="hover:bg-gray-100"
+            onClick={onDelete}
+            title="Delete"
+          >
+            <Trash2 className="h-4 w-4 text-gray-600" />
+          </Button>
+        )}
 
         <Separator orientation="vertical" className="h-6 mx-1" />
 
@@ -103,7 +109,7 @@ export function QuestionFooterGForm({
             Description
             {showDescription && <span className="ml-auto text-xs text-primary">✓</span>}
           </DropdownMenuItem>
-          {questionType === 'multiple_choice' && (
+          {questionType === 'multiple_choice' && !isTemplateQuestion && (
             <DropdownMenuItem onClick={handleResponseValidationClick}>
               <ShieldCheck className="h-4 w-4 mr-2" />
               Response validation

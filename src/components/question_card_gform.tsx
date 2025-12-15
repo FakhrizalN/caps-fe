@@ -55,6 +55,10 @@ export function QuestionCardGForm({
   const [showDescription, setShowDescription] = useState(!!question.description)
   const [responseValidation, setResponseValidation] = useState(false)
   const headerRef = useRef<QuestionHeaderGFormRef>(null)
+  
+  // Check if this is a template question (Sudah bekerja? for exit survey or SPV email for lv1)
+  const isTemplateQuestion = question.code === 'SPV_02' || question.source === 'template' || 
+    (question.title?.includes('Sudah bekerja') && question.type === 'multiple_choice')
 
   // Auto-enable response validation if branches exist
   useEffect(() => {
@@ -74,7 +78,7 @@ export function QuestionCardGForm({
     isDragging,
   } = useSortable({ 
     id: question.id,
-    disabled: !isEditMode
+    disabled: !isEditMode || isTemplateQuestion // Disable drag for template questions
   })
 
   const style = {
@@ -183,7 +187,7 @@ export function QuestionCardGForm({
       <CardHeader className="pt-0 -mt-4">
         <div className="flex items-start gap-3">
           {/*Edit Mode */}
-          {isEditMode && (
+          {isEditMode && !isTemplateQuestion && (
             <Button 
               {...attributes}
               {...listeners}
@@ -249,6 +253,7 @@ export function QuestionCardGForm({
             questionType={localQuestion.type}
             showDescription={showDescription}
             responseValidation={responseValidation}
+            isTemplateQuestion={isTemplateQuestion}
             onRequiredChange={(required) => updateQuestion({ required })}
             onDuplicate={() => onDuplicate?.(localQuestion.id)}
             onDelete={() => onDelete?.(localQuestion.id)}
