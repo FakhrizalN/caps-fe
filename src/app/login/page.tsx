@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
 import { login, setTokens, setUser } from '@/lib/api'
+import { isFlutterWebView } from '@/lib/mobile-helper'
 import { Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -26,6 +27,7 @@ export default function LoginPage() {
   })
   const [rememberMe, setRememberMe] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [isMobile] = useState(() => isFlutterWebView())
   const router = useRouter()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,6 +98,7 @@ export default function LoginPage() {
             // Also store in localStorage for sidebar
             const userData = {
               id: payload.user_id,
+              username: payload.username || payload.user_id,
               role_name: payload.role,
               program_study: payload.program_study || null
             }
@@ -106,11 +109,18 @@ export default function LoginPage() {
           console.error('Error decoding JWT:', err)
         }
         
-        // Redirect based on role
+        // Redirect based on role and platform
+        const isMobile = isFlutterWebView()
+        
         if (isAlumni) {
-          router.push('/')
+          // Alumni/User
+          if (isMobile) {
+            router.push('/dashboard-mobile') // Mobile: dashboard mobile dengan survey cards
+          } else {
+            router.push('/') // Web: ke landing page
+          }
         } else {
-
+          // Admin/Staff
           router.push('/dashboard')
         }
       })(),

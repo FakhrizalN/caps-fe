@@ -1,22 +1,15 @@
 'use client'
 
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbList,
-    BreadcrumbPage
-} from "@/components/ui/breadcrumb"
+import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { changePassword, getCurrentUserFromAPI, patchCurrentUserProfile } from "@/lib/api"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+
 
 export default function ProfileUserPage() {
   const router = useRouter()
@@ -153,22 +146,7 @@ export default function ProfileUserPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Link>
-        </Button>
-        <Separator orientation="vertical" className="mr-2 !h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbPage>My Profile</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </header>
+    <Navbar />
       
       <div className="flex flex-1 flex-col gap-8 p-8 max-w-5xl mx-auto">
         {error && (
