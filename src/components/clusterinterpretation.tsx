@@ -10,6 +10,7 @@ interface ClusterData {
   x: number;
   y: number;
   cluster: number;
+  rowData?: Record<string, string>;
 }
 
 interface Props {
@@ -88,12 +89,20 @@ export function ClusterInterpretation({
           sumF1101 = 0;
 
         clusterData.forEach((point) => {
-          const rowIdx = clusterResult.indexOf(point);
-          sumF502 += parseFloat(rows[rowIdx].F502) || 0;
-          sumF505 += parseFloat(rows[rowIdx].F505) || 0;
-          sumF14 += parseFloat(rows[rowIdx].F14) || 3;
-          sumF5d += parseFloat(rows[rowIdx].F5d) || 0;
-          sumF1101 += parseFloat(rows[rowIdx].F1101) || 3;
+          // Use rowData from point if available, otherwise fallback to rows array
+          const row = point.rowData || rows[clusterResult.indexOf(point)];
+
+          // Validate row exists before accessing properties
+          if (!row) {
+            console.warn(`Row data not found for cluster point`);
+            return;
+          }
+
+          sumF502 += parseFloat(row.F502) || 0;
+          sumF505 += parseFloat(row.F505) || 0;
+          sumF14 += parseFloat(row.F14) || 3;
+          sumF5d += parseFloat(row.F5d) || 0;
+          sumF1101 += parseFloat(row.F1101) || 3;
         });
 
         const count = clusterData.length;

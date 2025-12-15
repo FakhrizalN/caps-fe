@@ -1,8 +1,8 @@
-import { AboutSection } from "@/components/about-section"
-import { Footer } from "@/components/footer"
-import { HeroSection } from "@/components/hero-section"
-import { KuesionerSection } from "@/components/kuesioner-section"
-import { Navbar } from "@/components/navbar"
+import { Navbar } from "@/components/navbar";
+import { HeroSection } from "@/components/hero-section";
+import { KuesionerSection } from "@/components/kuesioner-section";
+import { AboutSection } from "@/components/about-section";
+import { Footer } from "@/components/footer";
 
 export default function Home() {
   return (
@@ -13,5 +13,5 @@ export default function Home() {
       <AboutSection />
       <Footer />
     </main>
-  )
+  );
 }
