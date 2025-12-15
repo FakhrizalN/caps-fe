@@ -43,15 +43,33 @@ export function UnitManagementClient({
         </div>
         
         <TabsContent value="fakultas">
-          <DataTable columns={fakultasColumns} data={fakultasData} />
+          <DataTable 
+            columns={fakultasColumns} 
+            data={fakultasData}
+            activeTab="fakultas"
+            fakultasData={fakultasData}
+            jurusanData={jurusanData}
+          />
         </TabsContent>
         
         <TabsContent value="jurusan">
-          <DataTable columns={jurusanColumns} data={jurusanData} />
+          <DataTable 
+            columns={jurusanColumns} 
+            data={jurusanData}
+            activeTab="jurusan"
+            fakultasData={fakultasData}
+            jurusanData={jurusanData}
+          />
         </TabsContent>
         
         <TabsContent value="prodi">
-          <DataTable columns={prodiColumns} data={prodiData} />
+          <DataTable 
+            columns={prodiColumns} 
+            data={prodiData}
+            activeTab="prodi"
+            fakultasData={fakultasData}
+            jurusanData={jurusanData}
+          />
         </TabsContent>
       </Tabs>
     </>

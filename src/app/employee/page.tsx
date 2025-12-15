@@ -131,7 +131,7 @@ export default function EmployeePage() {
                     <Link href="/employee/add">
                       <Button className="flex items-center gap-2">
                         <Plus className="h-4 w-4" />
-                        Add User
+                        <span className="hidden sm:inline">Add User</span>
                       </Button>
                     </Link>
                   </div>
@@ -140,7 +140,7 @@ export default function EmployeePage() {
               )}
             </div>
           </SidebarInset>
-        </SidebarProvider>
+        </SidebarProvider>  
       </div>
     </div>
   )

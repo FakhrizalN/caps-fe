@@ -52,7 +52,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { useParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 interface TextElement {
   id: string
@@ -83,6 +83,9 @@ export default function SurveyQuestionsPage() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false)
   const [programStudyId, setProgramStudyId] = useState<string | undefined>(undefined)
+  
+  // Ref to track which surveyId has been fetched to prevent double execution in React Strict Mode
+  const fetchedSurveyIdRef = useRef<number | null>(null)
 
   // Drag and drop sensors - only vertical dragging
   const sensors = useSensors(
@@ -168,6 +171,13 @@ export default function SurveyQuestionsPage() {
 
   // Fetch survey data and sections
   const fetchSurveyData = async () => {
+    // Prevent double execution in React Strict Mode
+    if (fetchedSurveyIdRef.current === surveyId) {
+      console.log("⚠️ Skipping duplicate fetchSurveyData call (React Strict Mode)")
+      return
+    }
+    fetchedSurveyIdRef.current = surveyId
+    
     try {
       setLoading(true)
       
@@ -269,19 +279,56 @@ export default function SurveyQuestionsPage() {
 
       // If no questions exist, create a default one
       if (sectionsWithQuestions[0] && sectionsWithQuestions[0].questions.length === 0) {
-        const defaultQuestion = await createQuestion(surveyId, sectionsWithQuestions[0].id, {
-          text: "Untitled question",
-          question_type: "radio",
-          options: [{ id: "1", label: "Option 1" }],
-          description: "",
-          order: 1,
-          is_required: false
-        })
-        
-        setSections([{
-          ...sectionsWithQuestions[0],
-          questions: [defaultQuestion]
-        }])
+        // Check if this is an exit survey - create template question
+        if (survey.survey_type === 'exit') {
+          const templateQuestion = await createQuestion(surveyId, sectionsWithQuestions[0].id, {
+            text: "Sudah bekerja?",
+            question_type: "radio",
+            options: [
+              { id: "1", label: "Sudah" },
+              { id: "2", label: "Belum" }
+            ],
+            description: "",
+            order: 1,
+            is_required: true
+          })
+          
+          setSections([{
+            ...sectionsWithQuestions[0],
+            questions: [templateQuestion]
+          }])
+        } else if (survey.survey_type === 'lv1') {
+          // For lv1 surveys, create supervisor email template question
+          const templateQuestion = await createQuestion(surveyId, sectionsWithQuestions[0].id, {
+            text: "Masukan email perusahaan atasan anda",
+            question_type: "text",
+            options: [],
+            description: "",
+            code: "SPV_02", // Backend config: QUESTION_CODE_SPV_EMAIL
+            order: 1,
+            is_required: true
+          })
+          
+          setSections([{
+            ...sectionsWithQuestions[0],
+            questions: [templateQuestion]
+          }])
+        } else {
+          // For non-exit/lv1 surveys, create default question
+          const defaultQuestion = await createQuestion(surveyId, sectionsWithQuestions[0].id, {
+            text: "Untitled question",
+            question_type: "radio",
+            options: [{ id: "1", label: "Option 1" }],
+            description: "",
+            order: 1,
+            is_required: true
+          })
+          
+          setSections([{
+            ...sectionsWithQuestions[0],
+            questions: [defaultQuestion]
+          }])
+        }
       }
     } catch (error) {
       console.error("Error fetching survey data:", error)
@@ -291,17 +338,29 @@ export default function SurveyQuestionsPage() {
   }
 
   useEffect(() => {
-    fetchSurveyData()
+    let isMounted = true
     
-    // Get program study ID from user
-    const user = getCurrentUser()
-    console.log("Current user:", user)
-    if (user?.program_study) {
-      console.log("Setting programStudyId to:", user.program_study)
-      setProgramStudyId(user.program_study.toString())
-    } else {
-      console.warn("No program_study found in user data, using default: 1")
-      setProgramStudyId("1") // Default fallback
+    const loadData = async () => {
+      if (isMounted) {
+        await fetchSurveyData()
+        
+        // Get program study ID from user
+        const user = getCurrentUser()
+        console.log("Current user:", user)
+        if (user?.program_study) {
+          console.log("Setting programStudyId to:", user.program_study)
+          if (isMounted) setProgramStudyId(user.program_study.toString())
+        } else {
+          console.warn("No program_study found in user data, using default: 1")
+          if (isMounted) setProgramStudyId("1") // Default fallback
+        }
+      }
+    }
+    
+    loadData()
+    
+    return () => {
+      isMounted = false
     }
   }, [surveyId])
 
@@ -1322,22 +1381,24 @@ export default function SurveyQuestionsPage() {
           onPublish={handlePublish}
         />
 
-        {/* Floating Toolbar */}
+        {/* Floating Toolbar - Hidden on mobile */}
         {!isPreviewMode && (
-          <QuestionFloatingToolbar 
-            onAddQuestion={handleAddQuestion}
-            onAddText={handleAddText}
-            onImportSuccess={fetchSurveyData}
-            onAddSection={handleAddSection}
-            activeQuestionId={activeQuestionId}
-            activeElementType={activeElementType}
-            surveyId={surveyId}
-            sectionId={activeSectionId || sections[0]?.id}
-          />
+          <div className="hidden lg:block">
+            <QuestionFloatingToolbar 
+              onAddQuestion={handleAddQuestion}
+              onAddText={handleAddText}
+              onImportSuccess={fetchSurveyData}
+              onAddSection={handleAddSection}
+              activeQuestionId={activeQuestionId}
+              activeElementType={activeElementType}
+              surveyId={surveyId}
+              sectionId={activeSectionId || sections[0]?.id}
+            />
+          </div>
         )}
         
-        <div className="p-6 bg-gray-50 min-h-screen">
-          <div className="ml-0 w-full space-y-3 pr-24">
+        <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
+          <div className="ml-0 w-full space-y-3 pr-0 lg:pr-24">
             {/* Question Header Card */}
             <div onClick={() => {
               setActiveElementType('header')
@@ -1424,7 +1485,9 @@ export default function SurveyQuestionsPage() {
                             const isPending = typeof question.id === 'string' && pendingQuestions.has(question.id)
                             const globalIndex = sections.slice(0, sectionIndex).reduce((acc, s) => acc + s.questions.length, 0) + itemIndex
                             const isQuestionActive = activeQuestionId === question.id
-                            const isQuestionEditable = !isPreviewMode && isQuestionActive
+                            // Disable edit mode for special questions with protected codes
+                            const isProtectedQuestion = question.code === 'SPV_02'
+                            const isQuestionEditable = !isPreviewMode && isQuestionActive && !isProtectedQuestion
                             
                             return (
                               <div 

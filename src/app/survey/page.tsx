@@ -550,7 +550,7 @@ export default function SurveyManagementPage() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       placeholder="Search"
-                      className="pl-10 w-64"
+                      className="pl-10 w-50 sm:w-70"
                     />
                   </div>
                 </div>
@@ -559,12 +559,12 @@ export default function SurveyManagementPage() {
                     {isEditMode ? (
                       <>
                         <Check className="h-4 w-4" />
-                        Done
+                        <span className="hidden sm:inline ml-2">Done</span>
                       </>
                     ) : (
                       <>
                         <Edit className="h-4 w-4" />
-                        Edit
+                        <span className="hidden sm:inline ml-2">Edit</span>
                       </>
                     )}
                   </Button>
@@ -580,7 +580,7 @@ export default function SurveyManagementPage() {
 
               {/* Template Section - Now shows surveys without periode */}
               <div className="space-y-4">
-                <div className="grid grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {surveysWithoutPeriode.map((survey) => (
                     <SurveyCard
                       key={survey.id}
@@ -651,7 +651,7 @@ export default function SurveyManagementPage() {
                       </div>
                     )}
                   </div>
-                  <div className="grid grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {section.surveys.map((survey) => (
                       <SurveyCard
                         key={survey.id}

@@ -1,29 +1,30 @@
 "use client"
 
 import {
-    ColumnDef,
-    ColumnFiltersState,
-    SortingState,
-    VisibilityState,
-    flexRender,
-    getCoreRowModel,
-    getFacetedRowModel,
-    getFacetedUniqueValues,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useReactTable,
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
 } from "@tanstack/react-table"
 import { Search, Trash2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import * as React from "react"
 
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table"
 
 import { DataTableViewOptions } from "@/components/column_toggle"
@@ -40,6 +41,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
+  const router = useRouter()
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
     faculty: false,
@@ -88,6 +90,11 @@ export function DataTable<TData, TValue>({
   const selectedRows = table.getFilteredSelectedRowModel().rows
   const selectedCount = selectedRows.length
 
+  const handleRowClick = (row: any) => {
+    const employeeId = (row.original as any).id
+    router.push(`/employee/${employeeId}/edit`)
+  }
+
   const handleDeleteAll = async () => {
     if (selectedCount === 0) return
 
@@ -129,13 +136,6 @@ export function DataTable<TData, TValue>({
               className="h-8 w-[150px] lg:w-[250px] pl-8"
             />
           </div>
-          {selectedCount > 0 && (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground">
-                {selectedCount} selected
-              </span>
-            </div>
-          )}
         </div>
         <div className="flex items-center space-x-2">
           {selectedCount > 0 && (
@@ -145,8 +145,8 @@ export function DataTable<TData, TValue>({
               onClick={handleDeleteAll}
               className="h-8"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete All ({selectedCount})
+              <Trash2 className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">Delete All ({selectedCount})</span>
             </Button>
           )}
           <DataTableViewOptions table={table} />
@@ -178,6 +178,8 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={() => handleRowClick(row)}
+                  className="cursor-pointer hover:bg-muted/50"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

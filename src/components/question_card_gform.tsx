@@ -201,12 +201,14 @@ export function QuestionCardGForm({
             ref={headerRef}
             title={localQuestion.title}
             description={localQuestion.description}
+            code={localQuestion.code}
             type={localQuestion.type}
             required={localQuestion.required}
             isEditMode={isEditMode}
             showDescription={showDescription}
             onTitleChange={(title) => updateQuestion({ title })}
             onDescriptionChange={(description) => updateQuestion({ description })}
+            onCodeChange={(code) => updateQuestion({ code })}
             onTypeChange={handleTypeChange}
           />
         </div>

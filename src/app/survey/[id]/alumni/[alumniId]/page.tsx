@@ -70,6 +70,8 @@ export default function AlumniAnswerPage() {
   const [navigationHistory, setNavigationHistory] = useState<number[]>([0]); // Track navigation history
   const [answers, setAnswers] = useState<Record<string, ResponseAnswer>>({});
   const [loading, setLoading] = useState(true);
+  const [isOnSubmitPage, setIsOnSubmitPage] = useState(false); // Track if on submit page
+  const [templateQuestion, setTemplateQuestion] = useState<ResponseAnswer | null>(null); // Template question from DB
 
 
   useEffect(() => {
@@ -84,6 +86,12 @@ export default function AlumniAnswerPage() {
         const survey = await getSurvey(String(surveyId));
         console.log("✅ Survey:", survey);
         setSurveyData(survey);
+        
+        // Check if exit survey - start at template question (index -1)
+        if (survey.survey_type === 'exit') {
+          setCurrentSectionIndex(-1); // -1 indicates template question
+          setNavigationHistory([-1]);
+        }
         
         // Fetch sections
         const sectionsData = await getSections(surveyId);
@@ -176,7 +184,29 @@ export default function AlumniAnswerPage() {
         }
         
         console.log("✅ Sections with questions:", sectionsWithQuestionsData);
-        setSectionsWithQuestions(sectionsWithQuestionsData);
+        
+        // For exit survey, set first question as template question and remove it from sections
+        if (survey.survey_type === 'exit' && sectionsWithQuestionsData.length > 0 && sectionsWithQuestionsData[0].questions.length > 0) {
+          const firstQuestion = sectionsWithQuestionsData[0].questions[0];
+          setTemplateQuestion(firstQuestion);
+          console.log("✅ Template question set:", firstQuestion);
+          
+          // Remove first question from first section to avoid duplicate submission
+          const updatedSections = sectionsWithQuestionsData.map((section, index) => {
+            if (index === 0) {
+              return {
+                ...section,
+                questions: section.questions.slice(1) // Remove first question
+              };
+            }
+            return section;
+          }).filter(section => section.questions.length > 0); // Filter out empty sections
+          
+          setSectionsWithQuestions(updatedSections);
+          console.log("✅ First question removed from sections and empty sections filtered");
+        } else {
+          setSectionsWithQuestions(sectionsWithQuestionsData);
+        }
         
         // Get program study ID from user API
         const user = await getCurrentUserFromAPI();
@@ -307,6 +337,34 @@ export default function AlumniAnswerPage() {
   };
 
   const handleNext = () => {
+    // Handle template question navigation
+    if (currentSectionIndex === -1 && templateQuestion) {
+      const templateAnswer = answers[templateQuestion.id];
+      // Only validate if template question is required
+      if (templateQuestion.required && !templateAnswer?.selectedOption) {
+        toast.warning('Mohon jawab pertanyaan yang wajib diisi');
+        return;
+      }
+      
+      // Find selected option
+      const selectedOption = templateQuestion.options?.find(opt => opt.id === templateAnswer.selectedOption);
+      
+      if (selectedOption?.label === 'Sudah') {
+        // Go directly to submit page
+        setIsOnSubmitPage(true);
+        setCurrentSectionIndex(-2); // Set to -2 to indicate submit page
+        setNavigationHistory(prev => [...prev, -2]); // -2 indicates submit page
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      } else {
+        // Continue to first section (default behavior for "Belum")
+        setCurrentSectionIndex(0);
+        setNavigationHistory(prev => [...prev, 0]);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    }
+    
     // Determine if we're on the last page (program study questions)
     const isLastPage = currentSectionIndex === sectionsWithQuestions.length;
     
@@ -437,7 +495,16 @@ export default function AlumniAnswerPage() {
       // Go to previous index in history
       const previousIndex = newHistory[newHistory.length - 1];
       setNavigationHistory(newHistory);
-      setCurrentSectionIndex(previousIndex);
+      
+      // Check if going back to submit page
+      if (previousIndex === -2) {
+        setIsOnSubmitPage(true);
+        setCurrentSectionIndex(-1); // Ensure we're not showing regular content
+      } else {
+        setIsOnSubmitPage(false);
+        setCurrentSectionIndex(previousIndex);
+      }
+      
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -451,6 +518,12 @@ export default function AlumniAnswerPage() {
     
       // Collect ALL questions from ALL sections (including skipped ones)
       const allQuestions: ResponseAnswer[] = [];
+      
+      // Add template question for exit survey (if exists and answered)
+      if (templateQuestion && surveyData?.survey_type === 'exit') {
+        allQuestions.push(templateQuestion);
+        console.log("📋 Added template question to submission:", templateQuestion.id);
+      }
       
       // Add regular section questions
       sectionsWithQuestions.forEach(section => {
@@ -623,6 +696,110 @@ export default function AlumniAnswerPage() {
     );
   }
 
+  // Render submit page
+  if (isOnSubmitPage) {
+    return (
+      <div className="max-w-3xl mx-auto bg-gray-50 min-h-screen py-8 px-4">
+        {/* Header Survey */}
+        <Card className="border-t-8 border-t-primary shadow-sm mb-6">
+          <CardContent className="pt-6 pb-4 space-y-2">
+            <h1 
+              className="text-3xl font-normal text-gray-900"
+              dangerouslySetInnerHTML={{ __html: formatText(surveyData?.title || "Survey") }}
+            />
+            {surveyData?.description && (
+              <p 
+                className="text-sm text-gray-600"
+                dangerouslySetInnerHTML={{ __html: formatText(surveyData.description) }}
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Submit Page Content */}
+        <Card className="shadow-sm">
+          <CardContent className="pt-12 pb-12 text-center">
+            <p className="text-xl text-gray-700 mb-8">
+              Klik kirim untuk menyelesaikan
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Navigation Buttons */}
+        <div className="pt-6 pb-8 flex justify-between">
+          <Button 
+            size="lg"
+            variant="outline"
+            onClick={handleBack}
+            disabled={isSubmitting}
+          >
+            Back
+          </Button>
+          
+          <Button 
+            size="lg"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="bg-primary hover:bg-primary/90"
+          >
+            {isSubmitting ? (
+              <>
+                <Spinner className="mr-2" />
+                Submitting...
+              </>
+            ) : (
+              "Kirim"
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show template question for exit survey
+  if (currentSectionIndex === -1 && templateQuestion) {
+    return (
+      <div className="max-w-3xl mx-auto bg-gray-50 min-h-screen py-8 px-4">
+        {/* Header Survey */}
+        <Card className="border-t-8 border-t-primary shadow-sm mb-6">
+          <CardContent className="pt-6 pb-4 space-y-2">
+            <h1 
+              className="text-3xl font-normal text-gray-900"
+              dangerouslySetInnerHTML={{ __html: formatText(surveyData?.title || "Survey") }}
+            />
+            {surveyData?.description && (
+              <p 
+                className="text-sm text-gray-600"
+                dangerouslySetInnerHTML={{ __html: formatText(surveyData.description) }}
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Template Question */}
+        <div className="space-y-6">
+          <ResponseAnswerCard
+            key={templateQuestion.id}
+            answer={answers[templateQuestion.id] || templateQuestion}
+            isReadOnly={false}
+            onUpdate={handleUpdateAnswer}
+          />
+        </div>
+
+        {/* Navigation Buttons */}
+        <div className="pt-6 pb-8 flex justify-end">
+          <Button 
+            size="lg"
+            onClick={handleNext}
+            className="bg-primary hover:bg-primary/90"
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Determine current page content
   const isOnProgramStudyPage = currentSectionIndex === sectionsWithQuestions.length;
   const currentSection = isOnProgramStudyPage ? null : sectionsWithQuestions[currentSectionIndex];
@@ -630,22 +807,40 @@ export default function AlumniAnswerPage() {
   const sectionTitle = isOnProgramStudyPage ? "Pertanyaan Khusus Program Studi" : (currentSection?.title ? formatText(currentSection.title) : "");
 
   return (
-    <div className="max-w-3xl mx-auto bg-gray-50 py-8 px-4">
-      {/* Header Survey */}
+    <div className="max-w-3xl mx-auto bg-gray-50 min-h-screen py-8 px-4">
+      {/* Header Survey - Show Survey Title and Description */}
       <Card className="border-t-8 border-t-primary shadow-sm mb-6">
         <CardContent className="pt-6 pb-4 space-y-2">
           <h1 
             className="text-3xl font-normal text-gray-900"
-            dangerouslySetInnerHTML={{ __html: sectionTitle || "Survey" }}
+            dangerouslySetInnerHTML={{ __html: formatText(surveyData?.title || "Survey") }}
           />
-          {(isOnProgramStudyPage ? null : currentSection?.description) && (
+          {surveyData?.description && (
             <p 
               className="text-sm text-gray-600"
-              dangerouslySetInnerHTML={{ __html: formatText(currentSection?.description || "") }}
+              dangerouslySetInnerHTML={{ __html: formatText(surveyData.description) }}
             />
           )}
         </CardContent>
       </Card>
+
+      {/* Section Title Card - Only show after first page */}
+      {currentSectionIndex >= 0 && (
+        <Card className="border-t-4 border-t-primary shadow-sm mb-6">
+          <CardContent className="pt-4 pb-4">
+            <h2 
+              className="text-xl font-medium text-gray-900"
+              dangerouslySetInnerHTML={{ __html: sectionTitle || "Section" }}
+            />
+            {!isOnProgramStudyPage && currentSection?.description && (
+              <p 
+                className="text-sm text-gray-600 mt-2"
+                dangerouslySetInnerHTML={{ __html: formatText(currentSection.description) }}
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Questions in Current Section or Program Study Questions */}
       <div className="space-y-6">

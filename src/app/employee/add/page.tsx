@@ -180,7 +180,8 @@ export default function AddEmployeePage() {
           </Breadcrumb>
         </header>
         <div className="flex flex-1 flex-col gap-8 p-8">
-          <div className="flex items-center justify-between">
+          {/* Desktop buttons - show on md and up */}
+          <div className="hidden md:flex items-center justify-between">
             <div className="text-3xl font-bold tracking-tight">Add New Employee</div>
             <div className="flex items-center gap-4">
               <Button 
@@ -204,6 +205,11 @@ export default function AddEmployeePage() {
                 </Button>
               </Link>
             </div>
+          </div>
+
+          {/* Mobile title only - show on mobile */}
+          <div className="md:hidden">
+            <div className="text-3xl font-bold tracking-tight">Add New Employee</div>
           </div>
 
           <Card>
@@ -396,6 +402,30 @@ export default function AddEmployeePage() {
                     onChange={handleInputChange}
                   />
                 </Field>
+              </div>
+
+              {/* Mobile buttons - show on mobile only, inside card */}
+              <div className="md:hidden flex flex-col gap-2 mt-6">
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting} 
+                  className="w-full flex items-center justify-center gap-2"
+                  onClick={handleSubmit}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Spinner className="size-4" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit"
+                  )}
+                </Button>
+                <Link href="/employee" className="w-full">
+                  <Button type="button" variant="outline" className="w-full">
+                    Cancel
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

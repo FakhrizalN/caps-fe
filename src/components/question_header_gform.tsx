@@ -1,26 +1,29 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select"
-import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Underline } from "lucide-react"
+import { Bold, Italic, Underline } from "lucide-react"
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { QuestionType } from "./question_content_gform"
 
 interface QuestionHeaderProps {
   title: string
   description?: string
+  code?: string
   type: QuestionType
   required?: boolean
   isEditMode?: boolean
   showDescription?: boolean
   onTitleChange?: (title: string) => void
   onDescriptionChange?: (description: string) => void
+  onCodeChange?: (code: string) => void
   onTypeChange?: (type: QuestionType) => void
 }
 
@@ -32,12 +35,14 @@ export interface QuestionHeaderGFormRef {
 export const QuestionHeaderGForm = forwardRef<QuestionHeaderGFormRef, QuestionHeaderProps>(function QuestionHeaderGForm({
   title,
   description,
+  code,
   type,
   required = false,
   isEditMode = false,
   showDescription = true,
   onTitleChange,
   onDescriptionChange,
+  onCodeChange,
   onTypeChange
 }, ref) {
   const titleRef = useRef<HTMLDivElement>(null)
@@ -140,6 +145,34 @@ export const QuestionHeaderGForm = forwardRef<QuestionHeaderGFormRef, QuestionHe
   // Edit Mode
   return (
     <div className="flex-1" dir="ltr">
+      {/* Question Code and Type Selector (Mobile) */}
+      <div className="mb-3 space-y-2">
+        <Input
+          type="text"
+          value={code || ""}
+          onChange={(e) => onCodeChange?.(e.target.value)}
+          placeholder="A001"
+          className="text-sm text-gray-700 max-w-[200px]"
+        />
+        
+        {/* Question Type Selector - Mobile only (below code) */}
+        <div className="md:hidden">
+          <Select value={type} onValueChange={(value) => onTypeChange?.(value as QuestionType)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="multiple_choice">Multiple choice</SelectItem>
+              <SelectItem value="checkbox">Checkboxes</SelectItem>
+              <SelectItem value="dropdown">Dropdown</SelectItem>
+              <SelectItem value="short_answer">Short answer</SelectItem>
+              <SelectItem value="paragraph">Paragraph</SelectItem>
+              <SelectItem value="linear_scale">Linear scale</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
       {/* Question Title */}
       <div className="flex items-start gap-4">
         <div className="flex-1">
@@ -160,20 +193,22 @@ export const QuestionHeaderGForm = forwardRef<QuestionHeaderGFormRef, QuestionHe
           </div>
         </div>
 
-        {/* Question Type Selector */}
-        <Select value={type} onValueChange={(value) => onTypeChange?.(value as QuestionType)}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="multiple_choice">Multiple choice</SelectItem>
-            <SelectItem value="checkbox">Checkboxes</SelectItem>
-            <SelectItem value="dropdown">Dropdown</SelectItem>
-            <SelectItem value="short_answer">Short answer</SelectItem>
-            <SelectItem value="paragraph">Paragraph</SelectItem>
-            <SelectItem value="linear_scale">Linear scale</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Question Type Selector - Desktop only (next to title) */}
+        <div className="hidden md:block">
+          <Select value={type} onValueChange={(value) => onTypeChange?.(value as QuestionType)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="multiple_choice">Multiple choice</SelectItem>
+              <SelectItem value="checkbox">Checkboxes</SelectItem>
+              <SelectItem value="dropdown">Dropdown</SelectItem>
+              <SelectItem value="short_answer">Short answer</SelectItem>
+              <SelectItem value="paragraph">Paragraph</SelectItem>
+              <SelectItem value="linear_scale">Linear scale</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Description Field - Only show if showDescription is true */}
@@ -221,36 +256,6 @@ export const QuestionHeaderGForm = forwardRef<QuestionHeaderGFormRef, QuestionHe
           title="Underline"
         >
           <Underline className="h-4 w-4 text-gray-600" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-8 w-8 hover:bg-gray-100 rounded"
-          onClick={() => applyFormatting("link")}
-          type="button"
-          title="Insert link"
-        >
-          <LinkIcon className="h-4 w-4 text-gray-600" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-8 w-8 hover:bg-gray-100 rounded"
-          onClick={() => applyFormatting("insertUnorderedList")}
-          type="button"
-          title="Bulleted list"
-        >
-          <List className="h-4 w-4 text-gray-600" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-8 w-8 hover:bg-gray-100 rounded"
-          onClick={() => applyFormatting("insertOrderedList")}
-          type="button"
-          title="Numbered list"
-        >
-          <ListOrdered className="h-4 w-4 text-gray-600" />
         </Button>
       </div>
     </div>

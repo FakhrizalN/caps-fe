@@ -526,31 +526,35 @@ export default function Dashboard() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 pb-4">
-                      <ChartContainer
-                        config={chartConfig}
-                        className="mx-auto w-full h-[340px]"
-                      >
-                        <PieChart>
-                          <ChartTooltip
-                            cursor={false}
-                            content={<ChartTooltipContent />}
-                          />
-                          <Pie
-                            data={jenisInstitusiColored}
-                            dataKey="jumlah"
-                            nameKey="institusi"
-                            innerRadius={80}
-                            outerRadius={130}
-                            paddingAngle={2}
-                          />
-                          <Legend
-                            layout="vertical"
-                            verticalAlign="middle"
-                            align="right"
-                            iconType="plainline"
-                          />
-                        </PieChart>
-                      </ChartContainer>
+                      <div className="overflow-x-auto">
+                        <div className="min-w-[500px]">
+                          <ChartContainer
+                            config={chartConfig}
+                            className="mx-auto w-full h-[340px]"
+                          >
+                            <PieChart>
+                              <ChartTooltip
+                                cursor={false}
+                                content={<ChartTooltipContent />}
+                              />
+                              <Pie
+                                data={jenisInstitusiColored}
+                                dataKey="jumlah"
+                                nameKey="institusi"
+                                innerRadius={80}
+                                outerRadius={130}
+                                paddingAngle={2}
+                              />
+                              <Legend
+                                layout="vertical"
+                                verticalAlign="middle"
+                                align="right"
+                                iconType="plainline"
+                              />
+                            </PieChart>
+                          </ChartContainer>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
 
@@ -565,26 +569,30 @@ export default function Dashboard() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <ChartContainer config={chartConfig}>
-                        <BarChart accessibilityLayer data={tingkatKerjaColored}>
-                          <CartesianGrid vertical={false} />
-                          <XAxis
-                            dataKey="level"
-                            tickLine={false}
-                            tickMargin={10}
-                            axisLine={false}
-                          />
-                          <ChartTooltip
-                            cursor={false}
-                            content={<ChartTooltipContent hideLabel />}
-                          />
-                          <Bar
-                            dataKey="jumlah"
-                            fill="var(--color-tingkat)"
-                            radius={8}
-                          />
-                        </BarChart>
-                      </ChartContainer>
+                      <div className="overflow-x-auto">
+                        <div className="min-w-[500px]">
+                          <ChartContainer config={chartConfig}>
+                            <BarChart accessibilityLayer data={tingkatKerjaColored}>
+                              <CartesianGrid vertical={false} />
+                              <XAxis
+                                dataKey="level"
+                                tickLine={false}
+                                tickMargin={10}
+                                axisLine={false}
+                              />
+                              <ChartTooltip
+                                cursor={false}
+                                content={<ChartTooltipContent hideLabel />}
+                              />
+                              <Bar
+                                dataKey="jumlah"
+                                fill="var(--color-tingkat)"
+                                radius={8}
+                              />
+                            </BarChart>
+                          </ChartContainer>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -668,33 +676,37 @@ export default function Dashboard() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 pb-0">
-                      <ChartContainer
-                        config={chartConfig}
-                        className="mx-auto max-h-[200px] w-full"
-                      >
-                        <PieChart
-                          margin={{ top: 8, right: 80, left: 8, bottom: 8 }}
-                        >
-                          <ChartTooltip
-                            cursor={false}
-                            content={<ChartTooltipContent hideLabel />}
-                          />
-                          <Pie
-                            data={tingkatPendidikanColored}
-                            dataKey="jumlah"
-                            nameKey="tingkat"
-                            innerRadius={50}
-                            outerRadius={90}
-                            paddingAngle={2}
-                          />
-                          <Legend
-                            layout="vertical"
-                            verticalAlign="middle"
-                            align="right"
-                            iconType="plainline"
-                          />
-                        </PieChart>
-                      </ChartContainer>
+                      <div className="overflow-x-auto">
+                        <div className="min-w-[500px]">
+                          <ChartContainer
+                            config={chartConfig}
+                            className="mx-auto max-h-[200px] w-full"
+                          >
+                            <PieChart
+                              margin={{ top: 8, right: 80, left: 8, bottom: 8 }}
+                            >
+                              <ChartTooltip
+                                cursor={false}
+                                content={<ChartTooltipContent hideLabel />}
+                              />
+                              <Pie
+                                data={tingkatPendidikanColored}
+                                dataKey="jumlah"
+                                nameKey="tingkat"
+                                innerRadius={50}
+                                outerRadius={90}
+                                paddingAngle={2}
+                              />
+                              <Legend
+                                layout="vertical"
+                                verticalAlign="middle"
+                                align="right"
+                                iconType="plainline"
+                              />
+                            </PieChart>
+                          </ChartContainer>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
 
@@ -873,33 +885,37 @@ export default function Dashboard() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 pb-0">
-                      <ChartContainer
-                        config={chartConfig}
-                        className="mx-auto h-[240px] w-full"
-                      >
-                        <PieChart
-                          margin={{ top: 8, right: 110, left: 16, bottom: 8 }}
-                        >
-                          <ChartTooltip
-                            cursor={false}
-                            content={<ChartTooltipContent hideLabel />}
-                          />
-                          <Pie
-                            data={statusPencarianColored}
-                            dataKey="jumlah"
-                            nameKey="status"
-                            innerRadius={60}
-                            outerRadius={110}
-                            paddingAngle={2}
-                          />
-                          <Legend
-                            layout="vertical"
-                            verticalAlign="middle"
-                            align="right"
-                            iconType="plainline"
-                          />
-                        </PieChart>
-                      </ChartContainer>
+                      <div className="overflow-x-auto">
+                        <div className="min-w-[550px]">
+                          <ChartContainer
+                            config={chartConfig}
+                            className="mx-auto h-[240px] w-full"
+                          >
+                            <PieChart
+                              margin={{ top: 8, right: 110, left: 16, bottom: 8 }}
+                            >
+                              <ChartTooltip
+                                cursor={false}
+                                content={<ChartTooltipContent hideLabel />}
+                              />
+                              <Pie
+                                data={statusPencarianColored}
+                                dataKey="jumlah"
+                                nameKey="status"
+                                innerRadius={60}
+                                outerRadius={110}
+                                paddingAngle={2}
+                              />
+                              <Legend
+                                layout="vertical"
+                                verticalAlign="middle"
+                                align="right"
+                                iconType="plainline"
+                              />
+                            </PieChart>
+                          </ChartContainer>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
 
@@ -1032,66 +1048,70 @@ export default function Dashboard() {
                       />
                     </div>
 
-                    <ResponsiveContainer width="100%" height={450}>
-                      <ScatterChart
-                        margin={{ top: 10, right: 30, bottom: 30, left: 30 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          type="number"
-                          dataKey="x"
-                          name="PC1"
-                          label={{
-                            value: `PC1 (${pcaVariance[0]?.toFixed(
-                              1
-                            )}% variance)`,
-                            position: "insideBottom",
-                            offset: -10,
-                          }}
-                        />
-                        <YAxis
-                          type="number"
-                          dataKey="y"
-                          name="PC2"
-                          label={{
-                            value: `PC2 (${pcaVariance[1]?.toFixed(
-                              1
-                            )}% variance)`,
-                            angle: -90,
-                            position: "insideLeft",
-                          }}
-                        />
-                        <Tooltip cursor={{ strokeDasharray: "3 3" }} />
+                    <div className="overflow-x-auto">
+                      <div className="min-w-[600px]">
+                        <ResponsiveContainer width="100%" height={450}>
+                          <ScatterChart
+                            margin={{ top: 10, right: 30, bottom: 30, left: 30 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis
+                              type="number"
+                              dataKey="x"
+                              name="PC1"
+                              label={{
+                                value: `PC1 (${pcaVariance[0]?.toFixed(
+                                  1
+                                )}% variance)`,
+                                position: "insideBottom",
+                                offset: -10,
+                              }}
+                            />
+                            <YAxis
+                              type="number"
+                              dataKey="y"
+                              name="PC2"
+                              label={{
+                                value: `PC2 (${pcaVariance[1]?.toFixed(
+                                  1
+                                )}% variance)`,
+                                angle: -90,
+                                position: "insideLeft",
+                              }}
+                            />
+                            <Tooltip cursor={{ strokeDasharray: "3 3" }} />
 
-                        <Legend
-                          layout="horizontal"
-                          verticalAlign="bottom"
-                          align="center"
-                          iconType="plainline"
-                          wrapperStyle={{
-                            paddingTop: 30,
-                          }}
-                        />
+                            <Legend
+                              layout="horizontal"
+                              verticalAlign="bottom"
+                              align="center"
+                              iconType="plainline"
+                              wrapperStyle={{
+                                paddingTop: 30,
+                              }}
+                            />
 
-                        {Array.from({ length: kClusters }).map(
-                          (_, clusterIdx) => {
-                            const clusterData = clusterResult.filter(
-                              (d) => d.cluster === clusterIdx
-                            );
-                            const colors = getClusterColors(kClusters);
+                            {Array.from({ length: kClusters }).map(
+                              (_, clusterIdx) => {
+                                const clusterData = clusterResult.filter(
+                                  (d) => d.cluster === clusterIdx
+                                );
+                                const colors = getClusterColors(kClusters);
 
-                            return (
-                              <Scatter
-                                key={`cluster-${clusterIdx}`}
-                                name={`Cluster ${clusterIdx + 1}`}
-                                data={clusterData}
-                                fill={colors[clusterIdx]}
-                              />
-                            );
-                          }
-                        )}
-                      </ScatterChart>
-                    </ResponsiveContainer>
+                                return (
+                                  <Scatter
+                                    key={`cluster-${clusterIdx}`}
+                                    name={`Cluster ${clusterIdx + 1}`}
+                                    data={clusterData}
+                                    fill={colors[clusterIdx]}
+                                  />
+                                );
+                              }
+                            )}
+                          </ScatterChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -1158,44 +1178,48 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    <div style={{ width: "100%", height: 360 }}>
-                      <ResponsiveContainer>
-                        <LineChart
-                          data={tsSeries
-                            .map((s) => ({ t: s.t, value: s.value }))
-                            .concat(
-                              (() => {
-                                const lastYear =
-                                  tsSeries.length > 0
-                                    ? parseInt(
-                                        tsSeries[tsSeries.length - 1].t,
-                                        10
-                                      )
-                                    : NaN;
-                                return forecastResult.map((v, i) => ({
-                                  t:
-                                    Number.isFinite(lastYear) &&
-                                    !Number.isNaN(lastYear)
-                                      ? String(lastYear + i + 1)
-                                      : `F+${i + 1}`,
-                                  value: v,
-                                }));
-                              })()
-                            )}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="t" />
-                          <YAxis />
-                          <Tooltip />
-                          <Legend verticalAlign="bottom" iconType="plainline" />
-                          <Line
-                            type="monotone"
-                            dataKey="value"
-                            stroke="#007FCB"
-                            dot={true}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
+                    <div className="overflow-x-auto">
+                      <div className="min-w-[600px]">
+                        <div style={{ width: "100%", height: 360 }}>
+                          <ResponsiveContainer>
+                            <LineChart
+                              data={tsSeries
+                                .map((s) => ({ t: s.t, value: s.value }))
+                                .concat(
+                                  (() => {
+                                    const lastYear =
+                                      tsSeries.length > 0
+                                        ? parseInt(
+                                            tsSeries[tsSeries.length - 1].t,
+                                            10
+                                          )
+                                        : NaN;
+                                    return forecastResult.map((v, i) => ({
+                                      t:
+                                        Number.isFinite(lastYear) &&
+                                        !Number.isNaN(lastYear)
+                                          ? String(lastYear + i + 1)
+                                          : `F+${i + 1}`,
+                                      value: v,
+                                    }));
+                                  })()
+                                )}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="t" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend verticalAlign="bottom" iconType="plainline" />
+                              <Line
+                                type="monotone"
+                                dataKey="value"
+                                stroke="#007FCB"
+                                dot={true}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

@@ -30,6 +30,8 @@ interface EditUnitDialogProps {
   jurusanData: Jurusan[]
   unitData: Fakultas | Jurusan | ProgramStudi
   trigger?: React.ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export function EditUnitDialog({ 
@@ -37,13 +39,19 @@ export function EditUnitDialog({
   fakultasData,
   jurusanData, 
   unitData,
-  trigger
+  trigger,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange
 }: EditUnitDialogProps) {
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
   const [name, setName] = useState("")
   const [selectedFakultas, setSelectedFakultas] = useState("")
   const [selectedJurusan, setSelectedJurusan] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+
+  // Use external open state if provided, otherwise use internal
+  const open = externalOpen !== undefined ? externalOpen : internalOpen
+  const setOpen = externalOnOpenChange || setInternalOpen
 
   // Initialize form with existing data
   useEffect(() => {

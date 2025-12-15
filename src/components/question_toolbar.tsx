@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import {
   Eye,
@@ -82,16 +83,32 @@ export function QuestionToolbar({
 
   return (
     <div className="sticky top-16 z-10 bg-white border-b shadow-sm">
-      <div className="flex items-center justify-between px-6 py-3">
-        <div className="flex items-center gap-3 min-w-[200px]">
+      <div className="flex items-center justify-between px-4 md:px-6 py-3">
+        {/* Title - Hidden on mobile */}
+        <div className="hidden md:flex items-center gap-3 min-w-[200px]">
           <File className="h-5 w-5 text-primary" />
           <h1 className="text-lg font-normal text-gray-900">{title}</h1>
         </div>
 
-        <div className="flex items-center gap-8 flex-1 justify-center">
+        {/* Mobile: Dropdown */}
+        <div className="md:hidden flex-1">
+          <Select value={currentTab} onValueChange={(value) => handleTabChange(value as any)}>
+            <SelectTrigger className="w-full max-w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="questions">Questions</SelectItem>
+              <SelectItem value="program-study">Program Study</SelectItem>
+              <SelectItem value="responses">Responses</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Desktop: Tabs */}
+        <div className="hidden md:flex items-center gap-8 flex-1 justify-center">
           <button
             onClick={() => handleTabChange("questions")}
-            className={`pb-3 text-sm font-medium transition-colors relative ${
+            className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${
               currentTab === "questions" 
                 ? "text-primary" 
                 : "text-gray-600 hover:text-gray-900"
@@ -104,7 +121,7 @@ export function QuestionToolbar({
           </button>
           <button
             onClick={() => handleTabChange("program-study")}
-            className={`pb-3 text-sm font-medium transition-colors relative ${
+            className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${
               currentTab === "program-study" 
                 ? "text-primary" 
                 : "text-gray-600 hover:text-gray-900"
@@ -117,7 +134,7 @@ export function QuestionToolbar({
           </button>
           <button
             onClick={() => handleTabChange("responses")}
-            className={`pb-3 text-sm font-medium transition-colors relative ${
+            className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${
               currentTab === "responses" 
                 ? "text-primary" 
                 : "text-gray-600 hover:text-gray-900"
@@ -132,7 +149,7 @@ export function QuestionToolbar({
         </div>
 
         {/* Right: Action Buttons */}
-        <div className="flex items-center gap-2 min-w-[280px] justify-end">
+        <div className="flex items-center gap-2 min-w-[100px] md:min-w-[280px] justify-end">
           {/* <Button 
             variant="ghost" 
             size="icon" 
@@ -162,12 +179,14 @@ export function QuestionToolbar({
             <Eye className="h-4 w-4" />
           </Button>
           
-          <Button variant="ghost" size="icon" title="Share">
+          {/* Share button - Hidden on mobile */}
+          <Button variant="ghost" size="icon" title="Share" className="hidden md:flex">
             <Share2 className="h-4 w-4" />
           </Button>
-          <Separator orientation="vertical" className="h-6 mx-1" />
+          <Separator orientation="vertical" className="h-6 mx-1 hidden md:block" />
           <Button onClick={onPublish} className="bg-primary hover:bg-primary/90">
-            Publish
+            <span className="hidden sm:inline">Publish</span>
+            <span className="sm:hidden">Publish</span>
           </Button>
         </div>
       </div>

@@ -247,44 +247,69 @@ export function QuestionContentGForm({
                   </Button>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center gap-3">
-                  <Input
-                    value={opt.label || ""}
-                    onChange={(e) => onOptionUpdate?.(opt.id, e.target.value)}
-                    placeholder={`Option ${idx + 1}`}
-                    className="flex-1 border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-blue-600 px-0"
-                  />
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <Input
+                      value={opt.label || ""}
+                      onChange={(e) => onOptionUpdate?.(opt.id, e.target.value)}
+                      placeholder={`Option ${idx + 1}`}
+                      className="flex-1 border-0 border-b border-gray-300 rounded-none focus-visible:ring-0 focus-visible:border-blue-600 px-0"
+                    />
+                    
+                    {/* Response Validation Dropdown - Desktop only */}
+                    {responseValidation && (
+                      <Select 
+                        value={opt.navigation || ""}
+                        onValueChange={(value) => onNavigationChange?.(opt.id, value)}
+                      >
+                        <SelectTrigger className="w-[200px] h-8 hidden md:flex">
+                          <SelectValue placeholder="Continue to next section" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="next">Continue to next section</SelectItem>
+                          {sections.map((section, sectionIdx) => (
+                            <SelectItem key={section.id} value={`section-${section.id}`}>
+                              Go to section {sectionIdx + 1} ({section.title})
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="submit">Submit form</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                    
+                    {options.length > 1 && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => onOptionDelete?.(opt.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-4 w-4 text-gray-500" />
+                      </Button>
+                    )}
+                  </div>
                   
-                  {/* Response Validation Dropdown */}
+                  {/* Response Validation Dropdown - Mobile only (below the option) */}
                   {responseValidation && (
-                    <Select 
-                      value={opt.navigation || ""}
-                      onValueChange={(value) => onNavigationChange?.(opt.id, value)}
-                    >
-                      <SelectTrigger className="w-[200px] h-8">
-                        <SelectValue placeholder="Continue to next section" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="next">Continue to next section</SelectItem>
-                        {sections.map((section, sectionIdx) => (
-                          <SelectItem key={section.id} value={`section-${section.id}`}>
-                            Go to section {sectionIdx + 1} ({section.title})
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="submit">Submit form</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                  
-                  {options.length > 1 && (
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => onOptionDelete?.(opt.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 className="h-4 w-4 text-gray-500" />
-                    </Button>
+                    <div className="md:hidden mt-2">
+                      <Select 
+                        value={opt.navigation || ""}
+                        onValueChange={(value) => onNavigationChange?.(opt.id, value)}
+                      >
+                        <SelectTrigger className="w-full h-8">
+                          <SelectValue placeholder="Continue to next section" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="next">Continue to next section</SelectItem>
+                          {sections.map((section, sectionIdx) => (
+                            <SelectItem key={section.id} value={`section-${section.id}`}>
+                              Go to section {sectionIdx + 1} ({section.title})
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="submit">Submit form</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   )}
                 </div>
               )}
@@ -310,19 +335,6 @@ export function QuestionContentGForm({
               >
                 Add option
               </Button>
-              {!hasOtherOption && (
-                <div className="flex items-center gap-1">
-                  <span className="text-sm text-gray-500">or</span>
-                  <Button 
-                    variant="link" 
-                    size="sm" 
-                    onClick={onAddOther}
-                    className="text-blue-600 px-2 h-auto py-1"
-                  >
-                    add "Other"
-                  </Button>
-                </div>
-              )}
             </div>
           </div>
         </div>

@@ -29,21 +29,31 @@ import {
 import { DataTablePagination } from "@/components/pagination_table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import type { Fakultas, Jurusan, ProgramStudi } from "./columns"
+import { EditUnitDialog } from "./edit-unit-dialog"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  activeTab?: string
+  fakultasData?: Fakultas[]
+  jurusanData?: Jurusan[]
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  activeTab,
+  fakultasData = [],
+  jurusanData = [],
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = React.useState("")
+  const [editDialogOpen, setEditDialogOpen] = React.useState(false)
+  const [selectedUnit, setSelectedUnit] = React.useState<Fakultas | Jurusan | ProgramStudi | null>(null)
 
   const table = useReactTable({
     data,
@@ -87,6 +97,13 @@ export function DataTable<TData, TValue>({
 
   const selectedRows = table.getFilteredSelectedRowModel().rows
   const selectedCount = selectedRows.length
+
+  const handleRowClick = (row: any) => {
+    if (activeTab) {
+      setSelectedUnit(row.original)
+      setEditDialogOpen(true)
+    }
+  }
 
   const handleDeleteAll = async () => {
     if (selectedCount === 0) return
@@ -147,46 +164,21 @@ export function DataTable<TData, TValue>({
           {/* <DataTableViewOptions table={table} /> */}
         </div>
       </div>
-      <div className="rounded-md border">
-        <Table className="w-full table-fixed">
+      <div className="rounded-md border overflow-x-auto">
+        <Table className="w-full min-w-[600px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  const isSelectColumn = header.column.id === 'select'
-                  const isActionsColumn = header.column.id === 'actions'
-                  const isNameColumn = header.column.id === 'name'
-                  
-                  let className = ""
-                  let style = {}
-                  
-                  if (isSelectColumn) {
-                    className = "w-10 text-center"
-                    style = { width: '50px' }
-                  } else if (isActionsColumn) {
-                    className = "w-16 text-center px-4"
-                    style = { width: '80px' }
-                  } else if (isNameColumn) {
-                    className = "w-auto"
-                    style = { width: 'calc(100% - 130px)' }
-                  }
-
-                  return (
-                    <TableHead 
-                      key={header.id} 
-                      colSpan={header.colSpan}
-                      className={className}
-                      style={style}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  )
-                })}
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} colSpan={header.colSpan}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>
@@ -196,39 +188,17 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={() => handleRowClick(row)}
+                  className="cursor-pointer hover:bg-muted/50"
                 >
-                  {row.getVisibleCells().map((cell) => {
-                    const isSelectColumn = cell.column.id === 'select'
-                    const isActionsColumn = cell.column.id === 'actions'
-                    const isNameColumn = cell.column.id === 'name'
-                    
-                    let className = ""
-                    let style = {}
-                    
-                    if (isSelectColumn) {
-                      className = "w-10 text-center"
-                      style = { width: '50px' }
-                    } else if (isActionsColumn) {
-                      className = "w-16 text-center px-4"
-                      style = { width: '80px' }
-                    } else if (isNameColumn) {
-                      className = "w-auto"
-                      style = { width: 'calc(100% - 130px)' }
-                    }
-
-                    return (
-                      <TableCell 
-                        key={cell.id}
-                        className={className}
-                        style={style}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    )
-                  })}
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
                 </TableRow>
               ))
             ) : (
@@ -247,6 +217,18 @@ export function DataTable<TData, TValue>({
       <div className="flex items-center justify-end space-x-2 py-4">
         <DataTablePagination table={table} />
       </div>
+
+      {/* Edit Dialog */}
+      {selectedUnit && activeTab && (
+        <EditUnitDialog
+          activeTab={activeTab}
+          fakultasData={fakultasData}
+          jurusanData={jurusanData}
+          unitData={selectedUnit}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+        />
+      )}
     </div>
   )
 }

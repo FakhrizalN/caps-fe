@@ -104,7 +104,8 @@ export function NewSurveyDialog({ isOpen, onOpenChange, onSave }: NewSurveyDialo
       <DialogTrigger asChild>
         <Button className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
-          New
+          
+          <span className="hidden sm:inline ml-2">New</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
