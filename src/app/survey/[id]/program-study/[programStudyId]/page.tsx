@@ -62,6 +62,7 @@ export default function ProgramStudyQuestionsPage() {
   const [activeQuestionId, setActiveQuestionId] = useState<number | string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [programStudyName, setProgramStudyName] = useState<string>("")
+  const [userRole, setUserRole] = useState<string>("")
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -174,12 +175,21 @@ export default function ProgramStudyQuestionsPage() {
         try {
           const currentUser = await getCurrentUserFromAPI()
           const userRole = currentUser.role || ""
+          setUserRole(userRole)
           const userProgramStudy = currentUser.program_study
           
           console.log("🔍 Program Study Auto-Redirect Check:")
           console.log("  - User Role:", userRole)
           console.log("  - User Program Study:", userProgramStudy)
           console.log("  - Current URL Program Study:", programStudyId)
+          
+          // Block Tracer from accessing program study questions
+          if (userRole === "Tracer") {
+            console.log("🚫 Tracer cannot access program study questions")
+            toast.error("You don't have permission to access program study questions")
+            router.replace(`/survey/${surveyId}`)
+            return
+          }
           
           // If user is Tim Prodi, auto-redirect to their program study
           if (userRole === "Tim Prodi" && userProgramStudy) {
@@ -531,6 +541,7 @@ export default function ProgramStudyQuestionsPage() {
           isPreviewMode={isPreviewMode}
           surveyId={surveyId.toString()}
           programStudyId={programStudyId.toString()}
+          userRole={userRole}
           onTabChange={(tab) => console.log("Tab changed:", tab)}
           onPreviewToggle={() => setIsPreviewMode(!isPreviewMode)}
           onPublish={handlePublish}

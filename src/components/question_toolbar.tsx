@@ -17,6 +17,7 @@ interface QuestionToolbarProps {
   isPreviewMode?: boolean
   surveyId?: string
   programStudyId?: string
+  userRole?: string
   onTabChange?: (tab: "questions" | "responses" | "program-study") => void
   onPreviewToggle?: () => void
   onPublish?: () => void
@@ -32,6 +33,7 @@ export function QuestionToolbar({
   isPreviewMode = false,
   surveyId,
   programStudyId,
+  userRole,
   onTabChange,
   onPreviewToggle,
   onPublish,
@@ -42,6 +44,12 @@ export function QuestionToolbar({
 }: QuestionToolbarProps) {
   const router = useRouter()
   const [currentTab, setCurrentTab] = useState(activeTab)
+
+  // Debug: Log userRole to check its value
+  useEffect(() => {
+    console.log("QuestionToolbar - userRole:", userRole)
+    console.log("QuestionToolbar - should hide program study?", userRole === "Tracer")
+  }, [userRole])
 
   // Sync currentTab with activeTab prop when it changes
   useEffect(() => {
@@ -98,7 +106,9 @@ export function QuestionToolbar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="questions">Questions</SelectItem>
-              <SelectItem value="program-study">Program Study</SelectItem>
+              {userRole !== "Tracer" && (
+                <SelectItem value="program-study">Program Study</SelectItem>
+              )}
               <SelectItem value="responses">Responses</SelectItem>
             </SelectContent>
           </Select>
@@ -120,15 +130,18 @@ export function QuestionToolbar({
             )}
           </button>
           <button
-            onClick={() => handleTabChange("program-study")}
-            className={`pb-3 text-sm font-medium transition-colors relative whitespace-nowrap ${
-              currentTab === "program-study" 
-                ? "text-primary" 
-                : "text-gray-600 hover:text-gray-900"
+            onClick={() => userRole !== "Tracer" && handleTabChange("program-study")}
+            disabled={userRole === "Tracer"}
+            className={`pb-3 text-sm font-medium relative whitespace-nowrap ${
+              userRole === "Tracer"
+                ? "text-gray-300 cursor-not-allowed"
+                : currentTab === "program-study" 
+                  ? "text-primary transition-colors" 
+                  : "text-gray-600 hover:text-gray-900 transition-colors"
             }`}
           >
             Program Study Question
-            {currentTab === "program-study" && (
+            {currentTab === "program-study" && userRole !== "Tracer" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>

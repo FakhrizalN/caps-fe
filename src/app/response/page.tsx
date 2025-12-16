@@ -22,8 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { getProgramStudiesDetailed, getUsers, type ProgramStudyDetailed, type User } from "@/lib/api"
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from "lucide-react"
+import { getCurrentUserFromAPI, getProgramStudiesDetailed, getUsers, type ProgramStudyDetailed, type User } from "@/lib/api"
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Mail, Mails, Search } from "lucide-react"
 import { useEffect, useState } from "react"
 
 // Helper function to calculate progress percentage
@@ -72,17 +72,54 @@ export default function ResponsesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [pageIndex, setPageIndex] = useState(0)
   const [pageSize, setPageSize] = useState(10)
+  const [currentUserRole, setCurrentUserRole] = useState<string>("")
+  const [currentUserProgramStudy, setCurrentUserProgramStudy] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        // Get current user info
+        const currentUser = await getCurrentUserFromAPI()
+        const userRole = currentUser.role || ""
+        const userProgramStudy = currentUser.program_study
+        
+        setCurrentUserRole(userRole)
+        setCurrentUserProgramStudy(userProgramStudy || null)
+        
+        console.log("📊 Current user:", { role: userRole, program_study: userProgramStudy })
+        
         const [usersData, programStudiesData] = await Promise.all([
           getUsers(),
           getProgramStudiesDetailed()
         ])
         
+        console.log("📊 Total users fetched:", usersData.length)
+        console.log("📊 Sample users with roles:", usersData.slice(0, 3).map(u => ({ id: u.id, role: u.role })))
+        
+        // Alumni role ID is 3 based on backend seed data
+        // global_roles = ['Admin', 'Tracer', 'Alumni', 'Pimpinan Unit']
+        // IDs: 1=Admin, 2=Tracer, 3=Alumni, 4=Pimpinan Unit
+        const ALUMNI_ROLE_ID = 3
+        
+        // Filter users by Alumni role only
+        let filteredUsers = usersData.filter((user: User) => {
+          const userRoleId = typeof user.role === 'number' ? user.role : Number(user.role)
+          return userRoleId === ALUMNI_ROLE_ID
+        })
+        
+        console.log("👥 Alumni users (role=3) before prodi filter:", filteredUsers.length)
+        console.log("👥 Alumni users:", filteredUsers.map(u => ({ id: u.id, name: u.username })))
+        
+        // If Tim Prodi, filter by program_study
+        if (userRole === "Tim Prodi" && userProgramStudy) {
+          filteredUsers = filteredUsers.filter((user: User) => 
+            Number(user.program_study) === Number(userProgramStudy)
+          )
+          console.log("🎓 Tim Prodi filtered users:", filteredUsers.length)
+        }
+        
         // Merge program study details with user data
-        const usersWithDetails: UserWithDetails[] = usersData.map((user: User) => {
+        const usersWithDetails: UserWithDetails[] = filteredUsers.map((user: User) => {
           const programStudy = programStudiesData.find((ps: ProgramStudyDetailed) => ps.id === Number(user.program_study))
           
           return {
@@ -93,7 +130,6 @@ export default function ResponsesPage() {
           }
         })
         
-
         setUsers(usersWithDetails)
       } catch (error) {
         console.error('Error fetching users:', error)
@@ -168,25 +204,38 @@ export default function ResponsesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[80px]">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          console.log('Send notification to all users:', filteredUsers.map(u => u.email))
+                        }}
+                        title="Send notification to all users"
+                      >
+                        <Mails className="h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                    <TableHead className="w-[200px]">Survey Progress</TableHead>
                     <TableHead>Nama</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>ID</TableHead>
                     <TableHead>Faculty</TableHead>
                     <TableHead>Department</TableHead>
                     <TableHead>Program Studi</TableHead>
-                    <TableHead className="w-[200px]">Survey Progress</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                         Loading...
                       </TableCell>
                     </TableRow>
                   ) : filteredUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                         {searchQuery ? 'Tidak ada data yang cocok' : 'Tidak ada data user'}
                       </TableCell>
                     </TableRow>
@@ -196,12 +245,17 @@ export default function ResponsesPage() {
                       const label = getProgressLabel(user.last_survey)
                       return (
                         <TableRow key={user.id}>
-                          <TableCell>{user.username}</TableCell>
-                          <TableCell>{user.email || '-'}</TableCell>
-                          <TableCell>{user.id}</TableCell>
-                          <TableCell>{user.faculty_name}</TableCell>
-                          <TableCell>{user.department_name}</TableCell>
-                          <TableCell>{user.program_study_name}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => console.log('Send email to:', user.email)}
+                              title="Send email notification"
+                            >
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                           <TableCell>
                             <div className="space-y-1">
                               <Progress value={progress} />
@@ -210,6 +264,12 @@ export default function ResponsesPage() {
                               </span>
                             </div>
                           </TableCell>
+                          <TableCell>{user.username}</TableCell>
+                          <TableCell>{user.email || '-'}</TableCell>
+                          <TableCell>{user.id}</TableCell>
+                          <TableCell>{user.faculty_name}</TableCell>
+                          <TableCell>{user.department_name}</TableCell>
+                          <TableCell>{user.program_study_name}</TableCell>
                         </TableRow>
                       )
                     })

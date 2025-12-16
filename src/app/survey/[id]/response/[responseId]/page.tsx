@@ -5,28 +5,28 @@ import { QuestionCardGForm, QuestionData } from "@/components/question_card_gfor
 import { QuestionToolbar } from "@/components/question_toolbar"
 import { SectionHeaderCard } from "@/components/section_header_card"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
+    SidebarInset,
+    SidebarProvider,
+    SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Answer, deleteAnswer, getAnswers, getCurrentUser, getProgramStudyQuestions, getQuestions, getSections, getSurvey, ProgramStudyQuestion, Question, Section } from "@/lib/api"
+import { Answer, deleteAnswer, getAnswers, getCurrentUser, getCurrentUserFromAPI, getProgramStudyQuestions, getQuestions, getSections, getSurvey, ProgramStudyQuestion, Question, Section } from "@/lib/api"
 import { ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -66,6 +66,7 @@ export default function ResponseDetailPage() {
   const [userName, setUserName] = useState("")
   const [userEmail, setUserEmail] = useState("")
   const [programStudyId, setProgramStudyId] = useState<string | undefined>(undefined)
+  const [userRole, setUserRole] = useState<string>("")
 
   useEffect(() => {
     const fetchAllUsers = async () => {
@@ -99,9 +100,14 @@ export default function ResponseDetailPage() {
         setQuestions(allQuestions)
         setSectionsWithQuestions(sectionsData)
         
-        // Get program study ID from user
+        // Get program study ID from user and user role
+        const currentUser = await getCurrentUserFromAPI()
+        const userRoleName = currentUser.role || ""
+        setUserRole(userRoleName)
+        
         const user = getCurrentUser()
         console.log("Response detail - Current user:", user)
+        console.log("Response detail - User role:", userRoleName)
         let userProgramStudyId = 1 // default
         if (user?.program_study) {
           console.log("Response detail - Setting programStudyId to:", user.program_study)
@@ -926,6 +932,7 @@ export default function ResponseDetailPage() {
           activeTab="responses"
           surveyId={surveyId.toString()}
           programStudyId={programStudyId}
+          userRole={userRole}
           onPublish={() => console.log("Publish")}
         />
 

@@ -9,48 +9,48 @@ import { ReorderSectionsDialog } from "@/components/reorder-sections-dialog"
 import { SectionHeaderCard } from "@/components/section_header_card"
 import { TextCard } from "@/components/text_card"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
-  createQuestion,
-  createSection,
-  deleteQuestion,
-  deleteSection,
-  getCurrentUser,
-  getCurrentUserFromAPI,
-  getQuestions,
-  getSections,
-  getSurvey,
-  Question,
-  Section,
-  updateQuestion,
-  updateSection,
-  updateSurvey,
+    createQuestion,
+    createSection,
+    deleteQuestion,
+    deleteSection,
+    getCurrentUser,
+    getCurrentUserFromAPI,
+    getQuestions,
+    getSections,
+    getSurvey,
+    Question,
+    Section,
+    updateQuestion,
+    updateSection,
+    updateSurvey,
 } from "@/lib/api"
 import {
-  closestCenter,
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    DragOverlay,
+    DragStartEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
 } from "@dnd-kit/core"
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { useParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
@@ -85,6 +85,7 @@ export default function SurveyQuestionsPage() {
   const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false)
   const [programStudyId, setProgramStudyId] = useState<string | undefined>(undefined)
   const [isTimProdi, setIsTimProdi] = useState(false)
+  const [userRole, setUserRole] = useState<string>("")
   
   // Ref to track which surveyId has been fetched to prevent double execution in React Strict Mode
   const fetchedSurveyIdRef = useRef<number | null>(null)
@@ -384,6 +385,11 @@ export default function SurveyQuestionsPage() {
         console.log("  - User:", currentUser)
         console.log("  - Role Name:", userRoleName)
         console.log("  - Is Tim Prodi?", userRoleName === "Tim Prodi")
+        
+        // Set userRole state
+        if (isMounted) {
+          setUserRole(userRoleName)
+        }
         
         // If user is Tim Prodi, enable preview mode (disable editing) and lock it
         if (userRoleName === "Tim Prodi") {
@@ -1454,6 +1460,7 @@ export default function SurveyQuestionsPage() {
           activeTab="questions"
           surveyId={surveyId.toString()}
           programStudyId={programStudyId}
+          userRole={userRole}
           isPreviewMode={isPreviewMode}
           onPreviewToggle={() => {
             // Tim Prodi cannot toggle preview mode off

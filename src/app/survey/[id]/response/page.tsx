@@ -34,6 +34,7 @@ export default function ResponsesPage() {
   const [surveyTitle, setSurveyTitle] = useState("Loading...")
   const [isLoading, setIsLoading] = useState(true)
   const [programStudyId, setProgramStudyId] = useState<string | undefined>(undefined)
+  const [userRole, setUserRole] = useState<string>("")
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,11 +47,14 @@ export default function ResponsesPage() {
 
         // Get current user from API to get program_study
         const currentUser = await getCurrentUserFromAPI()
-        const userRole = currentUser.role || ""
+        const userRoleName = currentUser.role || ""
         const userProgramStudy = currentUser.program_study
         
+        // Set userRole state
+        setUserRole(userRoleName)
+        
         console.log("🔍 Response Page - User Info:")
-        console.log("  - User Role:", userRole)
+        console.log("  - User Role:", userRoleName)
         console.log("  - Program Study:", userProgramStudy)
         
         if (userProgramStudy) {
@@ -125,6 +129,7 @@ export default function ResponsesPage() {
           activeTab="responses"
           surveyId={surveyId.toString()}
           programStudyId={programStudyId}
+          userRole={userRole}
           onPublish={() => console.log("Publish")}
         />
         

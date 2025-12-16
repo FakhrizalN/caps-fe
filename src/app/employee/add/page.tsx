@@ -300,45 +300,21 @@ export default function AddEmployeePage() {
                       return null;
                     })()}
                   </Label>
-                  {(() => {
-                    const selectedRole = roles.find(r => r.id === formData.role);
-                    const isAlumni = selectedRole && selectedRole.name.toLowerCase() === "alumni";
-                    
-                    if (isAlumni) {
-                      return (
-                        <Select 
-                          value={formData.program_study?.toString()} 
-                          onValueChange={(value) => handleSelectChange("program_study", value)}
-                        >
-                          <SelectTrigger className={fieldErrors.program_study ? "border-red-500" : ""}>
-                            <SelectValue placeholder="Select program study" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {programStudies.map((program) => (
-                              <SelectItem key={program.id} value={program.id.toString()}>
-                                {program.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      );
-                    }
-                    
-                    return (
-                      <Input
-                        id="program_study"
-                        name="program_study"
-                        type="text"
-                        value={(() => {
-                          const selectedProdi = programStudies.find(p => p.id === formData.program_study);
-                          return selectedProdi?.name || "";
-                        })()}
-                        placeholder="-"
-                        disabled={true}
-                        className={fieldErrors.program_study ? "border-red-500" : ""}
-                      />
-                    );
-                  })()}
+                  <Select 
+                    value={formData.program_study?.toString()} 
+                    onValueChange={(value) => handleSelectChange("program_study", value)}
+                  >
+                    <SelectTrigger className={fieldErrors.program_study ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Select program study" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {programStudies.map((program) => (
+                        <SelectItem key={program.id} value={program.id.toString()}>
+                          {program.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {fieldErrors.program_study && (
                     <p className="text-sm text-red-500 mt-1">Program Study is required for Alumni with Prodi program</p>
                   )}
