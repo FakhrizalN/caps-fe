@@ -1395,63 +1395,67 @@ export default function Dashboard() {
                       />
                     </div>
 
-                    <div style={{ width: "100%", height: 360 }}>
-                      <ResponsiveContainer>
-                        <LineChart
-                          data={
-                            apiForecastData
-                              ? [
-                                  // Historical data from API
-                                  ...apiForecastData.historical_data.map(
-                                    (d: any) => ({
-                                      t: String(d.year),
-                                      value: d.lulusan,
-                                      type: "historical",
-                                    })
-                                  ),
-                                  // Forecast data from API
-                                  ...apiForecastData.forecast_data.map(
-                                    (d: any) => ({
-                                      t: String(d.year),
-                                      value: d.lulusan,
-                                      type: "forecast",
-                                    })
-                                  ),
-                                ]
-                              : []
-                          }
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="t" />
-                          <YAxis />
-                          <Tooltip />
-                          <Legend verticalAlign="bottom" iconType="plainline" />
-                          <Line
-                            type="monotone"
-                            dataKey="value"
-                            stroke="#007FCB"
-                            strokeWidth={2}
-                            dot={(props) => {
-                              const { cx, cy, payload, index } = props;
-                              return (
-                                <circle
-                                  key={`dot-${index}`}
-                                  cx={cx}
-                                  cy={cy}
-                                  r={payload.type === "forecast" ? 5 : 3}
-                                  fill={
-                                    payload.type === "forecast"
-                                      ? "#FF8042"
-                                      : "#007FCB"
-                                  }
-                                  stroke="#fff"
-                                  strokeWidth={2}
-                                />
-                              );
-                            }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
+                    <div className="overflow-x-auto">
+                      <div className="min-w-[1000px]">
+                        <div style={{ width: "100%", height: 360 }}>
+                          <ResponsiveContainer>
+                            <LineChart
+                              data={
+                                apiForecastData
+                                  ? [
+                                      // Historical data from API
+                                      ...apiForecastData.historical_data.map(
+                                        (d: any) => ({
+                                          t: String(d.year),
+                                          value: d.lulusan,
+                                          type: "historical",
+                                        })
+                                      ),
+                                      // Forecast data from API
+                                      ...apiForecastData.forecast_data.map(
+                                        (d: any) => ({
+                                          t: String(d.year),
+                                          value: d.lulusan,
+                                          type: "forecast",
+                                        })
+                                      ),
+                                    ]
+                                  : []
+                              }
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="t" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend verticalAlign="bottom" iconType="plainline" />
+                              <Line
+                                type="monotone"
+                                dataKey="value"
+                                stroke="#007FCB"
+                                strokeWidth={2}
+                                dot={(props) => {
+                                  const { cx, cy, payload, index } = props;
+                                  return (
+                                    <circle
+                                      key={`dot-${index}`}
+                                      cx={cx}
+                                      cy={cy}
+                                      r={payload.type === "forecast" ? 5 : 3}
+                                      fill={
+                                        payload.type === "forecast"
+                                          ? "#FF8042"
+                                          : "#007FCB"
+                                      }
+                                      stroke="#fff"
+                                      strokeWidth={2}
+                                    />
+                                  );
+                                }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

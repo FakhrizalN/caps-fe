@@ -5,8 +5,7 @@ import {
   Building2,
   ChevronRight,
   ClipboardList,
-  Shield,
-  Users,
+  Users
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
@@ -65,17 +64,6 @@ const data = {
         {
           title: "Response Data",
           url: "/response",
-          icon: BarChart2,
-        },
-      ],
-    },
-    {
-      title: "Analytics & ML",
-      url: "#",
-      items: [
-        {
-          title: "Dashboard",
-          url: "/dashboard",
           icon: BarChart2,
         },
       ],
