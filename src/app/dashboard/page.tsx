@@ -46,6 +46,12 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import {
+  clusteringPredict,
+  getCustomForecast,
+  getForecastData,
+  type ClusteringInput,
+} from "@/lib/ml-api";
 import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
@@ -68,14 +74,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { parseCSV } from "../../../utils/csv";
 import { kmeans2D } from "../../../utils/clustering";
-import {
-  clusteringPredict,
-  getForecastData,
-  getCustomForecast,
-  type ClusteringInput,
-} from "@/lib/ml-api";
+import { parseCSV } from "../../../utils/csv";
 
 const chartConfig = {
   alumni: { label: "Alumni" },
@@ -1432,9 +1432,10 @@ export default function Dashboard() {
                             stroke="#007FCB"
                             strokeWidth={2}
                             dot={(props) => {
-                              const { cx, cy, payload } = props;
+                              const { cx, cy, payload, index } = props;
                               return (
                                 <circle
+                                  key={`dot-${index}`}
                                   cx={cx}
                                   cy={cy}
                                   r={payload.type === "forecast" ? 5 : 3}
