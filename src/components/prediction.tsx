@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,17 +18,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Loader2,
-  CheckCircle2,
   AlertCircle,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  DollarSign,
   Briefcase,
-  GraduationCap,
   Building2,
+  CheckCircle2,
+  DollarSign,
+  GraduationCap,
+  Loader2,
+  Minus,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
+import { useState } from "react";
 
 const F14_OPTIONS = [
   "Sangat Erat",
@@ -337,14 +337,14 @@ const CompetencyInput = ({
   };
 
   return (
-    <div className="space-y-4 p-5 border-2 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 hover:border-blue-300 transition-all">
-      <div className="flex items-center justify-between">
-        <h4 className="font-semibold text-base text-gray-800">{label}</h4>
+    <div className="space-y-3 md:space-y-4 p-3 md:p-5 border-2 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 hover:border-blue-300 transition-all">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="font-semibold text-sm md:text-base text-gray-800">{label}</h4>
         {gap !== null && (
           <span
-            className={`text-sm font-medium ${getGapColor(
+            className={`text-xs md:text-sm font-medium ${getGapColor(
               gap
-            )} flex items-center gap-1`}
+            )} flex items-center gap-1 whitespace-nowrap`}
           >
             {getGapLabel(gap)}
           </span>
@@ -352,110 +352,114 @@ const CompetencyInput = ({
       </div>
 
       {/* Saat Lulus */}
-      <div className="space-y-3">
+      <div className="space-y-2 md:space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium text-gray-700">
+          <Label className="text-xs md:text-sm font-medium text-gray-700">
             Saat Lulus <span className="text-red-500">*</span>
           </Label>
           <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
             {value.saat_lulus ? `Level ${value.saat_lulus}` : "Pilih level"}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-600 w-20 text-right">
-            Sangat Kurang
-          </span>
-          <div className="flex-1 flex items-center justify-between gap-3 px-4">
-            {COMPETENCY_LEVELS.map((level) => (
-              <label
-                key={`${name}_lulus_${level}`}
-                className={`relative flex flex-col items-center cursor-pointer group ${
-                  disabled ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-              >
-                <input
-                  type="radio"
-                  name={`${name}_saat_lulus`}
-                  value={level}
-                  checked={value.saat_lulus === level}
-                  onChange={(e) =>
-                    !disabled && onChange(name, "saat_lulus", e.target.value)
-                  }
-                  disabled={disabled}
-                  className="sr-only"
-                />
-                <div
-                  className={`
-                w-10 h-10 rounded-full border-2 transition-all duration-200
-                flex items-center justify-center font-semibold text-sm
-                ${
-                  value.saat_lulus === level
-                    ? "bg-blue-600 border-blue-600 text-white scale-110 shadow-lg"
-                    : "bg-white border-gray-300 text-gray-600 hover:border-blue-400 hover:scale-105"
-                }
-              `}
+        <div className="space-y-1">
+          <div className="flex items-center justify-center px-1 sm:px-2 md:px-4">
+            <div className="flex items-center justify-between gap-0.5 sm:gap-1 md:gap-3 w-full max-w-md">
+              {COMPETENCY_LEVELS.map((level) => (
+                <label
+                  key={`${name}_lulus_${level}`}
+                  className={`relative flex flex-col items-center cursor-pointer group ${
+                    disabled ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
-                  {level}
-                </div>
-                <span className="text-xs text-gray-500 mt-1">{level}</span>
-              </label>
-            ))}
+                  <input
+                    type="radio"
+                    name={`${name}_saat_lulus`}
+                    value={level}
+                    checked={value.saat_lulus === level}
+                    onChange={(e) =>
+                      !disabled && onChange(name, "saat_lulus", e.target.value)
+                    }
+                    disabled={disabled}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`
+                  w-6 h-6 sm:w-7 sm:h-7 md:w-10 md:h-10 rounded-full border-2 transition-all duration-200
+                  flex items-center justify-center font-semibold text-[10px] sm:text-xs md:text-sm
+                  ${
+                    value.saat_lulus === level
+                      ? "bg-blue-600 border-blue-600 text-white scale-110 shadow-lg"
+                      : "bg-white border-gray-300 text-gray-600 hover:border-blue-400 hover:scale-105"
+                  }
+                `}
+                  >
+                    {level}
+                  </div>
+                  <span className="hidden sm:inline text-[10px] md:text-xs text-gray-500 mt-0.5 md:mt-1">{level}</span>
+                </label>
+              ))}
+            </div>
           </div>
-          <span className="text-xs text-gray-600 w-20">Sangat Baik</span>
+          <div className="flex items-center justify-between px-1 sm:px-2 md:px-4 text-[9px] sm:text-[10px] md:text-xs text-gray-600">
+            <span>Sangat Kurang</span>
+            <span>Sangat Baik</span>
+          </div>
         </div>
       </div>
 
       {/* Diperlukan Pekerjaan */}
-      <div className="space-y-3">
+      <div className="space-y-2 md:space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium text-gray-700">
+          <Label className="text-xs md:text-sm font-medium text-gray-700">
             Diperlukan Pekerjaan <span className="text-red-500">*</span>
           </Label>
           <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
             {value.diperlukan ? `Level ${value.diperlukan}` : "Pilih level"}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-600 w-20 text-right">
-            Sangat Kurang
-          </span>
-          <div className="flex-1 flex items-center justify-between gap-3 px-4">
-            {COMPETENCY_LEVELS.map((level) => (
-              <label
-                key={`${name}_diperlukan_${level}`}
-                className={`relative flex flex-col items-center cursor-pointer group ${
-                  disabled ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-              >
-                <input
-                  type="radio"
-                  name={`${name}_diperlukan`}
-                  value={level}
-                  checked={value.diperlukan === level}
-                  onChange={(e) =>
-                    !disabled && onChange(name, "diperlukan", e.target.value)
-                  }
-                  disabled={disabled}
-                  className="sr-only"
-                />
-                <div
-                  className={`
-                w-10 h-10 rounded-full border-2 transition-all duration-200
-                flex items-center justify-center font-semibold text-sm
-                ${
-                  value.diperlukan === level
-                    ? "bg-indigo-600 border-indigo-600 text-white scale-110 shadow-lg"
-                    : "bg-white border-gray-300 text-gray-600 hover:border-indigo-400 hover:scale-105"
-                }
-              `}
+        <div className="space-y-1">
+          <div className="flex items-center justify-center px-1 sm:px-2 md:px-4">
+            <div className="flex items-center justify-between gap-0.5 sm:gap-1 md:gap-3 w-full max-w-md">
+              {COMPETENCY_LEVELS.map((level) => (
+                <label
+                  key={`${name}_diperlukan_${level}`}
+                  className={`relative flex flex-col items-center cursor-pointer group flex-shrink-0 ${
+                    disabled ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
-                  {level}
-                </div>
-                <span className="text-xs text-gray-500 mt-1">{level}</span>
-              </label>
-            ))}
+                  <input
+                    type="radio"
+                    name={`${name}_diperlukan`}
+                    value={level}
+                    checked={value.diperlukan === level}
+                    onChange={(e) =>
+                      !disabled && onChange(name, "diperlukan", e.target.value)
+                    }
+                    disabled={disabled}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`
+                  w-6 h-6 sm:w-7 sm:h-7 md:w-10 md:h-10 rounded-full border-2 transition-all duration-200
+                  flex items-center justify-center font-semibold text-[10px] sm:text-xs md:text-sm
+                  ${
+                    value.diperlukan === level
+                      ? "bg-indigo-600 border-indigo-600 text-white scale-110 shadow-lg"
+                      : "bg-white border-gray-300 text-gray-600 hover:border-indigo-400 hover:scale-105"
+                  }
+                `}
+                  >
+                    {level}
+                  </div>
+                  <span className="hidden sm:inline text-[10px] md:text-xs text-gray-500 mt-0.5 md:mt-1">{level}</span>
+                </label>
+              ))}
+            </div>
           </div>
-          <span className="text-xs text-gray-600 w-20">Sangat Baik</span>
+          <div className="flex items-center justify-between px-1 sm:px-2 md:px-4 text-[9px] sm:text-[10px] md:text-xs text-gray-600">
+            <span>Sangat Kurang</span>
+            <span>Sangat Baik</span>
+          </div>
         </div>
       </div>
     </div>
@@ -620,19 +624,19 @@ export function PredictionSection() {
   return (
     <section
       id="prediction"
-      className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-b from-blue-50 to-white"
+      className="w-full py-8 md:py-12 lg:py-24 bg-gradient-to-b from-blue-50 to-white"
     >
-      <div className="container px-4 md:px-6">
-        <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+      <div className="container px-4 md:px-6 max-w-7xl mx-auto">
+        <div className="flex flex-col items-center justify-center space-y-3 md:space-y-4 text-center mb-8 md:mb-12">
           <div className="space-y-2">
             <div className="inline-block rounded-lg bg-blue-100 px-3 py-1 text-sm text-blue-800">
               <TrendingUp className="inline-block w-4 h-4 mr-2" />
               Prediksi Karir
             </div>
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
+            <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl lg:text-5xl">
               Prediksi Kesuksesan Karir Alumni
             </h2>
-            <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+            <p className="max-w-[900px] text-sm sm:text-base text-gray-500 md:text-lg lg:text-xl px-4">
               Prediksi apakah Anda termasuk kategori{" "}
               <strong>High Earner (Gaji {">"} 5 juta)</strong> berdasarkan
               profil kompetensi dan pekerjaan Anda
@@ -652,8 +656,8 @@ export function PredictionSection() {
             </CardHeader>
             <CardContent>
               {/* Info Notice */}
-              <div className="mb-6 flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="mb-4 md:mb-6 flex items-start gap-2 md:gap-3 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <AlertCircle className="h-4 w-4 md:h-5 md:w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
                   <h3 className="font-semibold text-blue-900">
                     Petunjuk Pengisian
@@ -667,49 +671,54 @@ export function PredictionSection() {
                     <p className="text-xs font-semibold text-gray-700 mb-2">
                       Skala Penilaian Kompetensi:
                     </p>
-                    <div className="flex items-center gap-4 text-xs text-gray-600">
+                    <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs text-gray-600">
                       <span className="flex items-center gap-1">
-                        <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center font-semibold">
+                        <span className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-gray-200 flex items-center justify-center font-semibold text-xs">
                           1
                         </span>
-                        = Sangat Kurang
+                        <span className="hidden sm:inline">= Sangat Kurang</span>
+                        <span className="sm:hidden">SK</span>
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center font-semibold">
+                        <span className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-gray-300 flex items-center justify-center font-semibold text-xs">
                           2
                         </span>
-                        = Kurang
+                        <span className="hidden sm:inline">= Kurang</span>
+                        <span className="sm:hidden">K</span>
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center font-semibold text-white">
+                        <span className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-gray-400 flex items-center justify-center font-semibold text-white text-xs">
                           3
                         </span>
-                        = Cukup
+                        <span className="hidden sm:inline">= Cukup</span>
+                        <span className="sm:hidden">C</span>
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center font-semibold text-white">
+                        <span className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-blue-500 flex items-center justify-center font-semibold text-white text-xs">
                           4
                         </span>
-                        = Baik
+                        <span className="hidden sm:inline">= Baik</span>
+                        <span className="sm:hidden">B</span>
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-semibold text-white">
+                        <span className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-blue-600 flex items-center justify-center font-semibold text-white text-xs">
                           5
                         </span>
-                        = Sangat Baik
+                        <span className="hidden sm:inline">= Sangat Baik</span>
+                        <span className="sm:hidden">SB</span>
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-8">
+              <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
                 {/* Section 1: Basic Info */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold border-b pb-2">
+                <div className="space-y-3 md:space-y-4">
+                  <h3 className="text-base md:text-lg font-semibold border-b pb-2">
                     Informasi Dasar
                   </h3>
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-3 md:gap-4 sm:grid-cols-2">
                     {/* Tahun Lulus */}
                     <div className="space-y-2">
                       <Label htmlFor="tahun_lulus">
@@ -838,20 +847,20 @@ export function PredictionSection() {
                 </div>
 
                 {/* Section 2: Competency Assessment */}
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
+                <div className="space-y-3 md:space-y-4">
+                  <div className="flex items-start gap-2 md:gap-3">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-base md:text-lg font-semibold text-gray-900">
                         Penilaian Kompetensi
                       </h3>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-xs md:text-sm text-gray-600 mt-1">
                         Untuk setiap kompetensi, pilih level kemampuan Anda dan
                         level yang diperlukan di pekerjaan. Klik pada angka yang
                         sesuai.
                       </p>
                     </div>
                   </div>
-                  <div className="grid gap-4">
+                  <div className="grid gap-3 md:gap-4">
                     <CompetencyInput
                       label="1. Etika"
                       name="etika"
@@ -917,18 +926,18 @@ export function PredictionSection() {
 
                 {/* Success Result */}
                 {result && (
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     {/* Main Result Card */}
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6 shadow-lg">
-                      <div className="flex items-start gap-4">
-                        <div className="p-3 bg-green-100 rounded-full">
-                          <CheckCircle2 className="h-8 w-8 text-green-600" />
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 md:p-6 shadow-lg">
+                      <div className="flex items-start gap-3 md:gap-4">
+                        <div className="p-2 md:p-3 bg-green-100 rounded-full">
+                          <CheckCircle2 className="h-6 w-6 md:h-8 md:w-8 text-green-600" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold text-green-900 mb-2">
+                          <h3 className="text-base md:text-xl font-bold text-green-900 mb-2">
                             🎯 Hasil Prediksi Gaji
                           </h3>
-                          <p className="text-3xl font-bold text-green-700 mb-1">
+                          <p className="text-xl md:text-3xl font-bold text-green-700 mb-1">
                             {
                               getPredictionInterpretation(
                                 result.predicted_label,
@@ -953,19 +962,19 @@ export function PredictionSection() {
                     </div>
 
                     {/* Detailed Analysis Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                       {/* Salary Breakdown */}
                       <Card>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm flex items-center gap-2">
-                            <DollarSign className="h-4 w-4 text-green-600" />
+                        <CardHeader className="pb-2 md:pb-3">
+                          <CardTitle className="text-xs md:text-sm flex items-center gap-2">
+                            <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
                             Kategori Gaji
                           </CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="text-sm md:text-base">
                           <div className="space-y-2">
                             <p
-                              className={`text-lg font-semibold ${
+                              className={`text-base md:text-lg font-semibold ${
                                 getPredictionInterpretation(
                                   result.predicted_label,
                                   formData
@@ -994,15 +1003,15 @@ export function PredictionSection() {
 
                       {/* Job Search Duration */}
                       <Card>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm flex items-center gap-2">
-                            <Briefcase className="h-4 w-4 text-blue-600" />
+                        <CardHeader className="pb-2 md:pb-3">
+                          <CardTitle className="text-xs md:text-sm flex items-center gap-2">
+                            <Briefcase className="h-3 w-3 md:h-4 md:w-4 text-blue-600" />
                             Waktu Tunggu Kerja
                           </CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="text-sm md:text-base">
                           <div className="space-y-2">
-                            <p className="text-2xl font-bold text-blue-700">
+                            <p className="text-xl md:text-2xl font-bold text-blue-700">
                               {formData.F502} bulan
                             </p>
                             <p className="text-sm text-blue-600">
@@ -1037,9 +1046,9 @@ export function PredictionSection() {
 
                       {/* Job Relevance */}
                       <Card>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm flex items-center gap-2">
-                            <GraduationCap className="h-4 w-4 text-purple-600" />
+                        <CardHeader className="pb-2 md:pb-3">
+                          <CardTitle className="text-xs md:text-sm flex items-center gap-2">
+                            <GraduationCap className="h-3 w-3 md:h-4 md:w-4 text-purple-600" />
                             Kesesuaian Bidang
                           </CardTitle>
                         </CardHeader>
@@ -1125,17 +1134,17 @@ export function PredictionSection() {
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <Button type="submit" disabled={loading} className="flex-1">
+                <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
+                  <Button type="submit" disabled={loading} className="flex-1 h-11">
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Memproses...
+                        <span className="text-sm md:text-base">Memproses...</span>
                       </>
                     ) : (
                       <>
                         <TrendingUp className="mr-2 h-4 w-4" />
-                        Prediksi Sekarang
+                        <span className="text-sm md:text-base">Prediksi Sekarang</span>
                       </>
                     )}
                   </Button>
@@ -1144,8 +1153,9 @@ export function PredictionSection() {
                     variant="outline"
                     onClick={handleReset}
                     disabled={loading}
+                    className="h-11 sm:w-auto w-full"
                   >
-                    Reset
+                    <span className="text-sm md:text-base">Reset</span>
                   </Button>
                 </div>
               </form>
