@@ -3,7 +3,28 @@
 
 import React from "react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// API Configuration - Auto-detect environment (same as api.ts)
+const getApiBaseUrl = () => {
+  // Jika di server-side, gunakan env variable
+  if (typeof window === 'undefined') {
+    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  }
+  
+  // Client-side: Auto-detect berdasarkan environment
+  const userAgent = window.navigator.userAgent
+  const isFlutterWebView = userAgent.includes('FlutterWebView') || 
+                          typeof (window as any).FlutterApp !== 'undefined'
+  
+  if (isFlutterWebView) {
+    // Mobile App: Gunakan 10.0.2.2 untuk Android Emulator
+    return 'http://10.0.2.2:8000'
+  } else {
+    // Browser Desktop: Gunakan localhost
+    return 'http://localhost:8000'
+  }
+}
+
+const API_BASE = getApiBaseUrl();
 const ML_API_BASE_URL = `${API_BASE}/api/ml`;
 
 // Helper function untuk get auth token dari storage
