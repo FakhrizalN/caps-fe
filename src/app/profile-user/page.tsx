@@ -148,7 +148,7 @@ export default function ProfileUserPage() {
     <div className="min-h-screen bg-background">
     <Navbar />
       
-      <div className="flex flex-1 flex-col gap-8 p-8 max-w-5xl mx-auto">
+      <div className="flex flex-1 flex-col gap-8 p-8 max-w-5xl mx-auto mt-16">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
             {error}
