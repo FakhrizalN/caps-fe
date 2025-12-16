@@ -46,5 +46,5 @@ export default function Home() {
       <AboutSection />
       <Footer />
     </main>
-  )
+  );
 }

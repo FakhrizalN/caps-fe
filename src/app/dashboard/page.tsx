@@ -2,7 +2,6 @@
 import {
   assignPalette as _assignPalette,
   getClusterColors as _getClusterColors,
-  numberFormatter as _numberFormatter,
   computeAlasanPekerjaan,
   computeComputedStats,
   computeJenisInstitusi,
@@ -70,8 +69,13 @@ import {
   YAxis,
 } from "recharts";
 import { parseCSV } from "../../../utils/csv";
-import { computeClustering } from "../../../utils/dashboard-utils";
-import { arForecast } from "../../../utils/forecasting";
+import { kmeans2D } from "../../../utils/clustering";
+import {
+  clusteringPredict,
+  getForecastData,
+  getCustomForecast,
+  type ClusteringInput,
+} from "@/lib/ml-api";
 
 const chartConfig = {
   alumni: { label: "Alumni" },
@@ -118,34 +122,36 @@ const chartConfig = {
 
 export default function Dashboard() {
   const [csvLoaded, setCsvLoaded] = useState(false);
-  const [columns, setColumns] = useState<string[]>([]);
   const [rows, setRows] = useState<Array<Record<string, string>>>([]);
   const [pcaVariance, setPcaVariance] = useState<number[]>([0, 0]);
-  const [config, setConfig] = useState<any>(null);
 
-  const [xFeature, setXFeature] = useState<string>("");
-  const [yFeature, setYFeature] = useState<string>("");
-  const [kClusters, setKClusters] = useState<number>(3);
   const [clusterResult, setClusterResult] = useState<
-    Array<{ x: number; y: number; cluster: number }>
+    Array<{
+      x: number;
+      y: number;
+      cluster: number;
+      rowData?: Record<string, string>;
+    }>
+  >([]);
+  const [pcaData, setPcaData] = useState<
+    Array<{ x: number; y: number; rowData: Record<string, string> }>
   >([]);
 
-  const [tsSeries, setTsSeries] = useState<Array<{ t: string; value: number }>>(
-    []
-  );
-  const [arOrder, setArOrder] = useState<number>(2);
-  const [diff, setDiff] = useState<number>(0);
-  const [horizon, setHorizon] = useState<number>(3);
-  const [forecastResult, setForecastResult] = useState<number[]>([]);
+  // Period filter for clustering
+  const [yearStart, setYearStart] = useState<number>(2016);
+  const [yearEnd, setYearEnd] = useState<number>(2025);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [kClusters, setKClusters] = useState<number>(4);
 
-  useEffect(() => {
-    fetch("/preprocessing_config.json")
-      .then((res) => res.json())
-      .then((data) => {
-        setConfig(data);
-      })
-      .catch((err) => console.error("Failed to load config:", err));
-  }, []);
+  // Forecast settings
+  const [forecastYears, setForecastYears] = useState<number>(5);
+
+  // API state
+  const [clusteringLoading, setClusteringLoading] = useState<boolean>(false);
+  const [forecastLoading, setForecastLoading] = useState<boolean>(false);
+  const [clusteringError, setClusteringError] = useState<string | null>(null);
+  const [forecastError, setForecastError] = useState<string | null>(null);
+  const [apiForecastData, setApiForecastData] = useState<any>(null);
 
   useEffect(() => {
     fetch("/data.csv")
@@ -153,68 +159,157 @@ export default function Dashboard() {
       .then((txt) => {
         const parsed = parseCSV(txt);
         if (parsed.length > 0) {
-          setColumns(Object.keys(parsed[0]));
           setRows(parsed);
           setCsvLoaded(true);
 
-          setXFeature("F502");
-          setYFeature("F505");
-          setKClusters(4);
+          // Extract available years from "Tahun Lulus" column
+          const years = parsed
+            .map((row) => parseInt(row["Tahun Lulus"], 10))
+            .filter((year) => !isNaN(year))
+            .sort((a, b) => a - b);
 
-          if (Object.keys(parsed[0]).includes("Tahun Lulus")) {
-            const agg: Record<string, number> = {};
-            parsed.forEach((r) => {
-              const y = r["Tahun Lulus"]?.trim();
-              if (!y) return;
-              agg[y] = (agg[y] || 0) + 1;
-            });
+          const uniqueYears = Array.from(new Set(years));
+          setAvailableYears(uniqueYears);
 
-            const years = Object.keys(agg)
-              .map((k) => parseInt(k, 10))
-              .filter((v) => !isNaN(v))
-              .sort((a, b) => a - b);
-
-            const series = years.map((y) => ({
-              t: String(y),
-              value: agg[String(y)],
-            }));
-
-            // kalau ada 2025, isi dengan rata-rata 3 tahun lengkap sebelumnya
-            const idx2025 = years.indexOf(2025);
-            if (idx2025 !== -1) {
-              const last3 = series
-                .filter((d) => parseInt(d.t, 10) < 2025)
-                .slice(-3)
-                .map((d) => d.value);
-
-              if (last3.length > 0) {
-                const avg = last3.reduce((s, v) => s + v, 0) / last3.length;
-                series[idx2025].value = avg;
-              }
-            }
-
-            setTsSeries(series);
+          // Set default range to all available years
+          if (uniqueYears.length > 0) {
+            setYearStart(uniqueYears[0]);
+            setYearEnd(uniqueYears[uniqueYears.length - 1]);
           }
         }
       })
       .catch((err) => console.error("csv load", err));
   }, []);
 
+  // Filter rows by year range for clustering
+  const filteredRows = useMemo(() => {
+    if (!yearStart || !yearEnd) return rows;
+    return rows.filter((row) => {
+      const tahunLulus = row["Tahun Lulus"];
+      if (!tahunLulus) return false; // Exclude rows without graduation year
+      const year =
+        typeof tahunLulus === "number" ? tahunLulus : parseInt(tahunLulus);
+      return !isNaN(year) && year >= yearStart && year <= yearEnd;
+    });
+  }, [rows, yearStart, yearEnd]);
+
+  // Count valid rows that have all required clustering columns
+  const validClusteringRows = useMemo(() => {
+    const requiredColumns = ["F502", "F505", "F14_enc", "F5d_enc", "F1101_enc"];
+    return filteredRows.filter((row) => {
+      return requiredColumns.every(
+        (col) => row[col] !== undefined && row[col] !== null && row[col] !== ""
+      );
+    });
+  }, [filteredRows]);
+
+  // Clustering: Fetch from API with period filter
   useEffect(() => {
-    if (!csvLoaded || !xFeature || !yFeature || !config) return;
+    if (!csvLoaded || rows.length === 0) return;
 
-    const { clusterPlot, explainedVariance } = computeClustering(
-      rows,
-      config,
-      kClusters
-    );
-    if (clusterPlot && clusterPlot.length > 0) {
-      setClusterResult(clusterPlot);
-    }
-    if (explainedVariance) setPcaVariance(explainedVariance);
-  }, [csvLoaded, xFeature, yFeature, kClusters, rows, config]);
+    const fetchClustering = async () => {
+      setClusteringLoading(true);
+      setClusteringError(null);
 
-  const numberFormatter = _numberFormatter;
+      try {
+        // Use the memoized valid clustering rows
+        const dataToCluster = validClusteringRows;
+
+        console.log(`Clustering for ${yearStart}-${yearEnd}:`, {
+          totalRows: rows.length,
+          filteredRows: filteredRows.length,
+          validRows: dataToCluster.length,
+        });
+
+        if (dataToCluster.length === 0) {
+          setClusteringError(
+            `Tidak ada data valid untuk periode ${yearStart}-${yearEnd}`
+          );
+          setClusterResult([]);
+          setClusteringLoading(false);
+          return;
+        }
+
+        // Prepare batch data for clustering API - validate each row
+        const batchData: ClusteringInput[] = dataToCluster.map((row, idx) => {
+          const data = {
+            F502: parseFloat(row["F502"]) || 0,
+            F505: parseFloat(row["F505"]) || 0,
+            F14_enc: parseFloat(row["F14_enc"]) || 0,
+            F5d_enc: parseFloat(row["F5d_enc"]) || 0,
+            F1101_enc: parseFloat(row["F1101_enc"]) || 0,
+          };
+
+          // Log first few rows for debugging
+          if (idx < 3) {
+            console.log(`Row ${idx}:`, { raw: row, parsed: data });
+          }
+
+          return data;
+        });
+
+        const result = await clusteringPredict(batchData);
+
+        if (result && "results" in result) {
+          // Store PCA data without cluster assignment
+          const pcaPoints = result.results.map((r, i) => ({
+            x: r.pca_coordinates?.pc1 || batchData[i].F502,
+            y: r.pca_coordinates?.pc2 || batchData[i].F505,
+            rowData: dataToCluster[i],
+          }));
+          setPcaData(pcaPoints);
+
+          // Transform API result to scatter plot format using PCA coordinates
+          // Include original row data for ClusterInterpretation
+          const clusterPlot = result.results.map((r, i) => ({
+            x: r.pca_coordinates?.pc1 || batchData[i].F502,
+            y: r.pca_coordinates?.pc2 || batchData[i].F505,
+            cluster: r.cluster,
+            rowData: dataToCluster[i], // Store original row data
+          }));
+
+          setClusterResult(clusterPlot);
+
+          // Set PCA variance if available
+          if (result.pca_variance) {
+            setPcaVariance([
+              result.pca_variance[0] * 100,
+              result.pca_variance[1] * 100,
+            ]);
+          }
+        }
+      } catch (error) {
+        console.error("Clustering API error:", error);
+        setClusteringError(
+          error instanceof Error ? error.message : "Clustering failed"
+        );
+      } finally {
+        setClusteringLoading(false);
+      }
+    };
+
+    fetchClustering();
+  }, [csvLoaded, validClusteringRows, yearStart, yearEnd]);
+
+  // Re-cluster when k changes (using local k-means on PCA data)
+  useEffect(() => {
+    if (pcaData.length === 0) return;
+
+    console.log(`Re-clustering with k=${kClusters}`);
+
+    // Perform k-means clustering on PCA coordinates
+    const clusterAssignments = kmeans2D(pcaData, kClusters);
+
+    // Update cluster result with new assignments
+    const updatedClusterResult = pcaData.map((point, i) => ({
+      x: point.x,
+      y: point.y,
+      cluster: clusterAssignments[i],
+      rowData: point.rowData,
+    }));
+
+    setClusterResult(updatedClusterResult);
+  }, [kClusters, pcaData]);
 
   const computedStats = useMemo(() => computeComputedStats(rows), [rows]);
   const statusAlumni = useMemo(() => computeStatusAlumni(rows), [rows]);
@@ -251,16 +346,49 @@ export default function Dashboard() {
   const alasanPekerjaan = useMemo(() => computeAlasanPekerjaan(rows), [rows]);
   const sumberDana = useMemo(() => computeSumberDana(rows), [rows]);
 
+  // Forecasting: Fetch from API
   useEffect(() => {
-    if (tsSeries.length === 0) return;
-    const values = tsSeries.map((s) => s.value);
-    const rawForecast = arForecast(values, arOrder, diff, horizon);
+    const fetchForecast = async () => {
+      setForecastLoading(true);
+      setForecastError(null);
 
-    // jumlah lulusan tidak boleh minus
-    const safeForecast = rawForecast.map((v) => Math.max(0, v));
+      try {
+        // Get historical data first
+        const historicalResult = await getForecastData();
 
-    setForecastResult(safeForecast);
-  }, [tsSeries, arOrder, diff, horizon]);
+        // Get custom forecast with user-defined steps
+        const customResult = await getCustomForecast(forecastYears);
+
+        if (historicalResult && customResult) {
+          // Combine historical and custom forecast
+          const combinedData = {
+            ...historicalResult,
+            forecast_data: customResult.forecast_years.map((year, idx) => ({
+              year,
+              lulusan: Math.round(customResult.forecast_values[idx]),
+            })),
+            forecast_years: customResult.forecast_years,
+            forecast_values: customResult.forecast_values,
+            model_info: {
+              ...historicalResult.model_info,
+              ...customResult.model_info,
+            },
+          };
+
+          setApiForecastData(combinedData);
+        }
+      } catch (error) {
+        console.error("Forecast API error:", error);
+        setForecastError(
+          error instanceof Error ? error.message : "Forecast failed"
+        );
+      } finally {
+        setForecastLoading(false);
+      }
+    };
+
+    fetchForecast();
+  }, [forecastYears]);
 
   const getClusterColors = _getClusterColors;
   const assignPalette = _assignPalette;
@@ -572,7 +700,10 @@ export default function Dashboard() {
                       <div className="overflow-x-auto">
                         <div className="min-w-[500px]">
                           <ChartContainer config={chartConfig}>
-                            <BarChart accessibilityLayer data={tingkatKerjaColored}>
+                            <BarChart
+                              accessibilityLayer
+                              data={tingkatKerjaColored}
+                            >
                               <CartesianGrid vertical={false} />
                               <XAxis
                                 dataKey="level"
@@ -892,7 +1023,12 @@ export default function Dashboard() {
                             className="mx-auto h-[240px] w-full"
                           >
                             <PieChart
-                              margin={{ top: 8, right: 110, left: 16, bottom: 8 }}
+                              margin={{
+                                top: 8,
+                                right: 110,
+                                left: 16,
+                                bottom: 8,
+                              }}
                             >
                               <ChartTooltip
                                 cursor={false}
@@ -1027,32 +1163,120 @@ export default function Dashboard() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Pola Kelompok Profil Karir Alumni</CardTitle>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Pola Kelompok Profil Karir Alumni</span>
+                      {clusteringLoading && (
+                        <span className="text-sm font-normal text-muted-foreground">
+                          Loading...
+                        </span>
+                      )}
+                    </CardTitle>
                     <CardDescription>
                       Setiap titik adalah alumni, dikelompokkan berdasarkan
                       kemiripan profil karirnya
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex gap-2 mb-3 items-center">
-                      <label className="text-sm font-medium">
-                        Jumlah kelompok:
-                      </label>
-                      <input
-                        type="number"
-                        min={2}
-                        max={10}
-                        value={kClusters}
-                        onChange={(e) => setKClusters(Number(e.target.value))}
-                        className="input w-20"
-                      />
+                    {/* Year Range Validation Warning */}
+                    {yearStart > yearEnd && (
+                      <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+                        <strong>Peringatan:</strong> Tahun awal tidak boleh
+                        lebih besar dari tahun akhir. Silakan perbaiki range
+                        tahun.
+                      </div>
+                    )}
+
+                    {/* Period Range & Cluster Filter - Single Row */}
+                    <div className="mb-6 flex gap-4 items-end">
+                      <div className="flex-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          Dari Tahun
+                        </label>
+                        <select
+                          value={yearStart}
+                          onChange={(e) => {
+                            const newStart = Number(e.target.value);
+                            setYearStart(newStart);
+                            // Auto-adjust yearEnd if needed
+                            if (newStart > yearEnd) {
+                              setYearEnd(newStart);
+                            }
+                          }}
+                          className={`w-full mt-1 px-3 py-2 border rounded-md bg-white ${
+                            yearStart > yearEnd ? "border-amber-500" : ""
+                          }`}
+                        >
+                          {availableYears.map((year) => (
+                            <option key={year} value={year}>
+                              {year}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          Sampai Tahun
+                        </label>
+                        <select
+                          value={yearEnd}
+                          onChange={(e) => setYearEnd(Number(e.target.value))}
+                          className={`w-full mt-1 px-3 py-2 border rounded-md bg-white ${
+                            yearStart > yearEnd ? "border-amber-500" : ""
+                          }`}
+                        >
+                          {availableYears
+                            .filter((year) => year >= yearStart)
+                            .map((year) => (
+                              <option key={year} value={year}>
+                                {year}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          Jumlah Cluster (K)
+                        </label>
+                        <input
+                          type="number"
+                          min="2"
+                          max="10"
+                          value={kClusters}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            if (val >= 2 && val <= 10) {
+                              setKClusters(val);
+                            }
+                          }}
+                          className="w-full mt-1 px-3 py-2 border rounded-md bg-white"
+                        />
+                      </div>
+                      <div className="flex-1 text-sm text-muted-foreground">
+                        <div className="font-medium">
+                          {validClusteringRows.length} alumni
+                        </div>
+                        <div className="text-xs">
+                          Periode {yearStart}-{yearEnd}
+                        </div>
+                        {validClusteringRows.length < filteredRows.length && (
+                          <div className="text-xs text-amber-600 mt-1">
+                            ({filteredRows.length - validClusteringRows.length}{" "}
+                            data tidak lengkap)
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className="overflow-x-auto">
                       <div className="min-w-[600px]">
                         <ResponsiveContainer width="100%" height={450}>
                           <ScatterChart
-                            margin={{ top: 10, right: 30, bottom: 30, left: 30 }}
+                            margin={{
+                              top: 10,
+                              right: 30,
+                              bottom: 30,
+                              left: 30,
+                            }}
                           >
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis
@@ -1127,7 +1351,7 @@ export default function Dashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <ClusterInterpretation
                         clusterResult={clusterResult}
-                        rows={rows}
+                        rows={filteredRows}
                         kClusters={kClusters}
                         getClusterColors={getClusterColors}
                       />
@@ -1137,89 +1361,96 @@ export default function Dashboard() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Forecasting (AR approx.)</CardTitle>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Forecasting Jumlah Lulusan</span>
+                      {forecastLoading && (
+                        <span className="text-sm font-normal text-muted-foreground">
+                          Loading...
+                        </span>
+                      )}
+                    </CardTitle>
                     <CardDescription>
                       Perkiraan jumlah lulusan per tahun berdasarkan tren data
                       beberapa tahun terakhir.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex gap-2 mb-3 items-center">
-                      {/* <label className="text-sm">Riwayat (p):</label>
+                    {/* Forecast Years Input */}
+                    <div className="mb-6 flex gap-2 items-center">
+                      <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                        Tahun yang diprediksi (1-10):
+                      </label>
                       <input
                         type="number"
-                        min={0}
-                        value={arOrder}
-                        onChange={(e) =>
-                          setArOrder(Number(e.target.value) || 0)
-                        }
-                        className="input w-20"
+                        min="1"
+                        max="10"
+                        value={forecastYears}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          if (val >= 1 && val <= 10) {
+                            setForecastYears(val);
+                          }
+                        }}
+                        className="w-20 px-3 py-2 border rounded-md bg-white"
                       />
-                      <label className="text-sm">Mode tren (d):</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={diff}
-                        onChange={(e) => setDiff(Number(e.target.value) || 0)}
-                        className="input w-20"
-                      /> */}
-                      <label className="text-sm">Tahun yang diprediksi:</label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={horizon}
-                        onChange={(e) =>
-                          setHorizon(Number(e.target.value) || 1)
-                        }
-                        className="input w-20"
-                      />
-                      <div className="ml-auto text-sm text-muted-foreground">
-                        Series points: {tsSeries.length}
-                      </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <div className="min-w-[600px]">
-                        <div style={{ width: "100%", height: 360 }}>
-                          <ResponsiveContainer>
-                            <LineChart
-                              data={tsSeries
-                                .map((s) => ({ t: s.t, value: s.value }))
-                                .concat(
-                                  (() => {
-                                    const lastYear =
-                                      tsSeries.length > 0
-                                        ? parseInt(
-                                            tsSeries[tsSeries.length - 1].t,
-                                            10
-                                          )
-                                        : NaN;
-                                    return forecastResult.map((v, i) => ({
-                                      t:
-                                        Number.isFinite(lastYear) &&
-                                        !Number.isNaN(lastYear)
-                                          ? String(lastYear + i + 1)
-                                          : `F+${i + 1}`,
-                                      value: v,
-                                    }));
-                                  })()
-                                )}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="t" />
-                              <YAxis />
-                              <Tooltip />
-                              <Legend verticalAlign="bottom" iconType="plainline" />
-                              <Line
-                                type="monotone"
-                                dataKey="value"
-                                stroke="#007FCB"
-                                dot={true}
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
+                    <div style={{ width: "100%", height: 360 }}>
+                      <ResponsiveContainer>
+                        <LineChart
+                          data={
+                            apiForecastData
+                              ? [
+                                  // Historical data from API
+                                  ...apiForecastData.historical_data.map(
+                                    (d: any) => ({
+                                      t: String(d.year),
+                                      value: d.lulusan,
+                                      type: "historical",
+                                    })
+                                  ),
+                                  // Forecast data from API
+                                  ...apiForecastData.forecast_data.map(
+                                    (d: any) => ({
+                                      t: String(d.year),
+                                      value: d.lulusan,
+                                      type: "forecast",
+                                    })
+                                  ),
+                                ]
+                              : []
+                          }
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="t" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend verticalAlign="bottom" iconType="plainline" />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#007FCB"
+                            strokeWidth={2}
+                            dot={(props) => {
+                              const { cx, cy, payload } = props;
+                              return (
+                                <circle
+                                  cx={cx}
+                                  cy={cy}
+                                  r={payload.type === "forecast" ? 5 : 3}
+                                  fill={
+                                    payload.type === "forecast"
+                                      ? "#FF8042"
+                                      : "#007FCB"
+                                  }
+                                  stroke="#fff"
+                                  strokeWidth={2}
+                                />
+                              );
+                            }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   </CardContent>
                 </Card>
