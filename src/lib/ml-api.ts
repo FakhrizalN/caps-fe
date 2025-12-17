@@ -9,37 +9,38 @@ const getApiBaseUrl = () => {
   if (typeof window === 'undefined') {
     return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4101'
   }
-  
+
   // Client-side: Auto-detect berdasarkan environment
   const userAgent = window.navigator.userAgent
-  const isFlutterWebView = userAgent.includes('FlutterWebView') || 
-                          typeof (window as any).FlutterApp !== 'undefined'
-  
+  const isFlutterWebView = userAgent.includes('FlutterWebView') ||
+    typeof (window as any).FlutterApp !== 'undefined'
+
   if (isFlutterWebView) {
     // Mobile App: Gunakan 10.0.2.2 untuk Android Emulator
     return 'http://10.0.2.2:4101'
   }
-  
+
   // Browser: Detect production vs development
   const hostname = window.location.hostname
   const protocol = window.location.protocol
-  
-  // Production domains - use same origin with /api prefix
+
+  // Production domains - use same origin (no /api prefix)
   if (hostname === 'tracer.neverlands.xyz') {
-    // Backend accessible via: https://tracer.neverlands.xyz/api/
-    return `${protocol}//${hostname}/api`
+    // Backend accessible via: https://tracer.neverlands.xyz
+    return `${protocol}//${hostname}`
   }
-  
-  // Production IPs - use same origin with /api prefix
+
+  // Production IPs - use same origin (no /api prefix)
   if (hostname === '192.168.0.7' || hostname === '100.111.43.115' || hostname === '103.171.154.14') {
-    return `${protocol}//${hostname}/api`
+    return `${protocol}//${hostname}`
   }
-  
+
   // Development: localhost
   return 'http://localhost:4101'
 }
 
 const API_BASE = getApiBaseUrl();
+// ML API base URL - all endpoints use /api/ml prefix
 const ML_API_BASE_URL = `${API_BASE}/api/ml`;
 
 // Helper function untuk get auth token dari storage

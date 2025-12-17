@@ -4,39 +4,39 @@ const getBaseUrl = () => {
   if (typeof window === 'undefined') {
     return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4101'
   }
-  
+
   // Client-side: Auto-detect berdasarkan environment
   const userAgent = window.navigator.userAgent
-  const isFlutterWebView = userAgent.includes('FlutterWebView') || 
-                          typeof (window as any).FlutterApp !== 'undefined'
-  
+  const isFlutterWebView = userAgent.includes('FlutterWebView') ||
+    typeof (window as any).FlutterApp !== 'undefined'
+
   if (isFlutterWebView) {
     // Mobile App: Gunakan 10.0.2.2 untuk Android Emulator
     return 'http://10.0.2.2:4101'
   }
-  
+
   // Browser: Detect production vs development
   const hostname = window.location.hostname
   const protocol = window.location.protocol
-  
+
   // Production domains - use same origin (no port, no /api prefix)
   if (hostname === 'tracer.neverlands.xyz') {
     // Backend accessible via: https://tracer.neverlands.xyz
     return `${protocol}//${hostname}`
   }
-  
+
   // Production IPs - use same origin
   if (hostname === '192.168.0.7' || hostname === '100.111.43.115' || hostname === '103.171.154.14') {
     return `${protocol}//${hostname}`
   }
-  
+
   // Development: localhost with port
   return 'http://localhost:4101'
 }
 
 const BASE_URL = getBaseUrl()
-// API_BASE_URL for /api/* endpoints (surveys, ml, etc)
-const API_BASE_URL = BASE_URL.includes('localhost') ? BASE_URL : `${BASE_URL}/api`
+// API_BASE_URL - same as BASE_URL since all endpoints already include '/api/' in their paths
+const API_BASE_URL = BASE_URL
 // ACCOUNTS_BASE_URL for /accounts/* endpoints (login, register, me)
 const ACCOUNTS_BASE_URL = BASE_URL
 
@@ -73,10 +73,10 @@ interface ApiError {
  */
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   try {
-    console.log('Making POST request to:', `${ACCOUNTS_BASE_URL}/accounts/login`)
+    console.log('Making POST request to:', `${ACCOUNTS_BASE_URL}/accounts/login/`)
     console.log('Request payload:', { id: credentials.id, password: '***' })
-    
-    const response = await fetch(`${ACCOUNTS_BASE_URL}/accounts/login`, {
+
+    const response = await fetch(`${ACCOUNTS_BASE_URL}/accounts/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -90,39 +90,39 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
     if (!response.ok) {
       const error: ApiError = await response.json().catch(() => ({}))
       console.error('Error response:', error)
-      
+
       // Handle specific error messages
       if (error.detail) {
         throw new Error(error.detail)
       }
-      
+
       if (error.non_field_errors) {
         throw new Error(error.non_field_errors.join(', '))
       }
-      
+
       if (error.id) {
         throw new Error(`ID: ${error.id.join(', ')}`)
       }
-      
+
       if (error.password) {
         throw new Error(`Password: ${error.password.join(', ')}`)
       }
-      
+
       throw new Error('Login gagal. Periksa ID dan password Anda.')
     }
 
     const data = await response.json()
-    console.log('Login successful, received data:', { 
-      hasAccess: !!data.access, 
+    console.log('Login successful, received data:', {
+      hasAccess: !!data.access,
       hasRefresh: !!data.refresh,
-      hasUser: !!data.user 
+      hasUser: !!data.user
     })
     return data
   } catch (error) {
     console.error('Catch block error:', error)
     console.error('Error type:', error instanceof TypeError ? 'TypeError' : typeof error)
     console.error('Error message:', error instanceof Error ? error.message : String(error))
-    
+
     // Handle network errors
     if (error instanceof TypeError) {
       throw new Error('Tidak dapat terhubung ke server. Pastikan backend Django berjalan di http://localhost:4101 dan CORS dikonfigurasi dengan benar.')
@@ -139,7 +139,7 @@ export function logout() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user')
-    
+
     // Clear cookies
     document.cookie = 'access_token=; path=/; max-age=0'
     document.cookie = 'refresh_token=; path=/; max-age=0'
@@ -173,14 +173,14 @@ export function getRefreshToken(): string | null {
 export function setTokens(accessToken: string, refreshToken: string) {
   if (typeof window !== 'undefined') {
     console.log('Storing tokens...', { hasAccess: !!accessToken, hasRefresh: !!refreshToken })
-    
+
     localStorage.setItem('access_token', accessToken)
     localStorage.setItem('refresh_token', refreshToken)
-    
+
     // Also set as cookie for middleware with proper attributes
     document.cookie = `access_token=${accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax` // 7 days
     document.cookie = `refresh_token=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax` // 30 days
-    
+
     console.log('Tokens stored successfully')
     console.log('LocalStorage access_token:', localStorage.getItem('access_token') ? 'exists' : 'missing')
   }
@@ -268,7 +268,7 @@ export function isAuthenticated(): boolean {
  */
 export async function refreshAccessToken(): Promise<string> {
   const refreshToken = getRefreshToken()
-  
+
   if (!refreshToken) {
     throw new Error('No refresh token available')
   }
@@ -288,7 +288,7 @@ export async function refreshAccessToken(): Promise<string> {
 
   const data = await response.json()
   setTokens(data.access, refreshToken)
-  
+
   return data.access
 }
 
@@ -297,14 +297,14 @@ export async function refreshAccessToken(): Promise<string> {
  */
 export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   let accessToken = getAccessToken()
-  
+
   console.log('fetchWithAuth called for:', url, { hasToken: !!accessToken })
-  
+
   // Log request body for debugging
   if (options.body) {
     console.log('Request body:', options.body)
   }
-  
+
   if (!accessToken) {
     console.error('No access token found in localStorage')
     throw new Error('Not authenticated')
@@ -328,7 +328,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   if (response.status === 401) {
     try {
       accessToken = await refreshAccessToken()
-      
+
       // Retry request with new token
       response = await fetch(`${baseUrl}${url}`, {
         ...options,
@@ -421,7 +421,7 @@ export interface UpdateSurveyData {
 // }
 
 export async function getSurveys(): Promise<Survey[]> {
-  return fetch(`${API_BASE_URL}/surveys/`, {
+  return fetch(`${API_BASE_URL}/api/surveys/`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -909,10 +909,10 @@ export interface UpdateProgramStudyData {
  * Get all program studies with optional faculty filter
  */
 export async function getProgramStudiesDetailed(facultyId?: number): Promise<ProgramStudyDetailed[]> {
-  const url = facultyId 
+  const url = facultyId
     ? `/api/unit/program-studies/?faculty_id=${facultyId}`
     : '/api/unit/program-studies/'
-  
+
   return fetchWithAuth(url, {
     method: 'GET',
   })
@@ -1113,7 +1113,7 @@ export async function createQuestion(surveyId: number, sectionId: number, data: 
     ...data,
     options: data.options ? JSON.stringify(data.options) : null
   }
-  
+
   return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/questions/`, {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -1126,7 +1126,7 @@ export async function createQuestion(surveyId: number, sectionId: number, data: 
 export async function updateQuestion(surveyId: number, sectionId: number, questionId: number, data: UpdateQuestionData): Promise<Question> {
   // Build payload
   const payload: any = { ...data }
-  
+
   // If branches are present, options should already be cleaned (array of strings)
   // Otherwise, handle backward compatibility with old format
   if (data.branches && data.branches.length > 0) {
@@ -1145,7 +1145,7 @@ export async function updateQuestion(surveyId: number, sectionId: number, questi
         }
       }
     }
-    
+
     // Stringify options if it's an array/object
     if (typeof parsedOptions === 'string') {
       payload.options = parsedOptions
@@ -1153,10 +1153,10 @@ export async function updateQuestion(surveyId: number, sectionId: number, questi
       payload.options = JSON.stringify(parsedOptions)
     }
   }
-  
+
   // Branches should be sent as-is (array of objects)
   // Backend expects: [{ answer_value: string, next_section: number }]
-  
+
   return fetchWithAuth(`/api/surveys/${surveyId}/sections/${sectionId}/questions/${questionId}/`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
@@ -1361,7 +1361,7 @@ export async function getProgramStudyQuestion(surveyId: number, programStudyId: 
  */
 export async function createProgramStudyQuestion(surveyId: number, programStudyId: number, data: CreateProgramStudyQuestionData): Promise<ProgramStudyQuestion> {
   const payload: any = { ...data }
-  
+
   // Convert options from object format [{id, label}] to string array ["label1", "label2"]
   if (payload.options && Array.isArray(payload.options)) {
     payload.options = payload.options.map((opt: any) => {
@@ -1372,12 +1372,12 @@ export async function createProgramStudyQuestion(surveyId: number, programStudyI
       return String(opt)
     })
   }
-  
+
   // Send as JSON string to backend
   if (payload.options) {
     payload.options = JSON.stringify(payload.options)
   }
-  
+
   return fetchWithAuth(`/api/surveys/${surveyId}/programs/${programStudyId}/questions/`, {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -1389,7 +1389,7 @@ export async function createProgramStudyQuestion(surveyId: number, programStudyI
  */
 export async function updateProgramStudyQuestion(surveyId: number, programStudyId: number, questionId: number, data: UpdateProgramStudyQuestionData): Promise<ProgramStudyQuestion> {
   const payload: any = { ...data }
-  
+
   // Convert options from object format [{id, label}] to string array ["label1", "label2"]
   if (payload.options && Array.isArray(payload.options)) {
     payload.options = payload.options.map((opt: any) => {
@@ -1400,12 +1400,12 @@ export async function updateProgramStudyQuestion(surveyId: number, programStudyI
       return String(opt)
     })
   }
-  
+
   // Send as JSON string to backend
   if (payload.options) {
     payload.options = JSON.stringify(payload.options)
   }
-  
+
   return fetchWithAuth(`/api/surveys/${surveyId}/programs/${programStudyId}/questions/${questionId}/`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
