@@ -1,5 +1,5 @@
 // API Configuration - Auto-detect environment
-const getApiBaseUrl = () => {
+const getBaseUrl = () => {
   // Jika di server-side, gunakan env variable
   if (typeof window === 'undefined') {
     return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4101'
@@ -17,22 +17,28 @@ const getApiBaseUrl = () => {
   
   // Browser: Detect production vs development
   const hostname = window.location.hostname
+  const protocol = window.location.protocol
   
-  // Production domains
+  // Production domains - use same origin (no port, no /api prefix)
   if (hostname === 'tracer.neverlands.xyz') {
-    return 'http://tracer.neverlands.xyz:4101'
+    // Backend accessible via: https://tracer.neverlands.xyz
+    return `${protocol}//${hostname}`
   }
   
-  // Production IPs
+  // Production IPs - use same origin
   if (hostname === '192.168.0.7' || hostname === '100.111.43.115' || hostname === '103.171.154.14') {
-    return `http://${hostname}:4101`
+    return `${protocol}//${hostname}`
   }
   
-  // Development: localhost
+  // Development: localhost with port
   return 'http://localhost:4101'
 }
 
-const API_BASE_URL = getApiBaseUrl()
+const BASE_URL = getBaseUrl()
+// API_BASE_URL for /api/* endpoints (surveys, ml, etc)
+const API_BASE_URL = BASE_URL.includes('localhost') ? BASE_URL : `${BASE_URL}/api`
+// ACCOUNTS_BASE_URL for /accounts/* endpoints (login, register, me)
+const ACCOUNTS_BASE_URL = BASE_URL
 
 interface LoginRequest {
   id: string
@@ -67,10 +73,10 @@ interface ApiError {
  */
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   try {
-    console.log('Making POST request to:', `${API_BASE_URL}/accounts/login/`)
+    console.log('Making POST request to:', `${ACCOUNTS_BASE_URL}/accounts/login`)
     console.log('Request payload:', { id: credentials.id, password: '***' })
     
-    const response = await fetch(`${API_BASE_URL}/accounts/login/`, {
+    const response = await fetch(`${ACCOUNTS_BASE_URL}/accounts/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -204,7 +210,7 @@ export function getCurrentUser(): any | null {
  * Get current user data from API
  */
 export async function getCurrentUserFromAPI(): Promise<any> {
-  return fetchWithAuth('/accounts/me/');
+  return fetchWithAuth('/accounts/me');
 }
 
 /**
@@ -216,7 +222,7 @@ export async function updateCurrentUserProfile(data: {
   phone_number?: string;
   address?: string;
 }): Promise<any> {
-  return fetchWithAuth('/accounts/me/', {
+  return fetchWithAuth('/accounts/me', {
     method: 'PUT',
     body: JSON.stringify(data),
   });
@@ -231,7 +237,7 @@ export async function patchCurrentUserProfile(data: {
   phone_number?: string;
   address?: string;
 }): Promise<any> {
-  return fetchWithAuth('/accounts/me/', {
+  return fetchWithAuth('/accounts/me', {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
@@ -244,7 +250,7 @@ export async function changePassword(data: {
   old_password: string;
   new_password: string;
 }): Promise<any> {
-  return fetchWithAuth('/accounts/password/change/', {
+  return fetchWithAuth('/accounts/password/change', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -267,7 +273,7 @@ export async function refreshAccessToken(): Promise<string> {
     throw new Error('No refresh token available')
   }
 
-  const response = await fetch(`${API_BASE_URL}/accounts/token/refresh/`, {
+  const response = await fetch(`${ACCOUNTS_BASE_URL}/accounts/token/refresh`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -310,7 +316,10 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
     'Content-Type': 'application/json',
   }
 
-  let response = await fetch(`${API_BASE_URL}${url}`, {
+  // Determine which base URL to use
+  const baseUrl = url.startsWith('/accounts/') ? ACCOUNTS_BASE_URL : API_BASE_URL
+
+  let response = await fetch(`${baseUrl}${url}`, {
     ...options,
     headers,
   })
@@ -321,7 +330,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
       accessToken = await refreshAccessToken()
       
       // Retry request with new token
-      response = await fetch(`${API_BASE_URL}${url}`, {
+      response = await fetch(`${baseUrl}${url}`, {
         ...options,
         headers: {
           ...options.headers,
@@ -412,7 +421,7 @@ export interface UpdateSurveyData {
 // }
 
 export async function getSurveys(): Promise<Survey[]> {
-  return fetch(`${API_BASE_URL}/api/surveys/`, {
+  return fetch(`${API_BASE_URL}/surveys/`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

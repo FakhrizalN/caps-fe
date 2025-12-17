@@ -22,15 +22,17 @@ const getApiBaseUrl = () => {
   
   // Browser: Detect production vs development
   const hostname = window.location.hostname
+  const protocol = window.location.protocol
   
-  // Production domains
+  // Production domains - use same origin with /api prefix
   if (hostname === 'tracer.neverlands.xyz') {
-    return 'http://tracer.neverlands.xyz:4101'
+    // Backend accessible via: https://tracer.neverlands.xyz/api/
+    return `${protocol}//${hostname}/api`
   }
   
-  // Production IPs
+  // Production IPs - use same origin with /api prefix
   if (hostname === '192.168.0.7' || hostname === '100.111.43.115' || hostname === '103.171.154.14') {
-    return `http://${hostname}:4101`
+    return `${protocol}//${hostname}/api`
   }
   
   // Development: localhost
