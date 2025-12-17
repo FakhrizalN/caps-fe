@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import {
-  Eye,
-  File,
-  Share2
+    Eye,
+    File,
+    Share2
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -44,12 +44,6 @@ export function QuestionToolbar({
 }: QuestionToolbarProps) {
   const router = useRouter()
   const [currentTab, setCurrentTab] = useState(activeTab)
-
-  // Debug: Log userRole to check its value
-  useEffect(() => {
-    console.log("QuestionToolbar - userRole:", userRole)
-    console.log("QuestionToolbar - should hide program study?", userRole === "Tracer")
-  }, [userRole])
 
   // Sync currentTab with activeTab prop when it changes
   useEffect(() => {

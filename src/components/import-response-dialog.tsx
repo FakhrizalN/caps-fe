@@ -215,7 +215,6 @@ export function ImportResponseDialog({
       }
 
       // TODO: Implement API call to import responses
-      console.log('Parsed responses:', responses)
       
       alert(`Ready to import ${responses.length} response(s). API integration coming soon.`)
       

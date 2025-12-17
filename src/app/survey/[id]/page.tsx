@@ -126,7 +126,6 @@ export default function SurveyQuestionsPage() {
     // Don't allow reordering temporary questions
     const draggedQuestion = section.questions[oldIndex]
     if (typeof draggedQuestion.id === 'string' && draggedQuestion.id.startsWith('temp-')) {
-      console.log("Cannot reorder temporary question")
       return
     }
 
@@ -161,7 +160,6 @@ export default function SurveyQuestionsPage() {
       
       // Wait for all updates - no need to update state again since it's already correct
       await Promise.all(updatePromises)
-      console.log("Question order updated successfully")
     } catch (error) {
       console.error("Error updating question order:", error)
       // Revert on error
@@ -190,7 +188,6 @@ export default function SurveyQuestionsPage() {
   const fetchSurveyData = async () => {
     // Prevent double execution in React Strict Mode
     if (fetchedSurveyIdRef.current === surveyId) {
-      console.log("⚠️ Skipping duplicate fetchSurveyData call (React Strict Mode)")
       return
     }
     fetchedSurveyIdRef.current = surveyId
@@ -381,10 +378,7 @@ export default function SurveyQuestionsPage() {
         const currentUser = await getCurrentUserFromAPI()
         const userRoleName = currentUser.role || ""  // Changed from role_name to role
         
-        console.log("🔍 User Role Check:")
-        console.log("  - User:", currentUser)
-        console.log("  - Role Name:", userRoleName)
-        console.log("  - Is Tim Prodi?", userRoleName === "Tim Prodi")
+
         
         // Set userRole state
         if (isMounted) {
@@ -393,24 +387,18 @@ export default function SurveyQuestionsPage() {
         
         // If user is Tim Prodi, enable preview mode (disable editing) and lock it
         if (userRoleName === "Tim Prodi") {
-          console.log("✅ Setting preview mode for Tim Prodi")
           if (isMounted) {
             setIsTimProdi(true)
             setIsPreviewMode(true)
           }
-        } else {
-          console.log("❌ Not Tim Prodi, editing enabled")
         }
         
         // Get program study ID from user
         const user = getCurrentUser()
-        console.log("Current user:", user)
         if (user?.program_study) {
-          console.log("Setting programStudyId to:", user.program_study)
           if (isMounted) setProgramStudyId(user.program_study.toString())
         } else {
-          console.warn("No program_study found in user data, using default: 1")
-          if (isMounted) setProgramStudyId("1") // Default fallback
+          if (isMounted) setProgramStudyId("1")
         }
       }
     }
@@ -808,8 +796,6 @@ export default function SurveyQuestionsPage() {
       // Add branches array separately (backend will create QuestionBranch entries)
       // This field is separate from options and handled by backend serializer
       payload.branches = branches
-
-      console.log('Updating question with payload:', payload)
 
       const updatedQuestion = await updateQuestion(surveyId, section.id, question.id as number, payload)
 
@@ -1222,13 +1208,6 @@ export default function SurveyQuestionsPage() {
         const newSurveyTitle = newFirstSectionOriginal.title
         const newSurveyDescription = newFirstSectionOriginal.description || ""
 
-        console.log("First section changed, updating survey title and description", {
-          oldFirstSectionId: oldFirstSection.id,
-          newFirstSectionId: newFirstSection.id,
-          newSurveyTitle,
-          newSurveyDescription
-        })
-
         // Update survey title and description in state and backend
         setSurveyTitle(newSurveyTitle)
         setSurveyDescription(newSurveyDescription)
@@ -1241,20 +1220,14 @@ export default function SurveyQuestionsPage() {
       }
 
       // Update ALL sections with their new order ONLY (no title changes)
-      console.log("Updating section orders")
       reorderedSections.forEach(section => {
         const updateData = { order: section.order }
-        console.log(`Updating section ${section.id}:`, updateData)
         updatePromises.push(
-          updateSection(surveyId, section.id, updateData).then(response => {
-            console.log(`Response for section ${section.id}:`, response)
-            return response
-          })
+          updateSection(surveyId, section.id, updateData)
         )
       })
       
       await Promise.all(updatePromises)
-      console.log("Sections reordered successfully")
       
       // Give a small delay to ensure state is updated before dialog might reopen
       await new Promise(resolve => setTimeout(resolve, 100))
@@ -1396,9 +1369,7 @@ export default function SurveyQuestionsPage() {
     }
   }
 
-  const handlePublish = () => {
-    console.log("Survey published!")
-  }
+  const handlePublish = () => {}
 
   if (loading) {
     return (
@@ -1424,11 +1395,7 @@ export default function SurveyQuestionsPage() {
     title: section.title || `Section${index + 1}`
   }))
 
-  // Debug log for preview mode state
-  console.log("📋 Survey Page State:")
-  console.log("  - isPreviewMode:", isPreviewMode)
-  console.log("  - isTimProdi:", isTimProdi)
-  console.log("  - Active Question ID:", activeQuestionId)
+
 
   return (
     <SidebarProvider>

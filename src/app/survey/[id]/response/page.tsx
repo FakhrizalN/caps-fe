@@ -4,12 +4,12 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { QuestionToolbar } from "@/components/question_toolbar"
 import { ResponseData, ResponseListTable } from "@/components/response_list_table"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
@@ -53,9 +53,7 @@ export default function ResponsesPage() {
         // Set userRole state
         setUserRole(userRoleName)
         
-        console.log("🔍 Response Page - User Info:")
-        console.log("  - User Role:", userRoleName)
-        console.log("  - Program Study:", userProgramStudy)
+
         
         if (userProgramStudy) {
           setProgramStudyId(userProgramStudy.toString())
@@ -69,8 +67,7 @@ export default function ResponsesPage() {
         setSurveyTitle(survey.title)
 
         const answers: Answer[] = await getAnswers(surveyId)
-        console.log("📊 Total answers fetched:", answers.length)
-        console.log("📋 Sample answer structure:", answers[0])
+
 
         const uniqueUsers = new Map<string, UniqueUser>()
         
@@ -86,7 +83,7 @@ export default function ResponsesPage() {
         })
 
         const userList: ResponseData[] = Array.from(uniqueUsers.values())
-        console.log("👥 Unique users:", userList.length)
+
         setResponses(userList)
       } catch (err) {
         console.error("❌ Error fetching responses:", err)
@@ -130,7 +127,7 @@ export default function ResponsesPage() {
           surveyId={surveyId.toString()}
           programStudyId={programStudyId}
           userRole={userRole}
-          onPublish={() => console.log("Publish")}
+          onPublish={() => {}}
         />
         
         <div className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">

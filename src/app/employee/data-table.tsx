@@ -1,30 +1,30 @@
 "use client"
 
 import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+    ColumnDef,
+    ColumnFiltersState,
+    SortingState,
+    VisibilityState,
+    flexRender,
+    getCoreRowModel,
+    getFacetedRowModel,
+    getFacetedUniqueValues,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
 } from "@tanstack/react-table"
 import { Search, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import * as React from "react"
 
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from "@/components/ui/table"
 
 import { DataTableViewOptions } from "@/components/column_toggle"
@@ -105,8 +105,7 @@ export function DataTable<TData, TValue>({
         // Get selected employee IDs
         const selectedIds = selectedRows.map(row => (row.original as any).id)
         
-        // Implementasi API call untuk bulk delete
-        console.log('Delete employees:', selectedIds)
+        // TODO: Implement API call for bulk delete
         
         // Simulasi API call
         await new Promise(resolve => setTimeout(resolve, 1000))

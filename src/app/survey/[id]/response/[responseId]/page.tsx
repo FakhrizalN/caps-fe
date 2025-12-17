@@ -106,15 +106,11 @@ export default function ResponseDetailPage() {
         setUserRole(userRoleName)
         
         const user = getCurrentUser()
-        console.log("Response detail - Current user:", user)
-        console.log("Response detail - User role:", userRoleName)
         let userProgramStudyId = 1 // default
         if (user?.program_study) {
-          console.log("Response detail - Setting programStudyId to:", user.program_study)
           userProgramStudyId = user.program_study
           setProgramStudyId(user.program_study.toString())
         } else {
-          console.warn("Response detail - No program_study found, using default: 1")
           setProgramStudyId("1")
         }
         
@@ -122,27 +118,11 @@ export default function ResponseDetailPage() {
         try {
           const programQuestions = await getProgramStudyQuestions(surveyId, userProgramStudyId)
           setProgramStudyQuestions(programQuestions)
-          console.log("📚 Program Study Questions:", programQuestions)
         } catch (error) {
-          console.log("No program study questions found or error:", error)
           setProgramStudyQuestions([])
         }
         
-        console.log("📚 Questions with options:", allQuestions)
-        
-        // Log detail untuk setiap question yang punya options
-        allQuestions.forEach(q => {
-          if (q.options) {
-            console.log(`Question ${q.id} (${q.question_type}):`, {
-              optionsType: typeof q.options,
-              optionsRaw: q.options,
-              optionsParsed: typeof q.options === 'string' ? JSON.parse(q.options) : q.options
-            })
-          }
-        })
-
         const allAnswers: Answer[] = await getAnswers(surveyId)
-        console.log("📋 All answers:", allAnswers)
 
         const uniqueUsers = new Map<string, UniqueUser>()
 
@@ -158,7 +138,6 @@ export default function ResponseDetailPage() {
 
         const userList = Array.from(uniqueUsers.values())
         setAllUsers(userList)
-        console.log("👥 Unique users:", userList)
 
         if (userList.length > 0 && !currentUserNim) {
           setCurrentUserNim(userList[0].nim)
@@ -183,15 +162,11 @@ export default function ResponseDetailPage() {
       try {
         if (!currentUserNim || !surveyId || isNaN(surveyId)) return
 
-        console.log(`📝 Fetching answers untuk user (NIM/user_id): ${currentUserNim}`)
-
         const allAnswers: Answer[] = await getAnswers(surveyId)
 
         const answers = allAnswers.filter(
           (a) => a.user_id === currentUserNim,
         )
-
-        console.log("✅ User answers:", answers)
 
         const sorted = answers.sort((a, b) => a.question - b.question)
         setUserAnswers(sorted)
@@ -396,22 +371,8 @@ export default function ResponseDetailPage() {
     // Cari program study question yang sesuai
     const question = programStudyQuestions.find(q => Number(q.id) === answer.program_specific_question)
     
-    console.log(`🔍 Converting program study answer for question ${answer.program_specific_question}:`, {
-      answerQuestionType: answer.question_type,
-      questionQuestionType: question?.question_type,
-      answerValue: answer.answer_value,
-      answerValueType: typeof answer.answer_value,
-      answerValueIsArray: Array.isArray(answer.answer_value),
-      foundQuestion: !!question,
-      questionOptions: question?.options,
-      questionOptionsType: typeof question?.options,
-      questionOptionsIsArray: Array.isArray(question?.options)
-    })
-    
     // PENTING: Gunakan question_type dari program study question, bukan dari answer
     const questionType = question?.question_type || answer.question_type
-    
-    console.log(`🎯 Question type decision - Using: "${questionType}", from question: "${question?.question_type}", from answer: "${answer.question_type}"`)
     
     // Parse options dari question.options (bisa berupa string JSON atau array)
     const parseOptions = (opts: any): any[] => {
@@ -490,8 +451,6 @@ export default function ResponseDetailPage() {
         const mcOptionsRaw = parseOptions(question?.options)
         const mcOptions = mcOptionsRaw
         
-        console.log(`📻 Program study MC - questionType: ${questionType}, options:`, mcOptions, `answerValue:`, answer.answer_value)
-        
         // answer_value bisa berupa object {id, label}, ID, atau label langsung
         let selectedOptionId: string
         if (typeof answer.answer_value === 'object' && answer.answer_value !== null && 'id' in answer.answer_value) {
@@ -508,8 +467,6 @@ export default function ResponseDetailPage() {
           selectedOptionId = String(answer.answer_value)
         }
         
-        console.log(`📻 Program study multiple choice - Selected:`, selectedOptionId)
-        
         const result = {
           id: `pq${idx}`,
           type: "multiple_choice" as const,
@@ -518,8 +475,6 @@ export default function ResponseDetailPage() {
           options: mcOptions,
           selectedOption: selectedOptionId,
         }
-        
-        console.log(`✅ Program study MC result:`, result)
         
         return result
 
@@ -582,8 +537,6 @@ export default function ResponseDetailPage() {
           selectedIds = [String(answer.answer_value)]
         }
         
-        console.log(`☑️ Program study checkbox options:`, cbOptions, `Selected:`, selectedIds)
-        
         return {
           id: `pq${idx}`,
           type: "checkbox",
@@ -613,8 +566,6 @@ export default function ResponseDetailPage() {
           selectedDropdownId = String(answer.answer_value)
         }
         
-        console.log(`📋 Program study dropdown options:`, dropdownOptions, `Selected:`, selectedDropdownId)
-        
         return {
           id: `pq${idx}`,
           type: "dropdown",
@@ -641,17 +592,6 @@ export default function ResponseDetailPage() {
   ): QuestionData => {
     // Cari question yang sesuai untuk mendapatkan options
     const question = questions.find(q => Number(q.id) === answer.question)
-    
-    console.log(`🔍 Converting answer for question ${answer.question}:`, {
-      questionType: answer.question_type,
-      answerValue: answer.answer_value,
-      answerValueType: typeof answer.answer_value,
-      answerValueIsArray: Array.isArray(answer.answer_value),
-      foundQuestion: !!question,
-      questionOptions: question?.options,
-      questionOptionsType: typeof question?.options,
-      questionOptionsIsArray: Array.isArray(question?.options)
-    })
     
     // Parse options dari question.options (bisa berupa string JSON atau array)
     const parseOptions = (opts: any): any[] => {
@@ -753,8 +693,6 @@ export default function ResponseDetailPage() {
           selectedOptionId = String(answer.answer_value)
         }
         
-        console.log(`📻 Multiple choice options:`, mcOptions, `Selected:`, selectedOptionId)
-        
         return {
           id: `q${idx}`,
           type: "multiple_choice",
@@ -835,8 +773,6 @@ export default function ResponseDetailPage() {
           selectedIds = [String(answer.answer_value)]
         }
         
-        console.log(`☑️ Checkbox options:`, cbOptions, `Selected:`, selectedIds)
-        
         return {
           id: `q${idx}`,
           type: "checkbox",
@@ -867,8 +803,6 @@ export default function ResponseDetailPage() {
         } else {
           selectedDropdownId = String(answer.answer_value)
         }
-        
-        console.log(`📋 Dropdown options:`, dropdownOptions, `Selected:`, selectedDropdownId)
         
         return {
           id: `q${idx}`,
@@ -933,7 +867,7 @@ export default function ResponseDetailPage() {
           surveyId={surveyId.toString()}
           programStudyId={programStudyId}
           userRole={userRole}
-          onPublish={() => console.log("Publish")}
+          onPublish={() => {}}
         />
 
         <div className="bg-gray-50 min-h-screen">

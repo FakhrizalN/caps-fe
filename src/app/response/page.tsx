@@ -6,21 +6,21 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from "@/components/ui/table"
 import { getCurrentUserFromAPI, getProgramStudiesDetailed, getUsers, type ProgramStudyDetailed, type User } from "@/lib/api"
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Mail, Mails, Search } from "lucide-react"
@@ -86,15 +86,10 @@ export default function ResponsesPage() {
         setCurrentUserRole(userRole)
         setCurrentUserProgramStudy(userProgramStudy || null)
         
-        console.log("📊 Current user:", { role: userRole, program_study: userProgramStudy })
-        
         const [usersData, programStudiesData] = await Promise.all([
           getUsers(),
           getProgramStudiesDetailed()
         ])
-        
-        console.log("📊 Total users fetched:", usersData.length)
-        console.log("📊 Sample users with roles:", usersData.slice(0, 3).map(u => ({ id: u.id, role: u.role })))
         
         // Alumni role ID is 3 based on backend seed data
         // global_roles = ['Admin', 'Tracer', 'Alumni', 'Pimpinan Unit']
@@ -107,15 +102,11 @@ export default function ResponsesPage() {
           return userRoleId === ALUMNI_ROLE_ID
         })
         
-        console.log("👥 Alumni users (role=3) before prodi filter:", filteredUsers.length)
-        console.log("👥 Alumni users:", filteredUsers.map(u => ({ id: u.id, name: u.username })))
-        
         // If Tim Prodi, filter by program_study
         if (userRole === "Tim Prodi" && userProgramStudy) {
           filteredUsers = filteredUsers.filter((user: User) => 
             Number(user.program_study) === Number(userProgramStudy)
           )
-          console.log("🎓 Tim Prodi filtered users:", filteredUsers.length)
         }
         
         // Merge program study details with user data
@@ -210,7 +201,7 @@ export default function ResponsesPage() {
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => {
-                          console.log('Send notification to all users:', filteredUsers.map(u => u.email))
+                          // TODO: implement send notification
                         }}
                         title="Send notification to all users"
                       >
@@ -250,7 +241,9 @@ export default function ResponsesPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => console.log('Send email to:', user.email)}
+                              onClick={() => {
+                                // TODO: implement send email
+                              }}
                               title="Send email notification"
                             >
                               <Mail className="h-4 w-4" />

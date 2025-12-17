@@ -7,42 +7,42 @@ import { QuestionFloatingToolbar } from "@/components/question_floating_toolbar"
 import { QuestionToolbar } from "@/components/question_toolbar"
 import { SectionHeaderCard } from "@/components/section_header_card"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
-  createProgramStudyQuestion,
-  deleteProgramStudyQuestion,
-  getCurrentUserFromAPI,
-  getProgramStudy,
-  getProgramStudyQuestions,
-  getSurvey,
-  ProgramStudyQuestion,
-  updateProgramStudyQuestion
+    createProgramStudyQuestion,
+    deleteProgramStudyQuestion,
+    getCurrentUserFromAPI,
+    getProgramStudy,
+    getProgramStudyQuestions,
+    getSurvey,
+    ProgramStudyQuestion,
+    updateProgramStudyQuestion
 } from "@/lib/api"
 import {
-  closestCenter,
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    DragOverlay,
+    DragStartEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
 } from "@dnd-kit/core"
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -93,7 +93,6 @@ export default function ProgramStudyQuestionsPage() {
 
     const draggedQuestion = questions[oldIndex]
     if (typeof draggedQuestion.id === 'string' && draggedQuestion.id.startsWith('temp-')) {
-      console.log("Cannot reorder temporary question")
       return
     }
 
@@ -119,7 +118,6 @@ export default function ProgramStudyQuestionsPage() {
         )
       
       await Promise.all(updatePromises)
-      console.log("Question order updated successfully")
     } catch (error) {
       console.error("Error updating question order:", error)
       toast.error("Failed to update question order")
@@ -178,14 +176,8 @@ export default function ProgramStudyQuestionsPage() {
           setUserRole(userRole)
           const userProgramStudy = currentUser.program_study
           
-          console.log("🔍 Program Study Auto-Redirect Check:")
-          console.log("  - User Role:", userRole)
-          console.log("  - User Program Study:", userProgramStudy)
-          console.log("  - Current URL Program Study:", programStudyId)
-          
           // Block Tracer from accessing program study questions
           if (userRole === "Tracer") {
-            console.log("🚫 Tracer cannot access program study questions")
             toast.error("You don't have permission to access program study questions")
             router.replace(`/survey/${surveyId}`)
             return
@@ -194,11 +186,9 @@ export default function ProgramStudyQuestionsPage() {
           // If user is Tim Prodi, auto-redirect to their program study
           if (userRole === "Tim Prodi" && userProgramStudy) {
             if (userProgramStudy !== programStudyId) {
-              console.log(`🔄 Auto-redirecting to user's program study: ${userProgramStudy}`)
               router.replace(`/survey/${surveyId}/program-study/${userProgramStudy}`)
               return
             }
-            console.log("✅ User already on their program study page")
           }
         } catch (error) {
           console.error("Error checking user program study:", error)
@@ -485,14 +475,12 @@ export default function ProgramStudyQuestionsPage() {
   }
 
   const handleImportSuccess = async () => {
-    console.log("Import successful, refreshing questions...")
     await fetchQuestions()
     // Force page refresh to ensure all imported questions are displayed
     window.location.reload()
   }
 
   const handlePublish = () => {
-    console.log("Publishing survey...")
     alert("Survey published!")
   }
 
@@ -542,7 +530,7 @@ export default function ProgramStudyQuestionsPage() {
           surveyId={surveyId.toString()}
           programStudyId={programStudyId.toString()}
           userRole={userRole}
-          onTabChange={(tab) => console.log("Tab changed:", tab)}
+          onTabChange={() => {}}
           onPreviewToggle={() => setIsPreviewMode(!isPreviewMode)}
           onPublish={handlePublish}
         />

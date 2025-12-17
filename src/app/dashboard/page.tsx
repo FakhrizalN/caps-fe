@@ -1,78 +1,78 @@
 "use client";
 import {
-  assignPalette as _assignPalette,
-  getClusterColors as _getClusterColors,
-  computeAlasanPekerjaan,
-  computeComputedStats,
-  computeJenisInstitusi,
-  computeKompetensiData,
-  computeMetodePembelajaran,
-  computePekerjaanCepat,
-  computePendapatanData,
-  computeRelevansiBidang,
-  computeStatusAlumni,
-  computeStatusPencarian,
-  computeStrategiPencarian,
-  computeSumberDana,
-  computeTimelinePencarian,
-  computeTingkatKerja,
-  computeTingkatPendidikan,
-  computeWaktuTunggu,
+    assignPalette as _assignPalette,
+    getClusterColors as _getClusterColors,
+    computeAlasanPekerjaan,
+    computeComputedStats,
+    computeJenisInstitusi,
+    computeKompetensiData,
+    computeMetodePembelajaran,
+    computePekerjaanCepat,
+    computePendapatanData,
+    computeRelevansiBidang,
+    computeStatusAlumni,
+    computeStatusPencarian,
+    computeStrategiPencarian,
+    computeSumberDana,
+    computeTimelinePencarian,
+    computeTingkatKerja,
+    computeTingkatPendidikan,
+    computeWaktuTunggu,
 } from "../../../utils/dashboard-utils";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { ClusterInterpretation } from "@/components/clusterinterpretation";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbList,
+    BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Separator } from "@/components/ui/separator";
 import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
+    SidebarInset,
+    SidebarProvider,
+    SidebarTrigger,
 } from "@/components/ui/sidebar";
 import {
-  clusteringPredict,
-  getCustomForecast,
-  getForecastData,
-  type ClusteringInput,
+    clusteringPredict,
+    getCustomForecast,
+    getForecastData,
+    type ClusteringInput,
 } from "@/lib/ml-api";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  LabelList,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  PolarAngleAxis,
-  PolarGrid,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Scatter,
-  ScatterChart,
-  Tooltip,
-  XAxis,
-  YAxis,
+    Bar,
+    BarChart,
+    CartesianGrid,
+    LabelList,
+    Legend,
+    Line,
+    LineChart,
+    Pie,
+    PieChart,
+    PolarAngleAxis,
+    PolarGrid,
+    Radar,
+    RadarChart,
+    ResponsiveContainer,
+    Scatter,
+    ScatterChart,
+    Tooltip,
+    XAxis,
+    YAxis,
 } from "recharts";
 import { kmeans2D } from "../../../utils/clustering";
 import { parseCSV } from "../../../utils/csv";
@@ -215,12 +215,6 @@ export default function Dashboard() {
         // Use the memoized valid clustering rows
         const dataToCluster = validClusteringRows;
 
-        console.log(`Clustering for ${yearStart}-${yearEnd}:`, {
-          totalRows: rows.length,
-          filteredRows: filteredRows.length,
-          validRows: dataToCluster.length,
-        });
-
         if (dataToCluster.length === 0) {
           setClusteringError(
             `Tidak ada data valid untuk periode ${yearStart}-${yearEnd}`
@@ -239,11 +233,6 @@ export default function Dashboard() {
             F5d_enc: parseFloat(row["F5d_enc"]) || 0,
             F1101_enc: parseFloat(row["F1101_enc"]) || 0,
           };
-
-          // Log first few rows for debugging
-          if (idx < 3) {
-            console.log(`Row ${idx}:`, { raw: row, parsed: data });
-          }
 
           return data;
         });
@@ -294,8 +283,6 @@ export default function Dashboard() {
   // Re-cluster when k changes (using local k-means on PCA data)
   useEffect(() => {
     if (pcaData.length === 0) return;
-
-    console.log(`Re-clustering with k=${kClusters}`);
 
     // Perform k-means clustering on PCA coordinates
     const clusterAssignments = kmeans2D(pcaData, kClusters);
