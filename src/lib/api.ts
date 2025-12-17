@@ -2,7 +2,7 @@
 const getApiBaseUrl = () => {
   // Jika di server-side, gunakan env variable
   if (typeof window === 'undefined') {
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4101'
   }
   
   // Client-side: Auto-detect berdasarkan environment
@@ -12,11 +12,24 @@ const getApiBaseUrl = () => {
   
   if (isFlutterWebView) {
     // Mobile App: Gunakan 10.0.2.2 untuk Android Emulator
-    return 'http://10.0.2.2:8000'
-  } else {
-    // Browser Desktop: Gunakan localhost
-    return 'http://localhost:8000'
+    return 'http://10.0.2.2:4101'
   }
+  
+  // Browser: Detect production vs development
+  const hostname = window.location.hostname
+  
+  // Production domains
+  if (hostname === 'tracer.neverlands.xyz') {
+    return 'http://tracer.neverlands.xyz:4101'
+  }
+  
+  // Production IPs
+  if (hostname === '192.168.0.7' || hostname === '100.111.43.115' || hostname === '103.171.154.14') {
+    return `http://${hostname}:4101`
+  }
+  
+  // Development: localhost
+  return 'http://localhost:4101'
 }
 
 const API_BASE_URL = getApiBaseUrl()
@@ -106,7 +119,7 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
     
     // Handle network errors
     if (error instanceof TypeError) {
-      throw new Error('Tidak dapat terhubung ke server. Pastikan backend Django berjalan di http://localhost:8000 dan CORS dikonfigurasi dengan benar.')
+      throw new Error('Tidak dapat terhubung ke server. Pastikan backend Django berjalan di http://localhost:4101 dan CORS dikonfigurasi dengan benar.')
     }
     throw error
   }

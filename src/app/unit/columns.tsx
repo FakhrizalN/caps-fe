@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { deleteDepartment, deleteFaculty, deleteProgramStudy } from "@/lib/api"
 import { ColumnDef } from "@tanstack/react-table"
@@ -279,4 +279,4 @@ export const createProdiColumns = (fakultasData: Fakultas[], jurusanData: Jurusa
 ]
 
 // Keep the original columns for backward compatibility
-export const prodiColumns = createProdiColumns([])
+export const prodiColumns = createProdiColumns([], [])

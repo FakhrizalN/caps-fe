@@ -564,7 +564,7 @@ export function PredictionSection() {
       const years_since_grad = currentYear - parseInt(formData.tahun_lulus);
 
       const response = await fetch(
-        "http://localhost:8000/api/ml/classification/predict/",
+        "http://localhost:4101/api/ml/classification/predict/",
         {
           method: "POST",
           headers: {
