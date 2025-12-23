@@ -11,31 +11,28 @@ const getApiBaseUrl = () => {
   }
 
   // Client-side: Auto-detect berdasarkan environment
+  const hostname = window.location.hostname
+  const protocol = window.location.protocol
   const userAgent = window.navigator.userAgent
   const isFlutterWebView = userAgent.includes('FlutterWebView') ||
     typeof (window as any).FlutterApp !== 'undefined'
 
-  if (isFlutterWebView) {
-    // Mobile App: Gunakan 10.0.2.2 untuk Android Emulator
-    return 'http://10.0.2.2:4101'
-  }
-
-  // Browser: Detect production vs development
-  const hostname = window.location.hostname
-  const protocol = window.location.protocol
-
-  // Production domains - use same origin (no /api prefix)
+  // PRIORITAS 1: Cek production domain DULUAN (baik browser maupun FlutterWebView)
   if (hostname === 'tracer.neverlands.xyz') {
-    // Backend accessible via: https://tracer.neverlands.xyz
     return `${protocol}//${hostname}`
   }
 
-  // Production IPs - use same origin (no /api prefix)
+  // Production IPs - use same origin
   if (hostname === '192.168.0.7' || hostname === '100.111.43.115' || hostname === '103.171.154.14') {
     return `${protocol}//${hostname}`
   }
 
-  // Development: localhost
+  // PRIORITAS 2: FlutterWebView di development (localhost)
+  if (isFlutterWebView) {
+    return 'http://10.0.2.2:4101'
+  }
+
+  // Browser development: localhost
   return 'http://localhost:4101'
 }
 

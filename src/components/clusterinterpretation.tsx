@@ -42,11 +42,19 @@ export function ClusterInterpretation({
     return "🌐 Multilateral";
   };
 
+  const getTingkatKerjaLabel = (val: number) => {
+    if (val <= 1.5) return "🏠 Lokal/Wilayah";
+    if (val <= 2.5) return "🗺️ Regional";
+    if (val <= 3.5) return "🇮🇩 Nasional";
+    if (val <= 4.5) return "🌏 Multinasional";
+    return "🌍 Internasional";
+  };
+
   const generateInterpretation = (
     waktu: number,
     gaji: number,
     kesesuaian: number,
-    lamaStudi: number,
+    tingkatKerja: number,
     institusi: number
   ) => {
     const traits = [];
@@ -63,7 +71,9 @@ export function ClusterInterpretation({
     if (kesesuaian <= 2) traits.push("🎯 Kerja sesuai bidang");
     else if (kesesuaian >= 4) traits.push("🔄 Kerja kurang sesuai");
 
-    if (lamaStudi > 4.5) traits.push("📚 Lulus lama");
+    if (tingkatKerja <= 2) traits.push("🏠 Dominan lokal/regional");
+    else if (tingkatKerja <= 3.5) traits.push("🇮🇩 Dominan nasional");
+    else traits.push("🌍 Banyak multinasional/internasional");
 
     if (institusi <= 2) traits.push("🏛️ Dominan pemerintah/non-profit");
     else if (institusi <= 3.5) traits.push("🏢 Dominan swasta");
@@ -147,8 +157,10 @@ export function ClusterInterpretation({
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Lama Studi:</span>
-                <span className="font-medium">{avgF5d} tahun</span>
+                <span className="text-muted-foreground">Tingkat Kerja:</span>
+                <span className="font-medium text-xs">
+                  {getTingkatKerjaLabel(parseFloat(avgF5d))}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Institusi:</span>

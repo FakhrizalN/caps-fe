@@ -6,22 +6,14 @@ const getBaseUrl = () => {
   }
 
   // Client-side: Auto-detect berdasarkan environment
+  const hostname = window.location.hostname
+  const protocol = window.location.protocol
   const userAgent = window.navigator.userAgent
   const isFlutterWebView = userAgent.includes('FlutterWebView') ||
     typeof (window as any).FlutterApp !== 'undefined'
 
-  if (isFlutterWebView) {
-    // Mobile App: Gunakan 10.0.2.2 untuk Android Emulator
-    return 'http://10.0.2.2:4101'
-  }
-
-  // Browser: Detect production vs development
-  const hostname = window.location.hostname
-  const protocol = window.location.protocol
-
-  // Production domains - use same origin (no port, no /api prefix)
+  // PRIORITAS 1: Cek production domain DULUAN (baik browser maupun FlutterWebView)
   if (hostname === 'tracer.neverlands.xyz') {
-    // Backend accessible via: https://tracer.neverlands.xyz
     return `${protocol}//${hostname}`
   }
 
@@ -30,7 +22,12 @@ const getBaseUrl = () => {
     return `${protocol}//${hostname}`
   }
 
-  // Development: localhost with port
+  // PRIORITAS 2: FlutterWebView di development (localhost)
+  if (isFlutterWebView) {
+    return 'http://10.0.2.2:4101'
+  }
+
+  // Browser development: localhost with port
   return 'http://localhost:4101'
 }
 
@@ -210,7 +207,7 @@ export function getCurrentUser(): any | null {
  * Get current user data from API
  */
 export async function getCurrentUserFromAPI(): Promise<any> {
-  return fetchWithAuth('/accounts/me');
+  return fetchWithAuth('/accounts/me/');
 }
 
 /**
@@ -222,7 +219,7 @@ export async function updateCurrentUserProfile(data: {
   phone_number?: string;
   address?: string;
 }): Promise<any> {
-  return fetchWithAuth('/accounts/me', {
+  return fetchWithAuth('/accounts/me/', {
     method: 'PUT',
     body: JSON.stringify(data),
   });
@@ -237,7 +234,7 @@ export async function patchCurrentUserProfile(data: {
   phone_number?: string;
   address?: string;
 }): Promise<any> {
-  return fetchWithAuth('/accounts/me', {
+  return fetchWithAuth('/accounts/me/', {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
@@ -250,7 +247,7 @@ export async function changePassword(data: {
   old_password: string;
   new_password: string;
 }): Promise<any> {
-  return fetchWithAuth('/accounts/password/change', {
+  return fetchWithAuth('/accounts/password/change/', {
     method: 'POST',
     body: JSON.stringify(data),
   });

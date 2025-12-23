@@ -6,25 +6,26 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table"
-import { getCurrentUserFromAPI, getProgramStudiesDetailed, getUsers, type ProgramStudyDetailed, type User } from "@/lib/api"
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Mail, Mails, Search } from "lucide-react"
+import { fetchWithAuth, getCurrentUserFromAPI, getProgramStudiesDetailed, getUsers, type ProgramStudyDetailed, type User } from "@/lib/api"
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Loader2, Mail, Mails, Search } from "lucide-react"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 // Helper function to calculate progress percentage
 function calculateProgress(lastSurvey: string | undefined): number {
@@ -74,6 +75,8 @@ export default function ResponsesPage() {
   const [pageSize, setPageSize] = useState(10)
   const [currentUserRole, setCurrentUserRole] = useState<string>("")
   const [currentUserProgramStudy, setCurrentUserProgramStudy] = useState<number | null>(null)
+  const [sendingEmailAll, setSendingEmailAll] = useState(false)
+  const [sendingEmailUser, setSendingEmailUser] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -157,6 +160,41 @@ export default function ResponsesPage() {
     setPageIndex(0)
   }, [searchQuery])
 
+  // Send reminder to all alumni (Admin/Tracer) or prodi alumni (Tim Prodi)
+  const handleSendReminderAll = async () => {
+    setSendingEmailAll(true)
+    try {
+      // Tim Prodi uses /api/mailer/reminder/prodi/, others use /api/mailer/reminder/all/
+      const endpoint = currentUserRole === "Tim Prodi" 
+        ? "/api/mailer/reminder/prodi/" 
+        : "/api/mailer/reminder/all/"
+      
+      const result = await fetchWithAuth(endpoint, { method: "POST" })
+      toast.success(`Email reminder berhasil dikirim ke ${result.total_reminded} alumni`)
+    } catch (error) {
+      console.error("Error sending reminder:", error)
+      toast.error("Gagal mengirim email reminder")
+    } finally {
+      setSendingEmailAll(false)
+    }
+  }
+
+  // Send reminder to specific user
+  const handleSendReminderUser = async (userId: string) => {
+    setSendingEmailUser(userId)
+    try {
+      const result = await fetchWithAuth(`/api/mailer/reminder/user/${userId}/`, { 
+        method: "POST" 
+      })
+      toast.success(`Email reminder berhasil dikirim`)
+    } catch (error) {
+      console.error("Error sending reminder to user:", error)
+      toast.error("Gagal mengirim email reminder")
+    } finally {
+      setSendingEmailUser(null)
+    }
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -200,12 +238,15 @@ export default function ResponsesPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => {
-                          // TODO: implement send notification
-                        }}
-                        title="Send notification to all users"
+                        onClick={handleSendReminderAll}
+                        disabled={sendingEmailAll}
+                        title={currentUserRole === "Tim Prodi" ? "Kirim reminder ke alumni prodi" : "Kirim reminder ke semua alumni"}
                       >
-                        <Mails className="h-4 w-4" />
+                        {sendingEmailAll ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Mails className="h-4 w-4" />
+                        )}
                       </Button>
                     </TableHead>
                     <TableHead className="w-[200px]">Survey Progress</TableHead>
@@ -241,12 +282,15 @@ export default function ResponsesPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => {
-                                // TODO: implement send email
-                              }}
-                              title="Send email notification"
+                              onClick={() => handleSendReminderUser(user.id)}
+                              disabled={sendingEmailUser === user.id}
+                              title="Kirim email reminder"
                             >
-                              <Mail className="h-4 w-4" />
+                              {sendingEmailUser === user.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Mail className="h-4 w-4" />
+                              )}
                             </Button>
                           </TableCell>
                           <TableCell>
