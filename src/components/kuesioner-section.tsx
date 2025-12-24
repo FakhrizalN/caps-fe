@@ -2,10 +2,11 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getSurveys, type Survey } from "@/lib/api"
-import { Award, ClipboardList, FileText, Users } from "lucide-react"
+import { getCurrentUserFromAPI, getSurveys, type Survey } from "@/lib/api"
+import { Award, ClipboardList, FileText, Lock, Users } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 // Map survey types to icons
 const surveyIcons: Record<string, any> = {
@@ -23,18 +24,81 @@ const surveyTitles: Record<string, string> = {
   skp: "Survey Kepuasan Pengguna",
 }
 
+// Survey progression order
+const surveyOrder = ['exit', 'lv1', 'lv2']
+
+// Helper function to check if a survey can be accessed based on last_survey progress
+function canAccessSurvey(surveyType: string | undefined, lastSurvey: string | undefined): boolean {
+  if (!surveyType) return true
+  
+  const normalizedSurveyType = surveyType.toLowerCase()
+  const normalizedLastSurvey = lastSurvey?.toLowerCase() || 'none'
+  
+  // Exit survey can always be accessed (it's the first one)
+  if (normalizedSurveyType === 'exit') {
+    return true
+  }
+  
+  // Level 1 requires exit to be completed
+  if (normalizedSurveyType === 'lv1') {
+    return normalizedLastSurvey === 'exit' || normalizedLastSurvey === 'lv1' || normalizedLastSurvey === 'lv2'
+  }
+  
+  // Level 2 requires level 1 to be completed
+  if (normalizedSurveyType === 'lv2') {
+    return normalizedLastSurvey === 'lv1' || normalizedLastSurvey === 'lv2'
+  }
+  
+  return true
+}
+
+// Helper function to get the required survey message
+function getRequiredSurveyMessage(surveyType: string | undefined): string {
+  if (!surveyType) return ''
+  
+  const normalizedSurveyType = surveyType.toLowerCase()
+  
+  if (normalizedSurveyType === 'lv1') {
+    return 'Selesaikan Exit Survey terlebih dahulu'
+  }
+  
+  if (normalizedSurveyType === 'lv2') {
+    return 'Selesaikan Tracer Study Level 1 terlebih dahulu'
+  }
+  
+  return ''
+}
+
 export function KuesionerSection() {
   const router = useRouter()
   const [surveys, setSurveys] = useState<Survey[]>([])
   const [loading, setLoading] = useState(true)
+  const [lastSurvey, setLastSurvey] = useState<string | undefined>(undefined)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
-    const fetchActiveSurveys = async () => {
+    const fetchData = async () => {
       try {
+        // Fetch surveys
         const allSurveys = await getSurveys()
-        // Filter only active surveys
-        const activeSurveys = allSurveys.filter(survey => survey.is_active)
+        // Filter only active surveys and exclude SKP type (SKP surveys are accessed via email link)
+        const activeSurveys = allSurveys.filter(survey => 
+          survey.is_active && survey.survey_type?.toLowerCase() !== 'skp'
+        )
         setSurveys(activeSurveys)
+        
+        // Check if user is logged in and fetch their progress
+        const accessToken = localStorage.getItem('access_token')
+        if (accessToken) {
+          setIsLoggedIn(true)
+          try {
+            const currentUser = await getCurrentUserFromAPI()
+            setLastSurvey(currentUser.last_survey || 'none')
+          } catch (error) {
+            console.error('Error fetching user data:', error)
+            setLastSurvey('none')
+          }
+        }
       } catch (error) {
         console.error('Error fetching surveys:', error)
       } finally {
@@ -42,14 +106,30 @@ export function KuesionerSection() {
       }
     }
 
-    fetchActiveSurveys()
+    fetchData()
   }, [])
 
-  const handleSurveyClick = async (surveyId: string | number) => {
-    // Check if user is authenticated
+  const handleSurveyClick = async (surveyId: string | number, surveyType?: string) => {
+    console.log('Survey clicked:', { surveyId, surveyType })
+    
+    // For SKP surveys, navigate directly to supervisor survey page without login
+    // Check case-insensitive to handle different cases
+    if (surveyType?.toLowerCase() === 'skp') {
+      console.log('Navigating to supervisor page for SKP survey')
+      router.push(`/survey/${surveyId}/supervisor`)
+      return
+    }
+
+    // Check if user is authenticated for other survey types
     const accessToken = localStorage.getItem('access_token')
     if (!accessToken) {
       router.push('/login')
+      return
+    }
+
+    // Check if user can access this survey based on progression
+    if (!canAccessSurvey(surveyType, lastSurvey)) {
+      toast.warning(getRequiredSurveyMessage(surveyType))
       return
     }
 
@@ -121,26 +201,48 @@ export function KuesionerSection() {
         }`}>
           {surveys.map((survey) => {
             const Icon = surveyIcons[survey.survey_type || ''] || FileText
+            const canAccess = !isLoggedIn || canAccessSurvey(survey.survey_type, lastSurvey)
+            const lockedMessage = getRequiredSurveyMessage(survey.survey_type)
             
             return (
-              <Card key={survey.id} className="bg-card border-border hover:shadow-lg transition-shadow">
+              <Card 
+                key={survey.id} 
+                className={`bg-card border-border transition-shadow ${
+                  canAccess ? 'hover:shadow-lg' : 'opacity-75'
+                }`}
+              >
                 <CardHeader>
                   <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-lg bg-primary/10">
-                      <Icon className="h-6 w-6 text-primary" />
+                    <div className={`p-3 rounded-lg ${canAccess ? 'bg-primary/10' : 'bg-muted'}`}>
+                      {canAccess ? (
+                        <Icon className="h-6 w-6 text-primary" />
+                      ) : (
+                        <Lock className="h-6 w-6 text-muted-foreground" />
+                      )}
                     </div>
                     <CardTitle className="text-xl text-foreground">{survey.title}</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-muted-foreground text-base mb-6">
+                  <CardDescription className="text-muted-foreground text-base mb-4">
                     {survey.description}
                   </CardDescription>
+                  {!canAccess && isLoggedIn && (
+                    <p className="text-sm text-amber-600 mb-4 flex items-center gap-2">
+                      <Lock className="h-4 w-4" />
+                      {lockedMessage}
+                    </p>
+                  )}
                   <Button 
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                    onClick={() => handleSurveyClick(survey.id)}
+                    className={`w-full ${
+                      canAccess 
+                        ? 'bg-primary hover:bg-primary/90 text-primary-foreground' 
+                        : 'bg-muted text-muted-foreground cursor-not-allowed'
+                    }`}
+                    onClick={() => handleSurveyClick(survey.id, survey.survey_type)}
+                    disabled={!canAccess && isLoggedIn}
                   >
-                    Isi Kuesioner
+                    {canAccess ? 'Isi Kuesioner' : 'Terkunci'}
                   </Button>
                 </CardContent>
               </Card>

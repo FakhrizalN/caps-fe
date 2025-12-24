@@ -16,7 +16,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { getSurveys, type Survey } from "@/lib/api"
+import { getCurrentUserFromAPI, getSurveys, type Survey } from "@/lib/api"
 import { Home, LogOut, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -28,15 +28,27 @@ export default function DashboardMobilePage() {
   const [userName, setUserName] = useState('')
 
   useEffect(() => {
-    // Get user data from localStorage
-    try {
-      const userDataString = localStorage.getItem('user')
-      if (userDataString) {
-        const userData = JSON.parse(userDataString)
+    // Fetch user data from API (like profile-user page)
+    const fetchUserData = async () => {
+      try {
+        const userData = await getCurrentUserFromAPI()
         setUserName(userData.username || 'User')
+        
+        // Also update localStorage with correct data
+        localStorage.setItem('user', JSON.stringify(userData))
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+        // Fallback to localStorage if API fails
+        try {
+          const userDataString = localStorage.getItem('user')
+          if (userDataString) {
+            const userData = JSON.parse(userDataString)
+            setUserName(userData.username || 'User')
+          }
+        } catch (e) {
+          console.error('Error parsing user data from localStorage:', e)
+        }
       }
-    } catch (error) {
-      console.error('Error parsing user data:', error)
     }
 
     // Fetch active surveys
@@ -52,6 +64,7 @@ export default function DashboardMobilePage() {
       }
     }
 
+    fetchUserData()
     fetchActiveSurveys()
   }, [])
 

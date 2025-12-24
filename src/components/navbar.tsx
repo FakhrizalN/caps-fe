@@ -170,15 +170,17 @@ export function Navbar() {
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href={isAlumni ? "/profile-user" : "/profile"}
-                      className="flex items-center cursor-pointer"
-                    >
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
+                  {isAlumni && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/profile-user"
+                        className="flex items-center cursor-pointer"
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     onClick={handleLogout}
                     className="cursor-pointer text-red-600"
@@ -281,14 +283,16 @@ export function Navbar() {
                         Dashboard Admin
                       </Link>
                     )}
-                    <Link
-                      href={isAlumni ? "/profile-user" : "/profile"}
-                      className="flex items-center gap-2 text-sm sm:text-base text-foreground hover:text-primary transition-colors py-1.5 active:bg-accent rounded px-2 -mx-2"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <User className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
-                      Profile
-                    </Link>
+                    {isAlumni && (
+                      <Link
+                        href="/profile-user"
+                        className="flex items-center gap-2 text-sm sm:text-base text-foreground hover:text-primary transition-colors py-1.5 active:bg-accent rounded px-2 -mx-2"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <User className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+                        Profile
+                      </Link>
+                    )}
                     <button
                       onClick={() => {
                         handleLogout();

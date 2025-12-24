@@ -1294,6 +1294,94 @@ export async function submitBulkAnswers(surveyId: number, answers: CreateAnswerD
   })
 }
 
+// ==========================================
+// Supervisor Survey API Functions (No Authentication Required)
+// ==========================================
+
+export interface SupervisorAnswerData {
+  question: number
+  answer_value: string | number | boolean | any
+}
+
+/**
+ * Get survey data without authentication (for SKP/supervisor surveys)
+ */
+export async function getSurveyPublic(surveyId: string): Promise<Survey> {
+  const response = await fetch(`${BASE_URL}/api/surveys/${surveyId}/`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.detail || `Failed to fetch survey: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Get sections without authentication (for SKP/supervisor surveys)
+ */
+export async function getSectionsPublic(surveyId: number): Promise<Section[]> {
+  const response = await fetch(`${BASE_URL}/api/surveys/${surveyId}/sections/`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.detail || `Failed to fetch sections: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Get questions without authentication (for SKP/supervisor surveys)
+ */
+export async function getQuestionsPublic(surveyId: number, sectionId: number): Promise<Question[]> {
+  const response = await fetch(`${BASE_URL}/api/surveys/${surveyId}/sections/${sectionId}/questions/`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.detail || `Failed to fetch questions: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Submit answers for supervisor survey (SKP) without authentication
+ * Uses endpoint: POST /api/surveys/supervisor/{survey_id}/answers/bulk
+ */
+export async function submitSupervisorBulkAnswers(surveyId: number, answers: SupervisorAnswerData[]): Promise<any> {
+  const response = await fetch(`${BASE_URL}/api/surveys/supervisor/${surveyId}/answers/bulk`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ answers }),
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.detail || `Failed to submit supervisor answers: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+
 // ============================================
 // Program Study Questions API
 // ============================================
